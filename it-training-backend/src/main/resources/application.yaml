@@ -1,3 +1,31 @@
 spring:
   application:
     name: it-training-backend
+  
+  datasource:
+    url: ${DEV_REMOTE_DB_URL:jdbc:mysql://localhost:4000/it_training}
+    username: ${DEV_REMOTE_DB_USERNAME:it_training_user}
+    password: ${DEV_REMOTE_DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.ittraining: INFO

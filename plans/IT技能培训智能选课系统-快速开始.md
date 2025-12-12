@@ -99,44 +99,198 @@ npm install -D sass
 
 ---
 
-## 三、数据库初始化
+## 三、数据库初始化（使用Flyway）
 
-### 3.1 创建数据库
+### 3.1 为什么使用Flyway
 
-```sql
--- 创建数据库（TiDB兼容MySQL语法）
+由于使用TiDB分布式数据库，推荐使用Flyway进行数据库版本管理：
+
+- ✅ **版本控制**：数据库结构变更可追溯
+- ✅ **自动迁移**：应用启动时自动执行迁移脚本
+- ✅ **团队协作**：避免数据库结构不一致
+- ✅ **回滚支持**：支持数据库版本回退
+- ✅ **TiDB兼容**：完全兼容TiDB（MySQL协议）
+
+### 3.2 添加Flyway依赖
+
+在 `pom.xml` 中添加Flyway依赖：
+
+```xml
+<dependency>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-core</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-mysql</artifactId>
+</dependency>
+```
+
+### 3.3 配置Flyway
+
+在 `application.yml` 中添加Flyway配置：
+
+```yaml
+spring:
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    encoding: UTF-8
+    validate-on-migrate: true
+    out-of-order: false
+```
+
+### 3.4 创建数据库
+
+首先手动创建数据库（只需执行一次）：
+
+```bash
+# 连接TiDB
+mysql -h 127.0.0.1 -P 4000 -u root
+
+# 创建数据库
 CREATE DATABASE IF NOT EXISTS it_training
 DEFAULT CHARACTER SET utf8mb4
 DEFAULT COLLATE utf8mb4_unicode_ci;
 
--- 使用数据库
-USE it_training;
+# 退出
+exit;
 ```
 
-### 3.2 执行SQL脚本
+### 3.5 创建Flyway迁移脚本
 
-将设计方案中的所有建表SQL按顺序执行：
+在 `src/main/resources/db/migration/` 目录下创建迁移脚本：
 
-```bash
-# 方式一：使用TiDB命令行（兼容MySQL客户端）
-mysql -h 127.0.0.1 -P 4000 -u root -p it_training < db/init.sql
+**命名规范**：`V{版本号}__{描述}.sql`
 
-# 方式二：使用Navicat等工具导入
-# 打开Navicat -> 连接TiDB(使用MySQL协议，端口4000) -> 运行SQL文件
-```
-
-### 3.3 初始化数据
-
+#### V1__init_user_tables.sql
 ```sql
--- 插入默认管理员
-INSERT INTO `user` (username, password, real_name, phone, email, status) 
-VALUES ('admin', '$2a$10$...', '系统管理员', '13800138000', 'admin@example.com', 1);
+-- 用户相关表
+CREATE TABLE `user` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
+  `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+  `password` VARCHAR(255) NOT NULL COMMENT '密码（加密）',
+  `real_name` VARCHAR(50) COMMENT '真实姓名',
+  `phone` VARCHAR(20) UNIQUE COMMENT '手机号',
+  `email` VARCHAR(100) UNIQUE COMMENT '邮箱',
+  `avatar` VARCHAR(255) COMMENT '头像URL',
+  `gender` TINYINT COMMENT '性别：0-未知，1-男，2-女',
+  `birth_date` DATE COMMENT '出生日期',
+  `status` TINYINT DEFAULT 1 COMMENT '状态：0-禁用，1-正常',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  INDEX idx_phone (`phone`),
+  INDEX idx_email (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
--- 插入默认角色
+CREATE TABLE `role` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '角色ID',
+  `role_name` VARCHAR(50) NOT NULL UNIQUE COMMENT '角色名称',
+  `role_code` VARCHAR(50) NOT NULL UNIQUE COMMENT '角色编码',
+  `description` VARCHAR(255) COMMENT '角色描述',
+  `status` TINYINT DEFAULT 1 COMMENT '状态：0-禁用，1-正常',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
+
+CREATE TABLE `user_role` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `role_id` BIGINT NOT NULL COMMENT '角色ID',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  UNIQUE KEY uk_user_role (`user_id`, `role_id`),
+  INDEX idx_user_id (`user_id`),
+  INDEX idx_role_id (`role_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联表';
+```
+
+#### V2__init_course_tables.sql
+```sql
+-- 课程相关表
+CREATE TABLE `course_category` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '分类ID',
+  `category_name` VARCHAR(50) NOT NULL COMMENT '分类名称',
+  `parent_id` BIGINT DEFAULT 0 COMMENT '父分类ID，0表示顶级分类',
+  `sort_order` INT DEFAULT 0 COMMENT '排序',
+  `icon` VARCHAR(255) COMMENT '图标',
+  `description` VARCHAR(255) COMMENT '描述',
+  `status` TINYINT DEFAULT 1 COMMENT '状态：0-禁用，1-正常',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  INDEX idx_parent_id (`parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程分类表';
+
+CREATE TABLE `course` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '课程ID',
+  `course_name` VARCHAR(100) NOT NULL COMMENT '课程名称',
+  `course_code` VARCHAR(50) UNIQUE COMMENT '课程编码',
+  `category_id` BIGINT NOT NULL COMMENT '分类ID',
+  `teacher_id` BIGINT NOT NULL COMMENT '讲师ID',
+  `cover_image` VARCHAR(255) COMMENT '封面图片',
+  `description` TEXT COMMENT '课程简介',
+  `difficulty_level` TINYINT COMMENT '难度等级：1-入门，2-初级，3-中级，4-高级，5-专家',
+  `duration` INT COMMENT '课程时长（分钟）',
+  `price` DECIMAL(10,2) DEFAULT 0.00 COMMENT '课程价格',
+  `original_price` DECIMAL(10,2) COMMENT '原价',
+  `max_students` INT DEFAULT 0 COMMENT '最大学员数，0表示不限制',
+  `enrolled_count` INT DEFAULT 0 COMMENT '已选人数',
+  `stock` INT DEFAULT 0 COMMENT '库存',
+  `version` INT DEFAULT 0 COMMENT '版本号（乐观锁）',
+  `view_count` INT DEFAULT 0 COMMENT '浏览次数',
+  `rating` DECIMAL(3,2) DEFAULT 0.00 COMMENT '评分（0-5）',
+  `rating_count` INT DEFAULT 0 COMMENT '评分人数',
+  `status` TINYINT DEFAULT 0 COMMENT '状态：0-草稿，1-已发布，2-已下架',
+  `is_hot` TINYINT DEFAULT 0 COMMENT '是否热门：0-否，1-是',
+  `is_recommend` TINYINT DEFAULT 0 COMMENT '是否推荐：0-否，1-是',
+  `start_time` DATETIME COMMENT '开课时间',
+  `end_time` DATETIME COMMENT '结课时间',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  INDEX idx_category_id (`category_id`),
+  INDEX idx_teacher_id (`teacher_id`),
+  INDEX idx_status (`status`),
+  INDEX idx_stock (`stock`),
+  INDEX idx_start_time (`start_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程表';
+```
+
+#### V3__init_enrollment_tables.sql
+```sql
+-- 选课相关表
+CREATE TABLE `enrollment` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '选课ID',
+  `student_id` BIGINT NOT NULL COMMENT '学员ID',
+  `course_id` BIGINT NOT NULL COMMENT '课程ID',
+  `order_id` BIGINT COMMENT '订单ID',
+  `enrollment_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '选课时间',
+  `status` TINYINT DEFAULT 1 COMMENT '状态：0-已取消，1-学习中，2-已完成',
+  `progress` DECIMAL(5,2) DEFAULT 0.00 COMMENT '学习进度（百分比）',
+  `study_duration` INT DEFAULT 0 COMMENT '学习时长（分钟）',
+  `last_study_time` DATETIME COMMENT '最后学习时间',
+  `complete_time` DATETIME COMMENT '完成时间',
+  `score` DECIMAL(5,2) COMMENT '成绩',
+  `certificate_url` VARCHAR(255) COMMENT '证书URL',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  UNIQUE KEY uk_student_course (`student_id`, `course_id`),
+  INDEX idx_student_id (`student_id`),
+  INDEX idx_course_id (`course_id`),
+  INDEX idx_status (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='选课记录表';
+```
+
+#### V4__init_data.sql
+```sql
+-- 初始化数据
 INSERT INTO `role` (role_name, role_code, description) VALUES
 ('管理员', 'ADMIN', '系统管理员'),
 ('教师', 'TEACHER', '课程讲师'),
 ('学员', 'STUDENT', '普通学员');
+
+-- 插入默认管理员（密码：admin123，需要使用BCrypt加密）
+INSERT INTO `user` (username, password, real_name, phone, email, status)
+VALUES ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '系统管理员', '13800138000', 'admin@example.com', 1);
 
 -- 关联管理员角色
 INSERT INTO `user_role` (user_id, role_id) VALUES (1, 1);
@@ -149,6 +303,69 @@ INSERT INTO `course_category` (category_name, parent_id, sort_order) VALUES
 ('数据库', 0, 4),
 ('人工智能', 0, 5);
 ```
+
+### 3.6 Flyway工作流程
+
+```mermaid
+graph LR
+    A[应用启动] --> B[Flyway检查]
+    B --> C{数据库是否存在<br/>flyway_schema_history表?}
+    C -->|否| D[创建表并执行所有迁移]
+    C -->|是| E[检查未执行的迁移]
+    E --> F{是否有新迁移?}
+    F -->|是| G[按版本号顺序执行]
+    F -->|否| H[跳过]
+    D --> I[应用正常启动]
+    G --> I
+    H --> I
+```
+
+### 3.7 Flyway常用命令
+
+```bash
+# 查看迁移状态
+mvn flyway:info
+
+# 手动执行迁移
+mvn flyway:migrate
+
+# 验证迁移脚本
+mvn flyway:validate
+
+# 清空数据库（慎用！）
+mvn flyway:clean
+
+# 修复迁移历史
+mvn flyway:repair
+```
+
+### 3.8 迁移脚本最佳实践
+
+1. **版本号规则**
+   - V1, V2, V3... 用于结构变更
+   - V1.1, V1.2... 用于小版本修复
+   - 版本号必须唯一且递增
+
+2. **文件命名**
+   ```
+   V1__init_user_tables.sql
+   V2__init_course_tables.sql
+   V3__init_enrollment_tables.sql
+   V4__init_data.sql
+   V5__add_column_to_course.sql
+   ```
+
+3. **脚本编写原则**
+   - 每个脚本只做一件事
+   - 脚本必须幂等（可重复执行）
+   - 不要修改已执行的脚本
+   - 使用事务保证原子性
+
+4. **TiDB特殊注意**
+   - TiDB完全兼容MySQL语法
+   - 支持AUTO_INCREMENT
+   - 支持外键语法但不强制约束
+   - 建议使用索引优化查询
 
 ---
 
@@ -169,13 +386,24 @@ spring:
     url: jdbc:mysql://localhost:4000/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: your_password
+  
+  # Flyway数据库迁移配置
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    encoding: UTF-8
+    validate-on-migrate: true
+    out-of-order: false
+    baseline-version: 0
+    baseline-description: "Initial baseline"
     
   # Redis配置
   data:
     redis:
       host: localhost
       port: 6379
-      password: 
+      password:
       database: 0
       lettuce:
         pool:
