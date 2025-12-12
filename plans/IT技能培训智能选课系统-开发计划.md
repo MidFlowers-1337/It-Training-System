@@ -98,7 +98,7 @@ it-training-frontend/
 ### 阶段一：项目初始化（第1-2周）
 
 #### 1. 环境搭建
-- [ ] 安装开发工具（JDK 17、Node.js、MySQL、Redis、RocketMQ）
+- [ ] 安装开发工具（JDK 17、Node.js、TiDB、Redis、RocketMQ）
 - [ ] 配置开发环境（IDEA、VS Code）
 - [ ] 安装Ollama并下载Qwen3模型
 - [ ] 配置Git仓库
@@ -741,16 +741,16 @@ ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: it-training-mysql
+  tidb:
+    image: pingcap/tidb:v7.5.0
+    container_name: it-training-tidb
     environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: it_training
+      TIDB_ROOT_PASSWORD: root123
     ports:
-      - "3306:3306"
+      - "4000:4000"
+      - "10080:10080"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - tidb-data:/var/lib/tidb
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - it-training-network

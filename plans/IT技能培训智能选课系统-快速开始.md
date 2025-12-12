@@ -8,7 +8,7 @@
 |------|---------|---------|
 | JDK | 17+ | https://www.oracle.com/java/technologies/downloads/ |
 | Node.js | 18+ | https://nodejs.org/ |
-| MySQL | 8.0+ | https://dev.mysql.com/downloads/ |
+| TiDB | 7.5+ | https://www.pingcap.com/download/ |
 | Redis | 7.0+ | https://redis.io/download |
 | RocketMQ | 5.1+ | https://rocketmq.apache.org/download |
 | Ollama | Latest | https://ollama.ai/ |
@@ -104,9 +104,9 @@ npm install -D sass
 ### 3.1 创建数据库
 
 ```sql
--- 创建数据库
-CREATE DATABASE IF NOT EXISTS it_training 
-DEFAULT CHARACTER SET utf8mb4 
+-- 创建数据库（TiDB兼容MySQL语法）
+CREATE DATABASE IF NOT EXISTS it_training
+DEFAULT CHARACTER SET utf8mb4
 DEFAULT COLLATE utf8mb4_unicode_ci;
 
 -- 使用数据库
@@ -118,11 +118,11 @@ USE it_training;
 将设计方案中的所有建表SQL按顺序执行：
 
 ```bash
-# 方式一：使用MySQL命令行
-mysql -u root -p it_training < db/init.sql
+# 方式一：使用TiDB命令行（兼容MySQL客户端）
+mysql -h 127.0.0.1 -P 4000 -u root -p it_training < db/init.sql
 
 # 方式二：使用Navicat等工具导入
-# 打开Navicat -> 连接数据库 -> 运行SQL文件
+# 打开Navicat -> 连接TiDB(使用MySQL协议，端口4000) -> 运行SQL文件
 ```
 
 ### 3.3 初始化数据
@@ -163,10 +163,10 @@ spring:
   application:
     name: it-training-backend
   
-  # 数据源配置
+  # 数据源配置（TiDB兼容MySQL协议，使用4000端口）
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:4000/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: your_password
     
@@ -374,27 +374,33 @@ export default router
 
 ## 六、中间件安装与配置
 
-### 6.1 MySQL安装
+### 6.1 TiDB安装
 
-**Windows:**
+**使用TiUP（推荐）：**
 ```bash
-# 下载MySQL安装包并安装
-# 配置环境变量
-# 启动MySQL服务
-net start mysql
+# 安装TiUP
+curl --proto '=https' --tlsv1.2 -sSf https://tiup-mirrors.pingcap.com/install.sh | sh
+
+# 启动本地TiDB集群（适合开发测试）
+tiup playground
+
+# 或启动指定版本
+tiup playground v7.5.0
+
+# TiDB会在4000端口启动，可以使用MySQL客户端连接
+mysql -h 127.0.0.1 -P 4000 -u root
 ```
 
-**Linux:**
+**使用Docker（快速体验）：**
 ```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install mysql-server
-sudo systemctl start mysql
-sudo mysql_secure_installation
+# 拉取TiDB镜像
+docker pull pingcap/tidb:v7.5.0
 
-# CentOS/RHEL
-sudo yum install mysql-server
-sudo systemctl start mysqld
+# 启动TiDB
+docker run -d --name tidb-server -p 4000:4000 -p 10080:10080 pingcap/tidb:v7.5.0
+
+# 连接TiDB
+mysql -h 127.0.0.1 -P 4000 -u root
 ```
 
 ### 6.2 Redis安装
@@ -556,16 +562,16 @@ npm run test
 
 **解决**:
 ```yaml
-# 检查MySQL是否启动
-systemctl status mysql
+# 检查TiDB是否启动
+tiup status
 
-# 检查端口是否开放
-netstat -an | grep 3306
+# 检查端口是否开放（TiDB使用4000端口）
+netstat -an | grep 4000
 
 # 修改配置文件中的连接信息
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/it_training?useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:4000/it_training?useSSL=false&serverTimezone=Asia/Shanghai
 ```
 
 ### 9.2 Redis连接失败
@@ -686,7 +692,7 @@ public class CorsConfig {
 
 - [ ] JDK 17已安装并配置环境变量
 - [ ] Node.js 18+已安装
-- [ ] MySQL 8.0已安装并启动
+- [ ] TiDB 7.5+已安装并启动
 - [ ] Redis已安装并启动
 - [ ] RocketMQ已安装并启动
 - [ ] Ollama已安装并下载Qwen3模型

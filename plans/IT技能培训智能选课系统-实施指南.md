@@ -4,6 +4,7 @@
 
 ### 1.1 证书表（续）
 ```sql
+-- 注意：TiDB完全兼容MySQL语法，所有表结构无需修改
 CREATE TABLE `certificate` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '证书ID',
   `certificate_no` VARCHAR(50) NOT NULL UNIQUE COMMENT '证书编号',
