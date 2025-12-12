@@ -244,7 +244,7 @@ API网关层（Nginx）
 | Spring Boot | 3.4.x | 核心框架 |
 | Spring Security | 6.x | 安全框架 |
 | MyBatis | 3.0.x | ORM框架 |
-| MySQL | 8.0+ | 关系数据库 |
+| TiDB | 7.5+ | 分布式关系数据库 |
 | Redis | 7.x | 缓存数据库 |
 | RocketMQ | 5.x | 消息队列 |
 | Redisson | 3.27.x | 分布式锁 |
