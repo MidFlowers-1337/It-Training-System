@@ -1,0 +1,99 @@
+# IT技能培训智能选课系统 - Docker Compose 配置
+# 版本: 1.0.0
+
+services:
+  # MySQL 数据库（或使用 TiDB）
+  mysql:
+    image: mysql:8.0
+    container_name: it-training-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_DATABASE: it_training
+      MYSQL_USER: ${MYSQL_USER:-itts}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-itts123456}
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docs/04-DB/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - it-training-network
+
+  # 后端服务
+  backend:
+    build:
+      context: ./it-training-backend
+      dockerfile: Dockerfile
+    container_name: it-training-backend
+    restart: unless-stopped
+    environment:
+      # 数据库配置
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-itts}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-itts123456}
+      # JWT 配置
+      JWT_SECRET: ${JWT_SECRET:-your-production-secret-key-must-be-at-least-32-characters}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      # AI 配置
+      AI_API_KEY: ${AI_API_KEY:-sk-demo}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.deepseek.com}
+      AI_MODEL: ${AI_MODEL:-deepseek-chat}
+      # 其他配置
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - it-training-network
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./it-training-frontend
+      dockerfile: Dockerfile
+    container_name: it-training-frontend
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - it-training-network
+
+# 数据卷
+volumes:
+  mysql_data:
+    driver: local
+
+# 网络
+networks:
+  it-training-network:
+    driver: bridge
