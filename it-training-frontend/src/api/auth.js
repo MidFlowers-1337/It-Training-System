@@ -18,18 +18,10 @@ export function register(data) {
   })
 }
 
-// 获取用户信息
-export function getUserInfo() {
+// 获取当前用户信息
+export function getCurrentUser() {
   return request({
-    url: '/auth/user/info',
+    url: '/auth/me',
     method: 'get'
-  })
-}
-
-// 退出登录
-export function logout() {
-  return request({
-    url: '/auth/logout',
-    method: 'post'
   })
 }
