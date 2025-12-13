@@ -1,31 +1,84 @@
 spring:
   application:
-    name: it-training-backend
-  
-  datasource:
-    url: ${DEV_REMOTE_DB_URL:jdbc:mysql://localhost:4000/it_training}
-    username: ${DEV_REMOTE_DB_USERNAME:it_training_user}
-    password: ${DEV_REMOTE_DB_PASSWORD:}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  
-  jpa:
-    show-sql: false
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-  
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
-    validate-on-migrate: true
+    name: it-training-system
 
+  # 数据源配置 - 使用环境变量，开发环境提供默认值
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Jackson 配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+
+  # Spring AI 配置（使用OpenAI兼容接口）
+  ai:
+    openai:
+      api-key: ${AI_API_KEY:sk-demo}
+      base-url: ${AI_BASE_URL:https://api.deepseek.com}
+      chat:
+        options:
+          model: ${AI_MODEL:deepseek-chat}
+          temperature: 0.7
+          max-tokens: 2000
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.itts.modules.*.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    # 使用 Log4j2 作为 SQL 日志实现
+    log-impl: org.apache.ibatis.logging.log4j2.Log4j2Impl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 服务器配置
 server:
   port: 8080
+  servlet:
+    context-path: /
 
+# JWT 配置
+jwt:
+  # 安全警告：生产环境必须通过环境变量 JWT_SECRET 设置安全的密钥
+  # 不提供默认值，强制要求配置（开发环境请在 .env.local 中设置）
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24小时（毫秒）
+  header: Authorization
+  prefix: "Bearer "
+
+# SpringDoc OpenAPI 配置
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+# 日志配置 - 使用 Log4j2
 logging:
+  config: classpath:log4j2-spring.xml
+  # 以下级别配置会被 log4j2-spring.xml 覆盖，保留作为文档参考
   level:
     root: INFO
-    com.ittraining: INFO
+    com.itts: DEBUG
+    org.springframework.security: INFO
+
+# AI推荐配置
+ai:
+  recommend:
+    enabled: true  # 是否启用AI推荐
+    timeout: 10000  # AI调用超时时间（毫秒）
+    fallback-on-error: true  # 出错时是否降级

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itts.modules.session.mapper.ClassSessionMapper">
+
+    <!-- 班期结果映射 -->
+    <resultMap id="ClassSessionWithDetailsMap" type="com.itts.modules.session.entity.ClassSession">
+        <id column="id" property="id"/>
+        <result column="course_id" property="courseId"/>
+        <result column="instructor_id" property="instructorId"/>
+        <result column="session_code" property="sessionCode"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="schedule" property="schedule"/>
+        <result column="location" property="location"/>
+        <result column="max_capacity" property="maxCapacity"/>
+        <result column="current_enrollment" property="currentEnrollment"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+        <result column="course_name" property="courseName"/>
+        <result column="instructor_name" property="instructorName"/>
+    </resultMap>
+
+    <!-- 分页查询班期列表（带关联信息） -->
+    <select id="selectPageWithDetails" resultMap="ClassSessionWithDetailsMap">
+        SELECT
+            cs.*,
+            c.name AS course_name,
+            u.real_name AS instructor_name
+        FROM class_session cs
+        LEFT JOIN course c ON cs.course_id = c.id AND c.deleted = 0
+        LEFT JOIN sys_user u ON cs.instructor_id = u.id AND u.deleted = 0
+        WHERE cs.deleted = 0
+        <if test="courseId != null">
+            AND cs.course_id = #{courseId}
+        </if>
+        <if test="instructorId != null">
+            AND cs.instructor_id = #{instructorId}
+        </if>
+        <if test="status != null">
+            AND cs.status = #{status}
+        </if>
+        ORDER BY cs.created_at DESC
+    </select>
+
+</mapper>

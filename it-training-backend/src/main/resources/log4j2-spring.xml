@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Log4j2 配置文件 for IT技能培训智能选课系统 -->
+<Configuration status="WARN" monitorInterval="30">
+
+    <!-- 全局属性定义 -->
+    <Properties>
+        <!-- 日志文件存储目录 -->
+        <Property name="LOG_PATH">logs</Property>
+        <!-- 应用名称 -->
+        <Property name="APP_NAME">it-training-system</Property>
+        <!-- 日志格式：时间 级别 线程 类名 - 消息 -->
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%level] [%thread] %logger{36} - %msg%n</Property>
+        <!-- 控制台彩色日志格式 -->
+        <Property name="CONSOLE_PATTERN">%d{HH:mm:ss.SSS} %highlight{%-5level} [%style{%thread}{bright,blue}] %style{%logger{36}}{cyan} - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- 控制台输出 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${CONSOLE_PATTERN}" disableAnsi="false"/>
+            <!-- 只输出 INFO 及以上级别 -->
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+        </Console>
+
+        <!-- 所有日志滚动文件 -->
+        <RollingRandomAccessFile name="AllLog"
+                                  fileName="${LOG_PATH}/${APP_NAME}.log"
+                                  filePattern="${LOG_PATH}/${APP_NAME}-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <!-- 每天滚动 -->
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <!-- 单文件大小超过 100MB 滚动 -->
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <!-- 最多保留 30 个文件 -->
+            <DefaultRolloverStrategy max="30">
+                <!-- 删除 30 天前的日志 -->
+                <Delete basePath="${LOG_PATH}" maxDepth="1">
+                    <IfFileName glob="${APP_NAME}-*.log.gz"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+        <!-- 错误日志单独文件 -->
+        <RollingRandomAccessFile name="ErrorLog"
+                                  fileName="${LOG_PATH}/${APP_NAME}-error.log"
+                                  filePattern="${LOG_PATH}/${APP_NAME}-error-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Filters>
+                <!-- 只记录 WARN 及以上级别 -->
+                <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="50MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingRandomAccessFile>
+
+        <!-- AI 模块专用日志 -->
+        <RollingRandomAccessFile name="AiLog"
+                                  fileName="${LOG_PATH}/${APP_NAME}-ai.log"
+                                  filePattern="${LOG_PATH}/${APP_NAME}-ai-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="50MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="15"/>
+        </RollingRandomAccessFile>
+
+        <!-- 安全/认证模块专用日志 -->
+        <RollingRandomAccessFile name="SecurityLog"
+                                  fileName="${LOG_PATH}/${APP_NAME}-security.log"
+                                  filePattern="${LOG_PATH}/${APP_NAME}-security-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="50MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="15"/>
+        </RollingRandomAccessFile>
+
+        <!-- 异步日志包装器 - 提升性能 -->
+        <Async name="AsyncAll" bufferSize="512">
+            <AppenderRef ref="AllLog"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <!-- Spring 框架日志 -->
+        <Logger name="org.springframework" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncAll"/>
+        </Logger>
+
+        <!-- Spring Security 日志 -->
+        <Logger name="org.springframework.security" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="SecurityLog"/>
+        </Logger>
+
+        <!-- MyBatis 日志 -->
+        <Logger name="com.baomidou.mybatisplus" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncAll"/>
+        </Logger>
+
+        <!-- SQL 语句日志（开发环境可设为 DEBUG 查看 SQL） -->
+        <Logger name="com.itts.modules" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncAll"/>
+            <AppenderRef ref="ErrorLog"/>
+        </Logger>
+
+        <!-- AI 推荐模块日志 -->
+        <Logger name="com.itts.modules.ai" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AiLog"/>
+            <AppenderRef ref="ErrorLog"/>
+        </Logger>
+
+        <!-- 安全模块日志 -->
+        <Logger name="com.itts.common.security" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="SecurityLog"/>
+            <AppenderRef ref="ErrorLog"/>
+        </Logger>
+
+        <!-- 认证模块日志 -->
+        <Logger name="com.itts.modules.auth" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="SecurityLog"/>
+            <AppenderRef ref="ErrorLog"/>
+        </Logger>
+
+        <!-- 根日志配置 -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncAll"/>
+            <AppenderRef ref="ErrorLog"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itts.modules.enrollment.mapper.EnrollmentMapper">
+
+    <!-- 报名结果映射（带关联信息） -->
+    <resultMap id="EnrollmentWithDetailsMap" type="com.itts.modules.enrollment.entity.Enrollment">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="session_id" property="sessionId"/>
+        <result column="status" property="status"/>
+        <result column="enrolled_at" property="enrolledAt"/>
+        <result column="canceled_at" property="canceledAt"/>
+        <result column="cancel_reason" property="cancelReason"/>
+        <result column="user_name" property="userName"/>
+        <result column="real_name" property="realName"/>
+        <result column="session_code" property="sessionCode"/>
+        <result column="course_name" property="courseName"/>
+        <result column="student_email" property="studentEmail"/>
+        <result column="student_phone" property="studentPhone"/>
+    </resultMap>
+
+    <!-- 分页查询报名列表（带关联信息） -->
+    <select id="selectPageWithDetails" resultMap="EnrollmentWithDetailsMap">
+        SELECT
+            e.*,
+            u.username AS user_name,
+            u.real_name AS real_name,
+            u.email AS student_email,
+            u.phone AS student_phone,
+            cs.session_code AS session_code,
+            c.name AS course_name
+        FROM enrollment e
+        LEFT JOIN sys_user u ON e.user_id = u.id AND u.deleted = 0
+        LEFT JOIN class_session cs ON e.session_id = cs.id AND cs.deleted = 0
+        LEFT JOIN course c ON cs.course_id = c.id AND c.deleted = 0
+        WHERE 1=1
+        <if test="userId != null">
+            AND e.user_id = #{userId}
+        </if>
+        <if test="sessionId != null">
+            AND e.session_id = #{sessionId}
+        </if>
+        <if test="status != null">
+            AND e.status = #{status}
+        </if>
+        ORDER BY e.enrolled_at DESC
+    </select>
+
+    <!-- 查询班期学员列表 -->
+    <select id="selectStudentsBySessionId" resultMap="EnrollmentWithDetailsMap">
+        SELECT
+            e.*,
+            u.username AS user_name,
+            u.real_name AS real_name,
+            u.email AS student_email,
+            u.phone AS student_phone,
+            cs.session_code AS session_code,
+            c.name AS course_name
+        FROM enrollment e
+        LEFT JOIN sys_user u ON e.user_id = u.id AND u.deleted = 0
+        LEFT JOIN class_session cs ON e.session_id = cs.id AND cs.deleted = 0
+        LEFT JOIN course c ON cs.course_id = c.id AND c.deleted = 0
+        WHERE e.session_id = #{sessionId}
+        AND e.status = 0
+        ORDER BY e.enrolled_at ASC
+    </select>
+
+</mapper>
