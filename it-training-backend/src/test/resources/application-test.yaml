@@ -1,0 +1,43 @@
+# 测试环境配置
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: false
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-test.sql
+
+  # 禁用 AI 功能进行测试
+  ai:
+    openai:
+      api-key: test-key
+      base-url: https://api.example.com
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# JWT 配置
+jwt:
+  secret: test-secret-key-for-unit-testing-must-be-at-least-32-characters-long
+  expiration: 86400000
+
+# AI 配置（测试环境禁用）
+ai:
+  recommend:
+    enabled: false
+    timeout: 5000
+    fallback-on-error: true
