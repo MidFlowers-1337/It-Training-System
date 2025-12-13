@@ -10,3 +10,31 @@ bmad-custom-src/
 .env.local
 .env.*.local
 *.env.local
+
+# 日志文件
+logs/
+*.log
+
+# Windows 系统文件
+nul
+Thumbs.db
+Desktop.ini
+
+# IDE 和编辑器
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# 构建产物
+target/
+dist/
+build/
+node_modules/
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
