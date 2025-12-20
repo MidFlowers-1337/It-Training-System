@@ -29,7 +29,7 @@ import java.util.List;
  */
 @Tag(name = "班期管理", description = "班期CRUD和报名状态管理")
 @RestController
-@RequestMapping("/api/sessions")
+@RequestMapping("/api/v1/sessions")
 @RequiredArgsConstructor
 public class SessionController {
 

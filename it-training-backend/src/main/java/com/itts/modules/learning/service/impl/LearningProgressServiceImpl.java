@@ -202,7 +202,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
         List<LearningProgress> progressList = list(
             new LambdaQueryWrapper<LearningProgress>()
                 .eq(LearningProgress::getUserId, userId)
-                .eq(LearningProgress::getStatus, "in_progress")
+                .in(LearningProgress::getStatus, "not_started", "in_progress")
                 .orderByDesc(LearningProgress::getLastStudyAt)
         );
         

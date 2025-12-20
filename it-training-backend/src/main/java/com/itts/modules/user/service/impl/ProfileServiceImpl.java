@@ -1,7 +1,16 @@
 package com.itts.modules.user.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
+import com.itts.common.util.VerificationCodeUtil;
+import com.itts.modules.learning.mapper.LearningProgressMapper;
+import com.itts.modules.learning.mapper.StudyCheckinMapper;
+import com.itts.modules.learning.mapper.UserAchievementMapper;
+import com.itts.modules.learning.mapper.UserLearningStatsMapper;
+import com.itts.modules.student.mapper.UserChapterProgressMapper;
+import com.itts.modules.student.mapper.UserLearningStreakMapper;
+import com.itts.modules.student.mapper.UserLevelMapper;
 import com.itts.modules.user.dto.ChangePasswordRequest;
 import com.itts.modules.user.dto.ProfileUpdateRequest;
 import com.itts.modules.user.dto.UserResponse;
@@ -28,6 +37,16 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final SysUserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final VerificationCodeUtil verificationCodeUtil;
+
+    // 学习数据相关的Mapper
+    private final LearningProgressMapper learningProgressMapper;
+    private final StudyCheckinMapper studyCheckinMapper;
+    private final UserLearningStatsMapper userLearningStatsMapper;
+    private final UserAchievementMapper userAchievementMapper;
+    private final UserChapterProgressMapper userChapterProgressMapper;
+    private final UserLearningStreakMapper userLearningStreakMapper;
+    private final UserLevelMapper userLevelMapper;
 
     @Override
     public UserResponse getCurrentUser(Long userId) {
@@ -132,12 +151,24 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     @Transactional
     public void bindEmail(Long userId, String email, String code) {
-        // 简化实现：实际应该验证验证码
-        // TODO: 实现验证码验证逻辑
-        
+        // 验证验证码
+        if (!verificationCodeUtil.verifyEmailCode(email, code)) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "验证码错误或已过期");
+        }
+
         SysUser user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 检查邮箱是否已被其他用户使用
+        SysUser existingUser = userMapper.selectOne(
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getEmail, email)
+                .ne(SysUser::getId, userId)
+        );
+        if (existingUser != null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "该邮箱已被其他用户绑定");
         }
 
         user.setEmail(email);
@@ -150,12 +181,24 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     @Transactional
     public void bindPhone(Long userId, String phone, String code) {
-        // 简化实现：实际应该验证验证码
-        // TODO: 实现验证码验证逻辑
-        
+        // 验证验证码
+        if (!verificationCodeUtil.verifyPhoneCode(phone, code)) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "验证码错误或已过期");
+        }
+
         SysUser user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 检查手机号是否已被其他用户使用
+        SysUser existingUser = userMapper.selectOne(
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getPhone, phone)
+                .ne(SysUser::getId, userId)
+        );
+        if (existingUser != null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "该手机号已被其他用户绑定");
         }
 
         user.setPhone(phone);
@@ -167,16 +210,42 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public void sendEmailCode(String email) {
-        // 简化实现：实际应该发送邮件
-        // TODO: 实现邮件发送逻辑
-        log.info("发送邮箱验证码到 {}", maskEmail(email));
+        // 检查是否频繁发送
+        if (verificationCodeUtil.emailCodeExists(email)) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "验证码已发送，请稍后再试");
+        }
+
+        // 生成验证码
+        String code = verificationCodeUtil.generateCode();
+
+        // 保存到Redis
+        verificationCodeUtil.saveEmailCode(email, code);
+
+        // 模拟发送邮件(实际项目中应调用邮件服务)
+        log.info("【模拟发送】邮箱验证码: {} -> {}", maskEmail(email), code);
+
+        // TODO: 集成真实邮件服务
+        // mailService.sendVerificationCode(email, code);
     }
 
     @Override
     public void sendPhoneCode(String phone) {
-        // 简化实现：实际应该发送短信
-        // TODO: 实现短信发送逻辑
-        log.info("发送手机验证码到 {}", maskPhone(phone));
+        // 检查是否频繁发送
+        if (verificationCodeUtil.phoneCodeExists(phone)) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "验证码已发送，请稍后再试");
+        }
+
+        // 生成验证码
+        String code = verificationCodeUtil.generateCode();
+
+        // 保存到Redis
+        verificationCodeUtil.savePhoneCode(phone, code);
+
+        // 模拟发送短信(实际项目中应调用短信服务)
+        log.info("【模拟发送】手机验证码: {} -> {}", maskPhone(phone), code);
+
+        // TODO: 集成真实短信服务
+        // smsService.sendVerificationCode(phone, code);
     }
 
     @Override
@@ -198,6 +267,64 @@ public class ProfileServiceImpl implements ProfileService {
         userMapper.updateById(user);
 
         log.info("用户 {} 注销了账号", userId);
+    }
+
+    @Override
+    @Transactional
+    public void clearLearningData(Long userId, String password) {
+        SysUser user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 验证密码
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "密码错误");
+        }
+
+        // 删除学习进度数据
+        learningProgressMapper.delete(
+            new LambdaQueryWrapper<com.itts.modules.learning.entity.LearningProgress>()
+                .eq(com.itts.modules.learning.entity.LearningProgress::getUserId, userId)
+        );
+
+        // 删除打卡记录
+        studyCheckinMapper.delete(
+            new LambdaQueryWrapper<com.itts.modules.learning.entity.StudyCheckin>()
+                .eq(com.itts.modules.learning.entity.StudyCheckin::getUserId, userId)
+        );
+
+        // 删除学习统计
+        userLearningStatsMapper.delete(
+            new LambdaQueryWrapper<com.itts.modules.learning.entity.UserLearningStats>()
+                .eq(com.itts.modules.learning.entity.UserLearningStats::getUserId, userId)
+        );
+
+        // 删除用户成就
+        userAchievementMapper.delete(
+            new LambdaQueryWrapper<com.itts.modules.learning.entity.UserAchievement>()
+                .eq(com.itts.modules.learning.entity.UserAchievement::getUserId, userId)
+        );
+
+        // 删除章节进度
+        userChapterProgressMapper.delete(
+            new LambdaQueryWrapper<com.itts.modules.student.entity.UserChapterProgress>()
+                .eq(com.itts.modules.student.entity.UserChapterProgress::getUserId, userId)
+        );
+
+        // 删除学习连续天数
+        userLearningStreakMapper.delete(
+            new LambdaQueryWrapper<com.itts.modules.student.entity.UserLearningStreak>()
+                .eq(com.itts.modules.student.entity.UserLearningStreak::getUserId, userId)
+        );
+
+        // 删除用户等级
+        userLevelMapper.delete(
+            new LambdaQueryWrapper<com.itts.modules.student.entity.UserLevel>()
+                .eq(com.itts.modules.student.entity.UserLevel::getUserId, userId)
+        );
+
+        log.info("用户 {} 清除了所有学习数据", userId);
     }
 
     /**

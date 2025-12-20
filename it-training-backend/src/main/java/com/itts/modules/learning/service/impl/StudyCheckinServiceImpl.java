@@ -13,21 +13,26 @@ import com.itts.modules.learning.service.AchievementService;
 import com.itts.modules.learning.service.StudyCheckinService;
 import com.itts.modules.learning.service.UserLearningStatsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * 学习打卡服务实现
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StudyCheckinServiceImpl extends ServiceImpl<StudyCheckinMapper, StudyCheckin>
         implements StudyCheckinService {
 
+    private static final ZoneId CHINA_ZONE = ZoneId.of("Asia/Shanghai");
+    
     private final CourseMapper courseMapper;
     private final UserLearningStatsService userLearningStatsService;
     private final AchievementService achievementService;
@@ -35,7 +40,8 @@ public class StudyCheckinServiceImpl extends ServiceImpl<StudyCheckinMapper, Stu
     @Override
     @Transactional
     public StudyCheckinResponse checkin(Long userId, StudyCheckinRequest request) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(CHINA_ZONE);
+        log.info("用户打卡 - userId: {}, 当前日期: {}, 时区: {}", userId, today, CHINA_ZONE);
         
         // 检查今日是否已打卡
         StudyCheckin existingCheckin = getOne(
@@ -112,7 +118,7 @@ public class StudyCheckinServiceImpl extends ServiceImpl<StudyCheckinMapper, Stu
         return count(
             new LambdaQueryWrapper<StudyCheckin>()
                 .eq(StudyCheckin::getUserId, userId)
-                .eq(StudyCheckin::getCheckinDate, LocalDate.now())
+                .eq(StudyCheckin::getCheckinDate, LocalDate.now(CHINA_ZONE))
         ) > 0;
     }
 
@@ -133,7 +139,7 @@ public class StudyCheckinServiceImpl extends ServiceImpl<StudyCheckinMapper, Stu
 
     @Override
     public int getCurrentStreak(Long userId) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(CHINA_ZONE);
         int streak = 0;
         LocalDate checkDate = today;
         
@@ -213,7 +219,7 @@ public class StudyCheckinServiceImpl extends ServiceImpl<StudyCheckinMapper, Stu
         StudyCheckin checkin = getOne(
             new LambdaQueryWrapper<StudyCheckin>()
                 .eq(StudyCheckin::getUserId, userId)
-                .eq(StudyCheckin::getCheckinDate, LocalDate.now())
+                .eq(StudyCheckin::getCheckinDate, LocalDate.now(CHINA_ZONE))
         );
         
         return checkin != null ? convertToResponse(checkin) : null;

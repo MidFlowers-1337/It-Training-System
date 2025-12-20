@@ -27,7 +27,7 @@ import java.util.List;
  */
 @Tag(name = "报名管理", description = "学员报名、取消报名、报名列表查询")
 @RestController
-@RequestMapping("/api/enrollments")
+@RequestMapping("/api/v1/enrollments")
 @RequiredArgsConstructor
 public class EnrollmentController {
 
