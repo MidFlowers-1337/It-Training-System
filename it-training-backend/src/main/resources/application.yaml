@@ -1,24 +1,57 @@
+# ============================================================================
+# IT Training System - 主配置文件
+# 说明: 包含所有环境通用的配置，数据库特定配置在 profile 文件中
+# ============================================================================
+
 spring:
   application:
     name: it-training-system
 
-  # 数据源配置 - 使用环境变量，开发环境提供默认值
-  datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+  # 激活的配置文件
+  # 开发环境: dev,mysql 或 dev,tidb
+  # 生产环境: prod,mysql 或 prod,tidb
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev,mysql}
 
-  # Jackson 配置
+  # Jackson JSON 配置
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
     default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
 
-  # Spring AI 配置（使用OpenAI兼容接口）
+  # Flyway 数据库迁移配置
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
+    encoding: UTF-8
+    out-of-order: false
+    table: flyway_schema_history
+
+  # Redis 配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+
+  # Spring AI 配置（使用 OpenAI 兼容接口）
   ai:
     openai:
-      api-key: ${AI_API_KEY:sk-demo}
+      api-key: ${AI_API_KEY}
       base-url: ${AI_BASE_URL:https://api.deepseek.com}
       chat:
         options:
@@ -26,37 +59,57 @@ spring:
           temperature: 0.7
           max-tokens: 2000
 
+# ============================================================================
 # MyBatis-Plus 配置
+# ============================================================================
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
   type-aliases-package: com.itts.modules.*.entity
   configuration:
     map-underscore-to-camel-case: true
-    # 使用 Log4j2 作为 SQL 日志实现
     log-impl: org.apache.ibatis.logging.log4j2.Log4j2Impl
+    cache-enabled: true
+    lazy-loading-enabled: true
+    aggressive-lazy-loading: false
   global-config:
     db-config:
       id-type: auto
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+    banner: false
 
+# ============================================================================
 # 服务器配置
+# ============================================================================
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  error:
+    include-message: always
+    include-binding-errors: always
 
+# ============================================================================
 # JWT 配置
+# ============================================================================
 jwt:
-  # 安全警告：生产环境必须通过环境变量 JWT_SECRET 设置安全的密钥
-  # 不提供默认值，强制要求配置（开发环境请在 .env.local 中设置）
+  # 安全警告：必须通过环境变量 JWT_SECRET 设置安全的密钥（至少32字符）
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}  # 24小时（毫秒）
   header: Authorization
   prefix: "Bearer "
 
+# ============================================================================
 # SpringDoc OpenAPI 配置
+# ============================================================================
 springdoc:
   api-docs:
     enabled: true
@@ -66,19 +119,44 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
+    display-request-duration: true
+  show-actuator: false
 
-# 日志配置 - 使用 Log4j2
+# ============================================================================
+# 日志配置
+# ============================================================================
 logging:
   config: classpath:log4j2-spring.xml
-  # 以下级别配置会被 log4j2-spring.xml 覆盖，保留作为文档参考
   level:
     root: INFO
-    com.itts: DEBUG
+    com.itts: INFO
+    org.springframework.web: INFO
     org.springframework.security: INFO
+    org.mybatis: INFO
 
-# AI推荐配置
+# ============================================================================
+# AI 推荐配置
+# ============================================================================
 ai:
   recommend:
-    enabled: true  # 是否启用AI推荐
-    timeout: 10000  # AI调用超时时间（毫秒）
-    fallback-on-error: true  # 出错时是否降级
+    enabled: ${AI_RECOMMEND_ENABLED:true}
+    timeout: ${AI_RECOMMEND_TIMEOUT:10000}
+    fallback-on-error: ${AI_RECOMMEND_FALLBACK:true}
+
+# ============================================================================
+# 应用自定义配置
+# ============================================================================
+app:
+  # 跨域配置
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+
+  # 文件上传配置
+  upload:
+    max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}
+    max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:50MB}
+    allowed-extensions: jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx

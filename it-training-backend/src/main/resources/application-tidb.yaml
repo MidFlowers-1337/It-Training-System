@@ -1,0 +1,74 @@
+# ============================================================================
+# TiDB 数据库配置
+# 激活方式: --spring.profiles.active=dev,tidb 或 prod,tidb
+# 说明: 仅包含 TiDB 特定的数据库配置
+# 文档: https://docs.pingcap.com/tidb/stable/dev-guide-sample-application-java-spring-boot
+# ============================================================================
+
+spring:
+  datasource:
+    # TiDB 连接配置
+    # TiDB Cloud: jdbc:mysql://<host>:4000/it_training?sslMode=VERIFY_IDENTITY&enabledTLSProtocols=TLSv1.2,TLSv1.3
+    # TiDB 本地: jdbc:mysql://localhost:4000/it_training
+    url: ${DB_URL:jdbc:mysql://localhost:4000/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # HikariCP 连接池配置 - 针对分布式数据库优化
+    hikari:
+      # 连接池大小（TiDB 推荐更大的连接池）
+      minimum-idle: ${DB_POOL_MIN_IDLE:10}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:30}
+      # 超时配置（毫秒）
+      idle-timeout: 600000           # 10分钟
+      max-lifetime: 1800000          # 30分钟
+      connection-timeout: 30000      # 30秒
+      # 连接池名称
+      pool-name: HikariCP-TiDB
+      # 连接测试
+      connection-test-query: SELECT 1
+      # TiDB 性能优化配置
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+        useConfigs: maxPerformance
+        rewriteBatchedStatements: true
+        # TiDB 特定优化
+        useLocalSessionState: true
+        cacheResultSetMetadata: true
+        cacheServerConfiguration: true
+        elideSetAutoCommits: true
+        maintainTimeStats: false
+
+  # Flyway TiDB 特定配置
+  flyway:
+    # TiDB 完全兼容 MySQL 的迁移脚本
+    # 如果有 TiDB 特定优化的脚本，可以添加额外位置
+    # locations: classpath:db/migration,classpath:db/migration/tidb
+    enabled: true
+
+# ============================================================================
+# MyBatis-Plus TiDB 特定配置
+# ============================================================================
+mybatis-plus:
+  global-config:
+    db-config:
+      # TiDB 的 ID 生成策略
+      # 推荐使用 ASSIGN_ID（雪花算法）以获得更好的分布式性能
+      # 如果使用 AUTO 自增，TiDB 会分配不连续的 ID
+      id-type: ${DB_ID_TYPE:auto}
+
+# ============================================================================
+# TiDB 环境说明
+# ============================================================================
+# TiDB vs MySQL 的主要差异:
+# 1. 默认端口: TiDB 使用 4000，MySQL 使用 3306
+# 2. AUTO_INCREMENT: TiDB 的自增 ID 不保证连续，但保证唯一
+# 3. 外键: TiDB 支持外键语法但默认不强制执行（可配置）
+# 4. 事务: TiDB 使用乐观事务模型，大事务需要注意
+# 5. 索引: TiDB 不支持全文索引，但支持 TiFlash 列式存储
+# 6. 连接池: 推荐使用更大的连接池以充分利用分布式特性
+# ============================================================================
