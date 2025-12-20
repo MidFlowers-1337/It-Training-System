@@ -79,6 +79,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         log.info("报名成功: enrollmentId={}", enrollment.getId());
 
+        // 检查是否满员，如果满员则自动更新状态为已满
+        ClassSession updatedSession = classSessionMapper.selectById(sessionId);
+        if (updatedSession.getCurrentEnrollment() >= updatedSession.getMaxCapacity()) {
+            updatedSession.setStatus(SessionStatus.FULL.getCode());
+            classSessionMapper.updateById(updatedSession);
+            log.info("班期已满员，自动关闭报名: sessionId={}", sessionId);
+        }
+
         return convertToResponse(enrollment);
     }
 

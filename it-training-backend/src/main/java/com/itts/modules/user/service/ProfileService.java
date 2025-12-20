@@ -82,4 +82,11 @@ public interface ProfileService {
      * @param password 密码确认
      */
     void deleteAccount(Long userId, String password);
+
+    /**
+     * 清除学习数据
+     * @param userId 用户ID
+     * @param password 密码确认
+     */
+    void clearLearningData(Long userId, String password);
 }

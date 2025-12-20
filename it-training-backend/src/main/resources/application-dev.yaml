@@ -1,0 +1,61 @@
+# ============================================================================
+# 开发环境配置
+# 激活方式: --spring.profiles.active=dev,mysql 或 dev,tidb
+# 说明: 开发环境特定配置，包含详细日志、调试工具等
+# ============================================================================
+
+# 日志配置 - 开发环境详细日志
+logging:
+  level:
+    root: INFO
+    com.itts: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.mybatis: DEBUG
+    org.springframework.jdbc.core: DEBUG
+    com.zaxxer.hikari: DEBUG
+
+# SpringDoc OpenAPI 配置 - 开发环境启用
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    display-request-duration: true
+    # 开发环境显示所有端点
+    show-actuator: true
+
+# Spring Boot Actuator 配置 - 开发环境仅暴露必要端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# 开发环境特定配置
+spring:
+  # 开发工具配置
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+  # H2 控制台（如果使用 H2 进行测试）
+  h2:
+    console:
+      enabled: false
+
+# JWT 配置 - 开发环境使用较短的过期时间便于测试
+jwt:
+  expiration: 86400000  # 24小时
+
+# AI 推荐配置 - 开发环境
+ai:
+  recommend:
+    enabled: true
+    timeout: 15000  # 开发环境超时时间更长，便于调试
+    fallback-on-error: true

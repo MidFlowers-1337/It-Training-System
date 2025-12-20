@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 用户登录
 export function login(data) {
   return request({
-    url: '/auth/login',
+    url: '/v1/auth/login',
     method: 'post',
     data
   })
@@ -12,7 +12,7 @@ export function login(data) {
 // 用户注册
 export function register(data) {
   return request({
-    url: '/auth/register',
+    url: '/v1/auth/register',
     method: 'post',
     data
   })
@@ -21,7 +21,7 @@ export function register(data) {
 // 获取当前用户信息
 export function getCurrentUser() {
   return request({
-    url: '/auth/me',
+    url: '/v1/auth/me',
     method: 'get'
   })
 }

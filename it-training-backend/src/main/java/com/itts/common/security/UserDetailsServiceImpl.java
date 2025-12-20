@@ -28,7 +28,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         SysUser user = userMapper.selectByUsername(username);
 
         if (user == null) {
-            throw new UsernameNotFoundException("用户不存在: " + username);
+            // 安全：统一错误信息，防止用户枚举攻击
+            throw new UsernameNotFoundException("用户名或密码错误");
         }
 
         if (user.getStatus() == 0) {

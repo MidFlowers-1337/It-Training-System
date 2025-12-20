@@ -1,0 +1,46 @@
+# ============================================================================
+# MySQL 数据库配置
+# 激活方式: --spring.profiles.active=dev,mysql 或 prod,mysql
+# 说明: 仅包含 MySQL 特定的数据库配置
+# ============================================================================
+
+spring:
+  datasource:
+    # MySQL 连接配置
+    # 安全警告：必须通过环境变量配置数据库凭据
+    url: ${DB_URL:jdbc:mysql://localhost:3306/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # HikariCP 连接池配置
+    hikari:
+      # 连接池大小
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      # 超时配置（毫秒）
+      idle-timeout: 300000          # 5分钟
+      max-lifetime: 1800000          # 30分钟
+      connection-timeout: 30000      # 30秒
+      # 连接池名称
+      pool-name: HikariCP-MySQL
+      # 连接测试
+      connection-test-query: SELECT 1
+      # MySQL 性能优化配置
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+        useLocalSessionState: true
+        rewriteBatchedStatements: true
+        cacheResultSetMetadata: true
+        cacheServerConfiguration: true
+        elideSetAutoCommits: true
+        maintainTimeStats: false
+
+  # Flyway MySQL 特定配置
+  flyway:
+    # 如果需要 MySQL 特定的迁移脚本，可以添加额外位置
+    # locations: classpath:db/migration,classpath:db/migration/mysql
+    enabled: true

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Tag(name = "AI智能推荐", description = "基于用户学习目标的智能课程推荐")
 @RestController
-@RequestMapping("/api/ai")
+@RequestMapping("/api/v1/ai")
 @RequiredArgsConstructor
 public class AiRecommendController {
 

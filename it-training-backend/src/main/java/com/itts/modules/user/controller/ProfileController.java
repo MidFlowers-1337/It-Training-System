@@ -97,4 +97,12 @@ public class ProfileController {
         profileService.deleteAccount(userId, password);
         return R.ok();
     }
+
+    @Operation(summary = "清除学习数据")
+    @PostMapping("/clear-data")
+    public R<Void> clearLearningData(@RequestParam String password) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        profileService.clearLearningData(userId, password);
+        return R.ok();
+    }
 }

@@ -2,9 +2,12 @@ package com.itts.modules.course.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itts.common.response.R;
+import com.itts.common.util.SecurityUtils;
+import com.itts.modules.course.dto.CourseChapterResponse;
 import com.itts.modules.course.dto.CourseCreateRequest;
 import com.itts.modules.course.dto.CourseResponse;
 import com.itts.modules.course.dto.CourseUpdateRequest;
+import com.itts.modules.course.service.CourseChapterService;
 import com.itts.modules.course.service.CourseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,11 +32,12 @@ import java.util.List;
  */
 @Tag(name = "课程管理", description = "课程CRUD和上下架操作")
 @RestController
-@RequestMapping("/api/courses")
+@RequestMapping("/api/v1/courses")
 @RequiredArgsConstructor
 public class CourseController {
 
     private final CourseService courseService;
+    private final CourseChapterService courseChapterService;
 
     @Operation(summary = "分页查询课程列表")
     @GetMapping
@@ -93,6 +97,29 @@ public class CourseController {
     @PatchMapping("/{id}/unpublish")
     public R<Void> unpublishCourse(@PathVariable Long id) {
         courseService.unpublishCourse(id);
+        return R.ok();
+    }
+
+    @Operation(summary = "获取课程章节列表")
+    @GetMapping("/{courseId}/chapters")
+    public R<List<CourseChapterResponse>> getCourseChapters(@PathVariable Long courseId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        List<CourseChapterResponse> chapters = courseChapterService.getCourseChapters(courseId, userId);
+        return R.ok(chapters);
+    }
+
+    @Operation(summary = "获取章节详情")
+    @GetMapping("/chapters/{chapterId}")
+    public R<CourseChapterResponse> getChapterById(@PathVariable Long chapterId) {
+        CourseChapterResponse chapter = courseChapterService.getChapterById(chapterId);
+        return R.ok(chapter);
+    }
+
+    @Operation(summary = "标记章节为已完成")
+    @PostMapping("/chapters/{chapterId}/complete")
+    public R<Void> markChapterCompleted(@PathVariable Long chapterId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        courseChapterService.markChapterCompleted(chapterId, userId);
         return R.ok();
     }
 }

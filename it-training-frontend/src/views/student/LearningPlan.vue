@@ -240,7 +240,7 @@ import {
   pausePlan as pausePlanApi, resumePlan as resumePlanApi, 
   cancelPlan, completePlan 
 } from '@/api/learning'
-import { getCourseList } from '@/api/course'
+import { getCourses } from '@/api/course'
 
 // 状态
 const loading = ref(false)
@@ -330,7 +330,7 @@ const loadData = async () => {
     const [plansRes, activeRes, coursesRes] = await Promise.all([
       getUserPlans(),
       getActivePlan(),
-      getCourseList({ page: 1, size: 100 })
+      getCourses({ page: 1, size: 100 })
     ])
     
     allPlans.value = plansRes.data || []

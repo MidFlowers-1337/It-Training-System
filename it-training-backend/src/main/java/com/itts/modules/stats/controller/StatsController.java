@@ -21,7 +21,7 @@ import java.util.List;
  */
 @Tag(name = "统计看板", description = "数据统计和报表")
 @RestController
-@RequestMapping("/api/stats")
+@RequestMapping("/api/v1/stats")
 @RequiredArgsConstructor
 public class StatsController {
 

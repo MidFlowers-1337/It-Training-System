@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取报名列表
 export function getEnrollments(params) {
   return request({
-    url: '/enrollments',
+    url: '/v1/enrollments',
     method: 'get',
     params
   })
@@ -12,7 +12,7 @@ export function getEnrollments(params) {
 // 报名
 export function enroll(sessionId) {
   return request({
-    url: '/enrollments',
+    url: '/v1/enrollments',
     method: 'post',
     data: { sessionId }
   })
@@ -21,7 +21,7 @@ export function enroll(sessionId) {
 // 取消报名
 export function cancelEnrollment(id, reason) {
   return request({
-    url: `/enrollments/${id}/cancel`,
+    url: `/v1/enrollments/${id}/cancel`,
     method: 'patch',
     data: { reason }
   })
@@ -30,7 +30,7 @@ export function cancelEnrollment(id, reason) {
 // 获取我的报名列表
 export function getMyEnrollments() {
   return request({
-    url: '/enrollments/my',
+    url: '/v1/enrollments/my',
     method: 'get'
   })
 }
@@ -38,7 +38,7 @@ export function getMyEnrollments() {
 // 分页查询报名列表（管理端/讲师端）
 export function listEnrollments(page, size, userId, sessionId, status) {
   return request({
-    url: '/enrollments',
+    url: '/v1/enrollments',
     method: 'get',
     params: { page, size, userId, sessionId, status }
   })

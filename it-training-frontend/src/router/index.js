@@ -30,7 +30,14 @@ const routes = [
       {
         path: 'home',
         name: 'Home',
-        component: () => import('@/views/student/Home.vue')
+        component: () => import('@/views/student/Dashboard.vue'),
+        meta: { title: '学习中心' }
+      },
+      {
+        path: 'dashboard',
+        name: 'StudentDashboard',
+        component: () => import('@/views/student/Dashboard.vue'),
+        meta: { title: '学习中心' }
       },
       {
         path: 'courses',
@@ -41,6 +48,12 @@ const routes = [
         path: 'course/:id',
         name: 'CourseDetail',
         component: () => import('@/views/student/CourseDetail.vue')
+      },
+      {
+        path: 'course/:id/study',
+        name: 'CourseStudy',
+        component: () => import('@/views/student/CourseStudy.vue'),
+        meta: { title: '课程学习' }
       },
       {
         path: 'my-courses',

@@ -108,7 +108,7 @@ public class SessionServiceImpl implements SessionService {
         ClassSession session = new ClassSession();
         BeanUtils.copyProperties(request, session);
         session.setCurrentEnrollment(0); // 初始报名人数为0
-        session.setStatus(SessionStatus.NOT_OPEN.getCode()); // 默认未开放
+        session.setStatus(SessionStatus.ENROLLING.getCode()); // 默认为报名中，方便快速开放
         session.setDeleted(0);
 
         classSessionMapper.insert(session);
