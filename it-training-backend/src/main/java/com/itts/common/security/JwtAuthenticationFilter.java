@@ -32,6 +32,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+        log.debug("JWT过滤器处理请求: {} {}", method, requestURI);
+        
         try {
             String jwt = getJwtFromRequest(request);
 
@@ -47,6 +51,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("用户 {} 认证成功", username);
+            } else {
+                log.debug("请求 {} {} 没有有效的JWT token", method, requestURI);
             }
         } catch (Exception e) {
             log.error("无法设置用户认证: {}", e.getMessage());

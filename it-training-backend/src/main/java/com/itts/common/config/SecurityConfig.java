@@ -2,6 +2,7 @@ package com.itts.common.config;
 
 import com.itts.common.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 /**
  * Spring Security 配置
  */
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -43,23 +45,23 @@ public class SecurityConfig {
                 // 配置权限
                 .authorizeHttpRequests(auth -> auth
                         // 公开接口
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
 
                         // 管理员专属接口
-                        .requestMatchers("/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/courses/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/courses/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/courses/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/sessions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/sessions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/sessions/**").hasRole("ADMIN")
-                        .requestMatchers("/api/statistics/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/courses/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/courses/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/courses/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/sessions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/sessions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/sessions/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/statistics/**").hasRole("ADMIN")
 
                         // 学员专属接口
-                        .requestMatchers("/api/ai/**").hasRole("STUDENT")
-                        .requestMatchers(HttpMethod.POST, "/api/enrollments").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/ai/**").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/enrollments").hasRole("STUDENT")
 
                         // 其他需要认证
                         .anyRequest().authenticated()
