@@ -62,17 +62,18 @@
           </div>
           <div class="card-body">
             <div v-if="!dashboard.todayCheckedIn" class="checkin-form">
-              <div class="form-group">
-                <label>学习时长（分钟）</label>
-                <input type="number" v-model.number="checkinForm.studyMinutes" min="1" placeholder="输入学习时长">
+              <div class="today-study-summary">
+                <p>今日学习时长：<strong>{{ todayStudyMinutes }}</strong> 分钟</p>
+                <p class="hint">系统将自动统计您今天的学习时长</p>
               </div>
               <div class="form-group">
                 <label>学习笔记（可选）</label>
                 <textarea v-model="checkinForm.studyContent" placeholder="记录今天学到了什么..."></textarea>
               </div>
-              <button class="btn btn-primary btn-block" @click="handleCheckin" :disabled="checkinLoading">
+              <button class="btn btn-primary btn-block" @click="handleCheckin" :disabled="checkinLoading || todayStudyMinutes === 0">
                 {{ checkinLoading ? '打卡中...' : '立即打卡' }}
               </button>
+              <p v-if="todayStudyMinutes === 0" class="warning-hint">请先学习课程后再打卡</p>
             </div>
             <div v-else class="checkin-done">
               <div class="checkin-icon">✅</div>
@@ -86,7 +87,7 @@
         <div class="card">
           <div class="card-header">
             <h3>📚 进行中的课程</h3>
-            <router-link to="/student/my-courses" class="link">查看全部</router-link>
+            <router-link to="/my-courses" class="link">查看全部</router-link>
           </div>
           <div class="card-body">
             <div v-if="dashboard.inProgressCourses?.length" class="course-list">
@@ -108,7 +109,7 @@
             </div>
             <div v-else class="empty-state">
               <p>暂无进行中的课程</p>
-              <router-link to="/student/courses" class="btn btn-outline">去选课</router-link>
+              <router-link to="/courses" class="btn btn-outline">去选课</router-link>
             </div>
           </div>
         </div>
@@ -138,7 +139,7 @@
         <div class="card">
           <div class="card-header">
             <h3>🏆 最近成就</h3>
-            <router-link to="/student/achievements" class="link">查看全部</router-link>
+            <router-link to="/achievements" class="link">查看全部</router-link>
           </div>
           <div class="card-body">
             <div v-if="dashboard.recentAchievements?.length" class="achievement-list">
@@ -210,12 +211,12 @@ export default {
     const todayCheckin = ref(null)
     const checkinDates = ref([])
     const checkinLoading = ref(false)
+    const todayStudyMinutes = ref(0)
     
     const currentYear = ref(new Date().getFullYear())
     const currentMonth = ref(new Date().getMonth() + 1)
     
     const checkinForm = reactive({
-      studyMinutes: 30,
       studyContent: ''
     })
     
@@ -282,10 +283,22 @@ export default {
         const res = await getDashboard()
         if (res.code === 200) {
           dashboard.value = res.data
+          // 计算今日学习时长
+          calculateTodayStudyMinutes()
         }
       } catch (error) {
         console.error('加载仪表盘失败:', error)
       }
+    }
+    
+    // 计算今日学习时长
+    const calculateTodayStudyMinutes = () => {
+      const today = dashboard.value.weeklyStudyData?.find(d => {
+        const date = new Date(d.date)
+        const now = new Date()
+        return date.toDateString() === now.toDateString()
+      })
+      todayStudyMinutes.value = today?.studyMinutes || 0
     }
     
     // 加载今日打卡
@@ -314,14 +327,17 @@ export default {
     
     // 打卡
     const handleCheckin = async () => {
-      if (!checkinForm.studyMinutes || checkinForm.studyMinutes < 1) {
-        ElMessage.warning('请输入有效的学习时长')
+      if (todayStudyMinutes.value === 0) {
+        ElMessage.warning('请先学习课程后再打卡')
         return
       }
       
       checkinLoading.value = true
       try {
-        const res = await checkin(checkinForm)
+        const res = await checkin({
+          studyMinutes: todayStudyMinutes.value,
+          studyContent: checkinForm.studyContent
+        })
         if (res.code === 200) {
           ElMessage.success('打卡成功！')
           if (res.data.newAchievementEarned) {
@@ -369,6 +385,7 @@ export default {
     return {
       dashboard,
       todayCheckin,
+      todayStudyMinutes,
       checkinForm,
       checkinLoading,
       currentYear,
@@ -577,6 +594,43 @@ export default {
   border-radius: 8px;
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+.today-study-summary {
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 16px;
+  color: white;
+}
+
+.today-study-summary p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.today-study-summary strong {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.today-study-summary .hint {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.warning-hint {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 13px;
+  color: #f56c6c;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 13px;
 }
 
 /* 课程列表 */

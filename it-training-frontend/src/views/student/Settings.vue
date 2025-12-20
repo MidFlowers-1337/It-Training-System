@@ -419,7 +419,8 @@ import {
   bindPhone,
   sendEmailCode,
   sendPhoneCode,
-  deleteAccount
+  deleteAccount,
+  clearLearningData
 } from '@/api/user'
 
 const router = useRouter()
@@ -645,15 +646,32 @@ const saveAppearanceSettings = () => {
 // 清除学习数据
 const handleClearData = async () => {
   try {
-    await ElMessageBox.confirm(
-      '确定要清除所有学习数据吗？此操作不可恢复！',
-      '警告',
-      { type: 'warning' }
+    const { value } = await ElMessageBox.prompt(
+      '此操作将清除所有学习进度、打卡记录、成就等数据,不可恢复!请输入密码确认:',
+      '清除学习数据',
+      {
+        confirmButtonText: '确认清除',
+        cancelButtonText: '取消',
+        inputType: 'password',
+        inputPlaceholder: '请输入密码',
+        type: 'warning'
+      }
     )
-    // TODO: 调用清除数据 API
+
+    if (!value) {
+      ElMessage.warning('请输入密码')
+      return
+    }
+
+    saving.value = true
+    await clearLearningData(value)
     ElMessage.success('学习数据已清除')
   } catch (error) {
-    // 用户取消
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '清除失败')
+    }
+  } finally {
+    saving.value = false
   }
 }
 
