@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取课程列表
 export function getCourses(params) {
   return request({
-    url: '/courses',
+    url: '/v1/courses',
     method: 'get',
     params
   })
@@ -12,7 +12,7 @@ export function getCourses(params) {
 // 获取已发布课程列表
 export function getPublishedCourses() {
   return request({
-    url: '/courses/published',
+    url: '/v1/courses/published',
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getPublishedCourses() {
 // 获取课程详情
 export function getCourseById(id) {
   return request({
-    url: `/courses/${id}`,
+    url: `/v1/courses/${id}`,
     method: 'get'
   })
 }
@@ -28,7 +28,7 @@ export function getCourseById(id) {
 // 创建课程
 export function createCourse(data) {
   return request({
-    url: '/courses',
+    url: '/v1/courses',
     method: 'post',
     data
   })
@@ -37,7 +37,7 @@ export function createCourse(data) {
 // 更新课程
 export function updateCourse(id, data) {
   return request({
-    url: `/courses/${id}`,
+    url: `/v1/courses/${id}`,
     method: 'put',
     data
   })
@@ -46,7 +46,7 @@ export function updateCourse(id, data) {
 // 删除课程
 export function deleteCourse(id) {
   return request({
-    url: `/courses/${id}`,
+    url: `/v1/courses/${id}`,
     method: 'delete'
   })
 }
@@ -54,7 +54,7 @@ export function deleteCourse(id) {
 // 发布课程
 export function publishCourse(id) {
   return request({
-    url: `/courses/${id}/publish`,
+    url: `/v1/courses/${id}/publish`,
     method: 'patch'
   })
 }
@@ -62,7 +62,31 @@ export function publishCourse(id) {
 // 下架课程
 export function unpublishCourse(id) {
   return request({
-    url: `/courses/${id}/unpublish`,
+    url: `/v1/courses/${id}/unpublish`,
     method: 'patch'
+  })
+}
+
+// 获取课程章节列表
+export function getCourseChapters(courseId) {
+  return request({
+    url: `/v1/courses/${courseId}/chapters`,
+    method: 'get'
+  })
+}
+
+// 获取章节详情
+export function getChapterById(chapterId) {
+  return request({
+    url: `/v1/courses/chapters/${chapterId}`,
+    method: 'get'
+  })
+}
+
+// 标记章节为已完成
+export function markChapterCompleted(chapterId) {
+  return request({
+    url: `/v1/courses/chapters/${chapterId}/complete`,
+    method: 'post'
   })
 }

@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取用户列表
 export function getUsers(params) {
   return request({
-    url: '/users',
+    url: '/v1/users',
     method: 'get',
     params
   })
@@ -12,7 +12,7 @@ export function getUsers(params) {
 // 获取用户详情
 export function getUserById(id) {
   return request({
-    url: `/users/${id}`,
+    url: `/v1/users/${id}`,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getUserById(id) {
 // 创建用户
 export function createUser(data) {
   return request({
-    url: '/users',
+    url: '/v1/users',
     method: 'post',
     data
   })
@@ -29,7 +29,7 @@ export function createUser(data) {
 // 更新用户
 export function updateUser(id, data) {
   return request({
-    url: `/users/${id}`,
+    url: `/v1/users/${id}`,
     method: 'put',
     data
   })
@@ -38,7 +38,7 @@ export function updateUser(id, data) {
 // 删除用户
 export function deleteUser(id) {
   return request({
-    url: `/users/${id}`,
+    url: `/v1/users/${id}`,
     method: 'delete'
   })
 }
@@ -46,7 +46,7 @@ export function deleteUser(id) {
 // 重置密码
 export function resetPassword(id, data) {
   return request({
-    url: `/users/${id}/password`,
+    url: `/v1/users/${id}/password`,
     method: 'patch',
     data
   })
@@ -55,7 +55,7 @@ export function resetPassword(id, data) {
 // 更新用户状态
 export function updateUserStatus(id, status) {
   return request({
-    url: `/users/${id}/status`,
+    url: `/v1/users/${id}/status`,
     method: 'patch',
     params: { status }
   })
@@ -68,7 +68,7 @@ export function updateUserStatus(id, status) {
  */
 export function getCurrentUser() {
   return request({
-    url: '/api/v1/profile',
+    url: '/v1/profile',
     method: 'get'
   })
 }
@@ -79,7 +79,7 @@ export function getCurrentUser() {
  */
 export function updateProfile(data) {
   return request({
-    url: '/api/v1/profile',
+    url: '/v1/profile',
     method: 'put',
     data
   })
@@ -91,7 +91,7 @@ export function updateProfile(data) {
  */
 export function changePassword(data) {
   return request({
-    url: '/api/v1/profile/password',
+    url: '/v1/profile/password',
     method: 'post',
     data
   })
@@ -103,7 +103,7 @@ export function changePassword(data) {
  */
 export function uploadAvatar(avatarUrl) {
   return request({
-    url: '/api/v1/profile/avatar',
+    url: '/v1/profile/avatar',
     method: 'post',
     params: { avatarUrl }
   })
@@ -114,7 +114,7 @@ export function uploadAvatar(avatarUrl) {
  */
 export function getSecurityInfo() {
   return request({
-    url: '/api/v1/profile/security',
+    url: '/v1/profile/security',
     method: 'get'
   })
 }
@@ -126,7 +126,7 @@ export function getSecurityInfo() {
  */
 export function bindEmail(email, code) {
   return request({
-    url: '/api/v1/profile/bind-email',
+    url: '/v1/profile/bind-email',
     method: 'post',
     params: { email, code }
   })
@@ -139,7 +139,7 @@ export function bindEmail(email, code) {
  */
 export function bindPhone(phone, code) {
   return request({
-    url: '/api/v1/profile/bind-phone',
+    url: '/v1/profile/bind-phone',
     method: 'post',
     params: { phone, code }
   })
@@ -151,7 +151,7 @@ export function bindPhone(phone, code) {
  */
 export function sendEmailCode(email) {
   return request({
-    url: '/api/v1/profile/send-email-code',
+    url: '/v1/profile/send-email-code',
     method: 'post',
     params: { email }
   })
@@ -163,7 +163,7 @@ export function sendEmailCode(email) {
  */
 export function sendPhoneCode(phone) {
   return request({
-    url: '/api/v1/profile/send-phone-code',
+    url: '/v1/profile/send-phone-code',
     method: 'post',
     params: { phone }
   })
@@ -175,8 +175,20 @@ export function sendPhoneCode(phone) {
  */
 export function deleteAccount(password) {
   return request({
-    url: '/api/v1/profile',
+    url: '/v1/profile',
     method: 'delete',
+    params: { password }
+  })
+}
+
+/**
+ * 清除学习数据
+ * @param {string} password 密码确认
+ */
+export function clearLearningData(password) {
+  return request({
+    url: '/v1/profile/clear-data',
+    method: 'post',
     params: { password }
   })
 }

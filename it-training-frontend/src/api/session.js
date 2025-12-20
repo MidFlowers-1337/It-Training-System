@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取班期列表
 export function getSessions(params) {
   return request({
-    url: '/sessions',
+    url: '/v1/sessions',
     method: 'get',
     params
   })
@@ -12,7 +12,7 @@ export function getSessions(params) {
 // 获取可报名班期列表
 export function getEnrollableSessions(courseId) {
   return request({
-    url: '/sessions/enrollable',
+    url: '/v1/sessions/enrollable',
     method: 'get',
     params: { courseId }
   })
@@ -21,7 +21,7 @@ export function getEnrollableSessions(courseId) {
 // 获取班期详情
 export function getSessionById(id) {
   return request({
-    url: `/sessions/${id}`,
+    url: `/v1/sessions/${id}`,
     method: 'get'
   })
 }
@@ -29,7 +29,7 @@ export function getSessionById(id) {
 // 创建班期
 export function createSession(data) {
   return request({
-    url: '/sessions',
+    url: '/v1/sessions',
     method: 'post',
     data
   })
@@ -38,7 +38,7 @@ export function createSession(data) {
 // 更新班期
 export function updateSession(id, data) {
   return request({
-    url: `/sessions/${id}`,
+    url: `/v1/sessions/${id}`,
     method: 'put',
     data
   })
@@ -47,7 +47,7 @@ export function updateSession(id, data) {
 // 删除班期
 export function deleteSession(id) {
   return request({
-    url: `/sessions/${id}`,
+    url: `/v1/sessions/${id}`,
     method: 'delete'
   })
 }
@@ -55,7 +55,7 @@ export function deleteSession(id) {
 // 开放报名
 export function openEnrollment(id) {
   return request({
-    url: `/sessions/${id}/open`,
+    url: `/v1/sessions/${id}/open`,
     method: 'patch'
   })
 }
@@ -63,7 +63,7 @@ export function openEnrollment(id) {
 // 关闭报名
 export function closeEnrollment(id) {
   return request({
-    url: `/sessions/${id}/close`,
+    url: `/v1/sessions/${id}/close`,
     method: 'patch'
   })
 }
@@ -71,7 +71,7 @@ export function closeEnrollment(id) {
 // 获取讲师自己的班期列表
 export function getMySessionsAsInstructor() {
   return request({
-    url: '/sessions/my',
+    url: '/v1/sessions/my',
     method: 'get'
   })
 }

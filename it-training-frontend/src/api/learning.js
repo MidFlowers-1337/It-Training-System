@@ -7,7 +7,7 @@ import request from '@/utils/request'
  */
 export function getDashboard() {
   return request({
-    url: '/api/v1/learning/dashboard',
+    url: '/v1/learning/dashboard',
     method: 'get'
   })
 }
@@ -17,7 +17,7 @@ export function getDashboard() {
  */
 export function getUserStats() {
   return request({
-    url: '/api/v1/learning/stats',
+    url: '/v1/learning/stats',
     method: 'get'
   })
 }
@@ -29,7 +29,7 @@ export function getUserStats() {
  */
 export function getUserProgress() {
   return request({
-    url: '/api/v1/learning/progress',
+    url: '/v1/learning/progress',
     method: 'get'
   })
 }
@@ -40,7 +40,7 @@ export function getUserProgress() {
  */
 export function getCourseProgress(courseId) {
   return request({
-    url: `/api/v1/learning/progress/course/${courseId}`,
+    url: `/v1/learning/progress/course/${courseId}`,
     method: 'get'
   })
 }
@@ -51,7 +51,7 @@ export function getCourseProgress(courseId) {
  */
 export function updateProgress(data) {
   return request({
-    url: '/api/v1/learning/progress/update',
+    url: '/v1/learning/progress/update',
     method: 'post',
     data
   })
@@ -63,7 +63,7 @@ export function updateProgress(data) {
  */
 export function markCompleted(courseId) {
   return request({
-    url: `/api/v1/learning/progress/complete/${courseId}`,
+    url: `/v1/learning/progress/complete/${courseId}`,
     method: 'post'
   })
 }
@@ -73,7 +73,7 @@ export function markCompleted(courseId) {
  */
 export function getInProgressCourses() {
   return request({
-    url: '/api/v1/learning/progress/in-progress',
+    url: '/v1/learning/progress/in-progress',
     method: 'get'
   })
 }
@@ -86,7 +86,7 @@ export function getInProgressCourses() {
  */
 export function checkin(data) {
   return request({
-    url: '/api/v1/learning/checkin',
+    url: '/v1/learning/checkin',
     method: 'post',
     data
   })
@@ -97,7 +97,7 @@ export function checkin(data) {
  */
 export function isTodayCheckedIn() {
   return request({
-    url: '/api/v1/learning/checkin/today',
+    url: '/v1/learning/checkin/today',
     method: 'get'
   })
 }
@@ -107,7 +107,7 @@ export function isTodayCheckedIn() {
  */
 export function getTodayCheckin() {
   return request({
-    url: '/api/v1/learning/checkin/today/detail',
+    url: '/v1/learning/checkin/today/detail',
     method: 'get'
   })
 }
@@ -119,7 +119,7 @@ export function getTodayCheckin() {
  */
 export function getCheckinHistory(startDate, endDate) {
   return request({
-    url: '/api/v1/learning/checkin/history',
+    url: '/v1/learning/checkin/history',
     method: 'get',
     params: { startDate, endDate }
   })
@@ -130,7 +130,7 @@ export function getCheckinHistory(startDate, endDate) {
  */
 export function getCurrentStreak() {
   return request({
-    url: '/api/v1/learning/checkin/streak',
+    url: '/v1/learning/checkin/streak',
     method: 'get'
   })
 }
@@ -142,7 +142,7 @@ export function getCurrentStreak() {
  */
 export function getMonthlyCheckinDates(year, month) {
   return request({
-    url: `/api/v1/learning/checkin/calendar/${year}/${month}`,
+    url: `/v1/learning/checkin/calendar/${year}/${month}`,
     method: 'get'
   })
 }
@@ -154,7 +154,7 @@ export function getMonthlyCheckinDates(year, month) {
  */
 export function getAllAchievements() {
   return request({
-    url: '/api/v1/learning/achievements',
+    url: '/v1/learning/achievements',
     method: 'get'
   })
 }
@@ -164,7 +164,7 @@ export function getAllAchievements() {
  */
 export function getUserAchievements() {
   return request({
-    url: '/api/v1/learning/achievements/earned',
+    url: '/v1/learning/achievements/earned',
     method: 'get'
   })
 }
@@ -175,7 +175,7 @@ export function getUserAchievements() {
  */
 export function getRecentAchievements(limit = 5) {
   return request({
-    url: '/api/v1/learning/achievements/recent',
+    url: '/v1/learning/achievements/recent',
     method: 'get',
     params: { limit }
   })
@@ -187,7 +187,7 @@ export function getRecentAchievements(limit = 5) {
  */
 export function getAchievementDetail(achievementId) {
   return request({
-    url: `/api/v1/learning/achievements/${achievementId}`,
+    url: `/v1/learning/achievements/${achievementId}`,
     method: 'get'
   })
 }
@@ -197,7 +197,7 @@ export function getAchievementDetail(achievementId) {
  */
 export function getAchievementPoints() {
   return request({
-    url: '/api/v1/learning/achievements/points',
+    url: '/v1/learning/achievements/points',
     method: 'get'
   })
 }
@@ -210,7 +210,7 @@ export function getAchievementPoints() {
  */
 export function createPlan(data) {
   return request({
-    url: '/api/v1/learning/plans',
+    url: '/v1/learning/plans',
     method: 'post',
     data
   })
@@ -221,7 +221,7 @@ export function createPlan(data) {
  */
 export function getUserPlans() {
   return request({
-    url: '/api/v1/learning/plans',
+    url: '/v1/learning/plans',
     method: 'get'
   })
 }
@@ -231,7 +231,7 @@ export function getUserPlans() {
  */
 export function getActivePlan() {
   return request({
-    url: '/api/v1/learning/plans/active',
+    url: '/v1/learning/plans/active',
     method: 'get'
   })
 }
@@ -242,7 +242,7 @@ export function getActivePlan() {
  */
 export function getPlanDetail(planId) {
   return request({
-    url: `/api/v1/learning/plans/${planId}`,
+    url: `/v1/learning/plans/${planId}`,
     method: 'get'
   })
 }
@@ -254,7 +254,7 @@ export function getPlanDetail(planId) {
  */
 export function updatePlan(planId, data) {
   return request({
-    url: `/api/v1/learning/plans/${planId}`,
+    url: `/v1/learning/plans/${planId}`,
     method: 'put',
     data
   })
@@ -266,7 +266,7 @@ export function updatePlan(planId, data) {
  */
 export function pausePlan(planId) {
   return request({
-    url: `/api/v1/learning/plans/${planId}/pause`,
+    url: `/v1/learning/plans/${planId}/pause`,
     method: 'post'
   })
 }
@@ -277,7 +277,7 @@ export function pausePlan(planId) {
  */
 export function resumePlan(planId) {
   return request({
-    url: `/api/v1/learning/plans/${planId}/resume`,
+    url: `/v1/learning/plans/${planId}/resume`,
     method: 'post'
   })
 }
@@ -288,7 +288,7 @@ export function resumePlan(planId) {
  */
 export function cancelPlan(planId) {
   return request({
-    url: `/api/v1/learning/plans/${planId}/cancel`,
+    url: `/v1/learning/plans/${planId}/cancel`,
     method: 'post'
   })
 }
@@ -299,7 +299,7 @@ export function cancelPlan(planId) {
  */
 export function completePlan(planId) {
   return request({
-    url: `/api/v1/learning/plans/${planId}/complete`,
+    url: `/v1/learning/plans/${planId}/complete`,
     method: 'post'
   })
 }
@@ -312,7 +312,7 @@ export function completePlan(planId) {
  */
 export function getWeeklyReport(weekStart) {
   return request({
-    url: '/api/v1/learning/reports/weekly',
+    url: '/v1/learning/reports/weekly',
     method: 'get',
     params: { weekStart }
   })
@@ -325,7 +325,7 @@ export function getWeeklyReport(weekStart) {
  */
 export function getMonthlyReport(year, month) {
   return request({
-    url: `/api/v1/learning/reports/monthly/${year}/${month}`,
+    url: `/v1/learning/reports/monthly/${year}/${month}`,
     method: 'get'
   })
 }
@@ -336,7 +336,7 @@ export function getMonthlyReport(year, month) {
  */
 export function getYearlyReport(year) {
   return request({
-    url: `/api/v1/learning/reports/yearly/${year}`,
+    url: `/v1/learning/reports/yearly/${year}`,
     method: 'get'
   })
 }
@@ -348,7 +348,7 @@ export function getYearlyReport(year) {
  */
 export function getCustomReport(startDate, endDate) {
   return request({
-    url: '/api/v1/learning/reports/custom',
+    url: '/v1/learning/reports/custom',
     method: 'get',
     params: { startDate, endDate }
   })
@@ -362,7 +362,7 @@ export function getCustomReport(startDate, endDate) {
  */
 export function recommendByHistory(limit = 10) {
   return request({
-    url: '/api/v1/learning/recommend/history',
+    url: '/v1/learning/recommend/history',
     method: 'get',
     params: { limit }
   })
@@ -375,7 +375,7 @@ export function recommendByHistory(limit = 10) {
  */
 export function recommendSimilarCourses(courseId, limit = 5) {
   return request({
-    url: `/api/v1/learning/recommend/similar/${courseId}`,
+    url: `/v1/learning/recommend/similar/${courseId}`,
     method: 'get',
     params: { limit }
   })
@@ -387,7 +387,7 @@ export function recommendSimilarCourses(courseId, limit = 5) {
  */
 export function recommendBySkills(limit = 10) {
   return request({
-    url: '/api/v1/learning/recommend/skills',
+    url: '/v1/learning/recommend/skills',
     method: 'get',
     params: { limit }
   })
@@ -399,7 +399,7 @@ export function recommendBySkills(limit = 10) {
  */
 export function recommendByPreference(limit = 10) {
   return request({
-    url: '/api/v1/learning/recommend/preference',
+    url: '/v1/learning/recommend/preference',
     method: 'get',
     params: { limit }
   })
@@ -413,7 +413,7 @@ export function recommendByPreference(limit = 10) {
  */
 export function recommendByUserBased(limit = 10) {
   return request({
-    url: '/api/v1/learning/recommend/user-based',
+    url: '/v1/learning/recommend/user-based',
     method: 'get',
     params: { limit }
   })
@@ -425,7 +425,7 @@ export function recommendByUserBased(limit = 10) {
  */
 export function recommendByItemBased(limit = 10) {
   return request({
-    url: '/api/v1/learning/recommend/item-based',
+    url: '/v1/learning/recommend/item-based',
     method: 'get',
     params: { limit }
   })
@@ -437,7 +437,7 @@ export function recommendByItemBased(limit = 10) {
  */
 export function getSimilarUsers(limit = 10) {
   return request({
-    url: '/api/v1/learning/recommend/similar-users',
+    url: '/v1/learning/recommend/similar-users',
     method: 'get',
     params: { limit }
   })
@@ -451,7 +451,7 @@ export function getSimilarUsers(limit = 10) {
  */
 export function getHybridRecommendations(limit = 10) {
   return request({
-    url: '/api/v1/learning/recommend/hybrid',
+    url: '/v1/learning/recommend/hybrid',
     method: 'get',
     params: { limit }
   })
@@ -462,7 +462,7 @@ export function getHybridRecommendations(limit = 10) {
  */
 export function getHomePageRecommendations() {
   return request({
-    url: '/api/v1/learning/recommend/home',
+    url: '/v1/learning/recommend/home',
     method: 'get'
   })
 }
@@ -473,7 +473,7 @@ export function getHomePageRecommendations() {
  */
 export function getYouMayLike(limit = 6) {
   return request({
-    url: '/api/v1/learning/recommend/you-may-like',
+    url: '/v1/learning/recommend/you-may-like',
     method: 'get',
     params: { limit }
   })
@@ -485,7 +485,7 @@ export function getYouMayLike(limit = 6) {
  */
 export function getPopularCourses(limit = 10) {
   return request({
-    url: '/api/v1/learning/recommend/popular',
+    url: '/v1/learning/recommend/popular',
     method: 'get',
     params: { limit }
   })
@@ -497,7 +497,7 @@ export function getPopularCourses(limit = 10) {
  */
 export function getNewCourses(limit = 10) {
   return request({
-    url: '/api/v1/learning/recommend/new',
+    url: '/v1/learning/recommend/new',
     method: 'get',
     params: { limit }
   })
@@ -510,7 +510,7 @@ export function getNewCourses(limit = 10) {
  */
 export function getUserProfile() {
   return request({
-    url: '/api/v1/learning/profile',
+    url: '/v1/learning/profile',
     method: 'get'
   })
 }
@@ -521,7 +521,7 @@ export function getUserProfile() {
  */
 export function updateSkillTags(skillTags) {
   return request({
-    url: '/api/v1/learning/profile/skills',
+    url: '/v1/learning/profile/skills',
     method: 'post',
     data: skillTags
   })
@@ -533,7 +533,7 @@ export function updateSkillTags(skillTags) {
  */
 export function updatePreferences(data) {
   return request({
-    url: '/api/v1/learning/profile/preferences',
+    url: '/v1/learning/profile/preferences',
     method: 'post',
     data
   })
@@ -544,7 +544,7 @@ export function updatePreferences(data) {
  */
 export function getLearningAbilityAssessment() {
   return request({
-    url: '/api/v1/learning/profile/ability-assessment',
+    url: '/v1/learning/profile/ability-assessment',
     method: 'get'
   })
 }
@@ -554,7 +554,7 @@ export function getLearningAbilityAssessment() {
  */
 export function analyzeLearningBehavior() {
   return request({
-    url: '/api/v1/learning/profile/analyze',
+    url: '/v1/learning/profile/analyze',
     method: 'post'
   })
 }
