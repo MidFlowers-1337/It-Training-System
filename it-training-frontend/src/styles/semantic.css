@@ -1,0 +1,162 @@
+/* ============================================
+   Design System v6 - Apple UI Bridge Layer
+   目标：在不修改三套主题 token（variables.css）的前提下，
+   通过语义层把 Element Plus 与全局 UI 风格对齐。
+   ============================================ */
+
+:root,
+[data-theme="warm"],
+[data-theme="dark"] {
+  /* RGB tokens（用于 Tailwind /xx 透明度） */
+  --bg-primary-rgb: 243 244 246;
+  --bg-secondary-rgb: 255 255 255;
+  --bg-tertiary-rgb: 229 231 235;
+  --bg-hover-rgb: 249 250 251;
+  --bg-card-rgb: 255 255 255;
+  --bg-inverse-rgb: 17 24 39;
+
+  --text-primary-rgb: 17 24 39;
+  --text-secondary-rgb: 75 85 99;
+  --text-muted-rgb: 156 163 175;
+  --text-disabled-rgb: 209 213 219;
+  --text-inverse-rgb: 255 255 255;
+
+  --primary-color-rgb: 37 99 235;
+  --primary-light-rgb: 59 130 246;
+  --primary-dark-rgb: 29 78 216;
+
+  --border-color-rgb: 229 231 235;
+  --border-light-rgb: 243 244 246;
+  --border-dark-rgb: 209 213 219;
+
+  --success-color-rgb: 5 150 105;
+  --warning-color-rgb: 217 119 6;
+  --error-color-rgb: 220 38 38;
+  --info-color-rgb: 37 99 235;
+
+  /* App gradients (legacy compatibility) */
+  --primary-bg: var(--primary-color-alpha);
+  --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+  --gradient-hero: radial-gradient(900px circle at 20% 0%, var(--primary-color-alpha), transparent 60%),
+    radial-gradient(900px circle at 80% 20%, var(--primary-color-alpha), transparent 65%);
+
+  /* Apple-like glass & separators */
+  --glass-bg: rgb(var(--bg-secondary-rgb) / 0.72);
+  --glass-border: rgb(var(--border-color-rgb) / 0.55);
+  --separator: rgb(var(--border-color-rgb) / 0.65);
+
+  /* Element Plus: Typography */
+  --el-font-family: var(--font-sans);
+
+  /* Element Plus: Brand & Status */
+  --el-color-primary: var(--primary-color);
+  --el-color-success: var(--success-color);
+  --el-color-warning: var(--warning-color);
+  --el-color-danger: var(--error-color);
+  --el-color-error: var(--error-color);
+  --el-color-info: var(--info-color);
+
+  /* Element Plus: Surfaces */
+  --el-bg-color: var(--bg-secondary);
+  --el-bg-color-page: var(--bg-primary);
+  --el-bg-color-overlay: var(--bg-secondary);
+
+  /* Element Plus: Text */
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-secondary);
+  --el-text-color-secondary: var(--text-muted);
+  --el-text-color-placeholder: var(--text-muted);
+  --el-text-color-disabled: var(--text-disabled);
+
+  /* Element Plus: Borders */
+  --el-border-color: var(--border-color);
+  --el-border-color-light: var(--border-light);
+  --el-border-color-lighter: var(--border-light);
+  --el-border-color-dark: var(--border-dark);
+  --el-border-color-darker: var(--border-dark);
+
+  /* Element Plus: Fills */
+  --el-fill-color: var(--bg-tertiary);
+  --el-fill-color-light: var(--bg-tertiary);
+  --el-fill-color-lighter: var(--bg-hover);
+  --el-fill-color-extra-light: var(--bg-hover);
+  --el-fill-color-dark: var(--bg-tertiary);
+  --el-fill-color-darker: var(--bg-tertiary);
+  --el-fill-color-blank: var(--bg-secondary);
+
+  /* Element Plus: Radius & Shadow */
+  --el-border-radius-base: var(--radius-xl);
+  --el-border-radius-small: var(--radius-md);
+  --el-border-radius-round: var(--radius-full);
+
+  --el-box-shadow: var(--shadow-lg);
+  --el-box-shadow-light: var(--shadow-md);
+  --el-box-shadow-lighter: var(--shadow-sm);
+}
+
+@supports (color: color-mix(in srgb, white, black)) {
+  :root,
+  [data-theme="warm"],
+  [data-theme="dark"] {
+    --primary-bg: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    --glass-bg: color-mix(in srgb, var(--bg-secondary) 72%, transparent);
+    --glass-border: color-mix(in srgb, var(--border-color) 60%, transparent);
+    --separator: color-mix(in srgb, var(--border-color) 75%, transparent);
+  }
+}
+
+[data-theme="warm"] {
+  --bg-primary-rgb: 255 251 235;
+  --bg-secondary-rgb: 255 255 255;
+  --bg-tertiary-rgb: 254 243 199;
+  --bg-hover-rgb: 254 243 199;
+  --bg-card-rgb: 255 255 255;
+  --bg-inverse-rgb: 69 26 3;
+
+  --text-primary-rgb: 69 26 3;
+  --text-secondary-rgb: 120 53 15;
+  --text-muted-rgb: 146 64 14;
+  --text-disabled-rgb: 214 211 209;
+  --text-inverse-rgb: 255 255 255;
+
+  --primary-color-rgb: 217 119 6;
+  --primary-light-rgb: 245 158 11;
+  --primary-dark-rgb: 180 83 9;
+
+  --border-color-rgb: 252 211 77;
+  --border-light-rgb: 253 230 138;
+  --border-dark-rgb: 251 191 36;
+
+  --success-color-rgb: 5 150 105;
+  --warning-color-rgb: 217 119 6;
+  --error-color-rgb: 220 38 38;
+  --info-color-rgb: 217 119 6;
+}
+
+[data-theme="dark"] {
+  --bg-primary-rgb: 15 23 42;
+  --bg-secondary-rgb: 30 41 59;
+  --bg-tertiary-rgb: 51 65 85;
+  --bg-hover-rgb: 71 85 105;
+  --bg-card-rgb: 30 41 59;
+  --bg-inverse-rgb: 248 250 252;
+
+  --text-primary-rgb: 248 250 252;
+  --text-secondary-rgb: 203 213 225;
+  --text-muted-rgb: 148 163 184;
+  --text-disabled-rgb: 71 85 105;
+  --text-inverse-rgb: 15 23 42;
+
+  --primary-color-rgb: 99 102 241;
+  --primary-light-rgb: 129 140 248;
+  --primary-dark-rgb: 79 70 229;
+
+  --border-color-rgb: 51 65 85;
+  --border-light-rgb: 71 85 105;
+  --border-dark-rgb: 30 41 59;
+
+  --success-color-rgb: 16 185 129;
+  --warning-color-rgb: 245 158 11;
+  --error-color-rgb: 239 68 68;
+  --info-color-rgb: 99 102 241;
+}
