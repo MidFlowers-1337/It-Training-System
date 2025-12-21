@@ -1,79 +1,90 @@
 <template>
-  <el-container class="instructor-layout">
-    <!-- 侧边栏 -->
-    <el-aside :width="isCollapse ? '64px' : '220px'" class="aside">
-      <div class="logo">
-        <img src="@/assets/logo.svg" alt="Logo" class="logo-img" v-if="!isCollapse" />
-        <span v-if="!isCollapse" class="logo-text">讲师工作台</span>
+  <div class="min-h-screen bg-bg-primary flex">
+    <!-- Sidebar -->
+    <aside
+      class="bg-bg-secondary/70 backdrop-blur-xl border-r border-border-color/60 flex flex-col transition-all duration-300"
+      :class="isCollapse ? 'w-16' : 'w-64'"
+    >
+      <div class="h-16 flex items-center justify-center border-b border-border-color/60">
+        <div class="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-base">
+          IT
+        </div>
+        <span v-if="!isCollapse" class="ml-3 font-bold text-text-primary text-lg">讲师工作台</span>
       </div>
 
-      <el-menu
-        :default-active="activeMenu"
-        :collapse="isCollapse"
-        :collapse-transition="false"
-        background-color="#2c3e50"
-        text-color="#bfcbd9"
-        active-text-color="#67C23A"
-        router
-      >
-        <el-menu-item index="/instructor/sessions">
-          <el-icon><Calendar /></el-icon>
-          <template #title>我的班期</template>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
+      <nav class="flex-1 py-4 overflow-y-auto">
+        <ul class="space-y-1 px-2">
+          <li v-for="item in menuItems" :key="item.path">
+            <router-link
+              :to="item.path"
+              class="flex items-center px-3 py-2.5 rounded-xl text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/60 transition-all border border-transparent"
+              active-class="bg-primary/10 text-primary border-primary/20"
+            >
+              <component :is="item.icon" class="w-5 h-5 flex-shrink-0" />
+              <span v-if="!isCollapse" class="ml-3 font-medium">{{ item.title }}</span>
+            </router-link>
+          </li>
+        </ul>
+      </nav>
 
-    <!-- 右侧区域 -->
-    <el-container class="main-container">
-      <!-- 顶部导航 -->
-      <el-header class="header">
-        <div class="header-left">
-          <el-icon
-            class="collapse-btn"
-            @click="toggleCollapse"
-          >
-            <Fold v-if="!isCollapse" />
-            <Expand v-else />
-          </el-icon>
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/instructor/sessions' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="currentRouteName">{{ currentRouteName }}</el-breadcrumb-item>
-          </el-breadcrumb>
+      <button
+        type="button"
+        @click="toggleCollapse"
+        class="h-12 flex items-center justify-center border-t border-border-color/60 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/60 transition-colors"
+      >
+        <component :is="isCollapse ? ChevronsRight : ChevronsLeft" class="w-5 h-5" />
+      </button>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="h-16 bg-bg-secondary/70 backdrop-blur-xl border-b border-border-color/60 shadow-sm flex items-center justify-between px-6 sticky top-0 z-40">
+        <div class="flex items-center text-text-secondary text-sm">
+          <span class="text-text-muted">当前位置：</span>
+          <span class="text-text-primary ml-2 font-medium">{{ currentRouteName }}</span>
         </div>
 
-        <div class="header-right">
+        <div class="flex items-center gap-4">
+          <ThemeSwitcher />
+
           <el-dropdown trigger="click" @command="handleCommand">
-            <span class="user-dropdown">
-              <el-avatar :size="32" icon="UserFilled" />
-              <span class="username">{{ userStore.realName || userStore.username }}</span>
-              <el-icon><ArrowDown /></el-icon>
-            </span>
+            <div class="flex items-center gap-3 cursor-pointer hover:bg-bg-tertiary/60 px-3 py-1.5 rounded-xl transition-colors">
+              <div class="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
+                {{ userInitial }}
+              </div>
+              <div class="hidden md:block text-left">
+                <div class="text-sm font-medium text-text-primary">{{ userStore.realName || userStore.username || '讲师' }}</div>
+                <div class="text-xs text-text-muted">讲师</div>
+              </div>
+              <ChevronDown class="w-4 h-4 text-text-muted" />
+            </div>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="student">学员端</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                <el-dropdown-item command="logout" divided class="text-error">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
         </div>
-      </el-header>
+      </header>
 
-      <!-- 主内容区 -->
-      <el-main class="main">
-        <router-view />
-      </el-main>
-    </el-container>
-  </el-container>
+      <main class="flex-1 overflow-y-auto p-6">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </main>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import {
-  Calendar,
-  Fold, Expand, ArrowDown
-} from '@element-plus/icons-vue'
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
+import { CalendarDays, ChevronDown, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -81,23 +92,22 @@ const userStore = useUserStore()
 
 const isCollapse = ref(false)
 
-// 当前激活菜单
-const activeMenu = computed(() => route.path)
+const menuItems = [{ path: '/instructor/sessions', title: '我的班期', icon: CalendarDays }]
 
-// 当前路由名称
 const currentRouteName = computed(() => {
-  const nameMap = {
-    '/instructor/sessions': '我的班期'
-  }
-  return nameMap[route.path] || ''
+  const item = menuItems.find((i) => i.path === route.path)
+  return item ? item.title : '讲师工作台'
 })
 
-// 切换侧边栏折叠状态
+const userInitial = computed(() => {
+  const name = userStore.realName || userStore.username || 'T'
+  return name.charAt(0).toUpperCase()
+})
+
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value
 }
 
-// 处理下拉菜单命令
 const handleCommand = (command) => {
   if (command === 'logout') {
     userStore.logout()
@@ -109,92 +119,13 @@ const handleCommand = (command) => {
 </script>
 
 <style scoped>
-.instructor-layout {
-  height: 100vh;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.aside {
-  background-color: #2c3e50;
-  transition: width 0.3s;
-  overflow: hidden;
-}
-
-.logo {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 16px;
-  background-color: #1a252f;
-}
-
-.logo-img {
-  width: 32px;
-  height: 32px;
-  margin-right: 8px;
-}
-
-.logo-text {
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.main-container {
-  display: flex;
-  flex-direction: column;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #fff;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
-  padding: 0 20px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
-.collapse-btn {
-  font-size: 20px;
-  cursor: pointer;
-  margin-right: 16px;
-  color: #606266;
-}
-
-.collapse-btn:hover {
-  color: #67C23A;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.user-dropdown {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: #606266;
-}
-
-.username {
-  margin: 0 8px;
-}
-
-.main {
-  background-color: #f0f2f5;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-/* 覆盖Element Plus菜单样式 */
-.el-menu {
-  border-right: none;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
