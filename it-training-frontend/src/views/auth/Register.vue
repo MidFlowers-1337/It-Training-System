@@ -1,108 +1,135 @@
 <template>
-  <div class="min-h-screen bg-bg-primary flex items-center justify-center px-4 py-10 transition-colors duration-300">
-    <div class="relative w-full max-w-md">
-      <div class="absolute inset-0 -z-10 blur-3xl opacity-60" style="background: var(--gradient-hero)"></div>
-
-      <div class="glass rounded-3xl border border-border-color/60 shadow-lg p-8 md:p-10">
-        <div class="flex flex-col items-center text-center">
-          <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <img src="@/assets/logo.svg" alt="Logo" class="w-8 h-8" />
-          </div>
-          <h1 class="mt-6 text-2xl font-semibold tracking-tight text-text-primary">Create Account</h1>
-          <p class="mt-2 text-sm text-text-secondary">Join our community and start learning today</p>
-        </div>
-
-        <el-form
-          ref="registerFormRef"
-          :model="registerForm"
-          :rules="rules"
-          label-position="top"
-          class="mt-8 space-y-5"
-          @submit.prevent
+  <AuthLayout
+    title="Create Account"
+    subtitle="Join our community and start learning today"
+    footer-text="Already have an account?"
+    footer-link-text="Sign in"
+    footer-link-to="/login"
+  >
+    <FormLayout>
+      <FormItem label="Username" required :error="errors.username">
+        <Input
+          v-model="registerForm.username"
+          placeholder="4-20 characters"
+          :error="!!errors.username"
+          @blur="validateField('username')"
         >
-          <el-form-item label="Username" prop="username">
-            <el-input v-model="registerForm.username" placeholder="4-20 characters" size="large">
-              <template #prefix>
-                <el-icon class="text-text-muted"><User /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
+          <template #icon-left>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </template>
+        </Input>
+      </FormItem>
 
-          <el-form-item label="Full Name" prop="realName">
-            <el-input v-model="registerForm.realName" placeholder="Your real name" size="large">
-              <template #prefix>
-                <el-icon class="text-text-muted"><UserFilled /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
+      <FormItem label="Full Name" required :error="errors.realName">
+        <Input
+          v-model="registerForm.realName"
+          placeholder="Your real name"
+          :error="!!errors.realName"
+          @blur="validateField('realName')"
+        >
+          <template #icon-left>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" fill="currentColor" fill-opacity="0.2" />
+            </svg>
+          </template>
+        </Input>
+      </FormItem>
 
-          <el-form-item label="Phone Number" prop="phone">
-            <el-input v-model="registerForm.phone" placeholder="Mobile number" size="large">
-              <template #prefix>
-                <el-icon class="text-text-muted"><Phone /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
+      <FormItem label="Phone Number" :error="errors.phone">
+        <Input
+          v-model="registerForm.phone"
+          type="tel"
+          placeholder="Mobile number"
+          :error="!!errors.phone"
+          @blur="validateField('phone')"
+        >
+          <template #icon-left>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+          </template>
+        </Input>
+      </FormItem>
 
-          <el-form-item label="Email (Optional)" prop="email">
-            <el-input v-model="registerForm.email" placeholder="email@example.com" size="large">
-              <template #prefix>
-                <el-icon class="text-text-muted"><Message /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
+      <FormItem label="Email (Optional)" :error="errors.email">
+        <Input
+          v-model="registerForm.email"
+          type="email"
+          placeholder="email@example.com"
+          :error="!!errors.email"
+          @blur="validateField('email')"
+        >
+          <template #icon-left>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+          </template>
+        </Input>
+      </FormItem>
 
-          <el-form-item label="Password" prop="password">
-            <el-input v-model="registerForm.password" type="password" placeholder="6-20 characters" size="large" show-password>
-              <template #prefix>
-                <el-icon class="text-text-muted"><Lock /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
+      <FormItem label="Password" required :error="errors.password">
+        <Input
+          v-model="registerForm.password"
+          type="password"
+          placeholder="6-20 characters"
+          :error="!!errors.password"
+          @blur="validateField('password')"
+        >
+          <template #icon-left>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </template>
+        </Input>
+      </FormItem>
 
-          <el-form-item label="Confirm Password" prop="confirmPassword">
-            <el-input
-              v-model="registerForm.confirmPassword"
-              type="password"
-              placeholder="Repeat password"
-              size="large"
-              show-password
-              @keyup.enter="handleRegister"
-            >
-              <template #prefix>
-                <el-icon class="text-text-muted"><Lock /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
+      <FormItem label="Confirm Password" required :error="errors.confirmPassword">
+        <Input
+          v-model="registerForm.confirmPassword"
+          type="password"
+          placeholder="Repeat password"
+          :error="!!errors.confirmPassword"
+          @blur="validateField('confirmPassword')"
+          @keyup.enter="handleRegister"
+        >
+          <template #icon-left>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </template>
+        </Input>
+      </FormItem>
 
-          <el-button type="primary" size="large" class="w-full !h-12 !text-base !font-bold mt-2" :loading="loading" @click="handleRegister">
-            Create Account
-          </el-button>
-        </el-form>
-
-        <div class="mt-6 text-center text-sm text-text-secondary">
-          Already have an account?
-          <router-link to="/login" class="text-primary hover:text-primary-light font-medium ml-1 transition-colors">
-            Sign in
-          </router-link>
-        </div>
-      </div>
-    </div>
-  </div>
+      <Button
+        variant="primary"
+        block
+        :loading="loading"
+        @click="handleRegister"
+      >
+        Create Account
+      </Button>
+    </FormLayout>
+  </AuthLayout>
 </template>
 
-<script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { User, UserFilled, Phone, Message, Lock } from '@element-plus/icons-vue'
-import { useUserStore } from '@/store/user'
+<script setup lang="ts">
+import { ref, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/store/user';
+import { AuthLayout, FormLayout, FormItem, Input, Button } from '@/design-system';
 
-const router = useRouter()
-const userStore = useUserStore()
-const registerFormRef = ref(null)
-const loading = ref(false)
+const router = useRouter();
+const userStore = useUserStore();
+const loading = ref(false);
 
+// 表单数据
 const registerForm = reactive({
   username: '',
   realName: '',
@@ -110,51 +137,75 @@ const registerForm = reactive({
   email: '',
   password: '',
   confirmPassword: '',
-})
+});
 
-const validateConfirmPassword = (rule, value, callback) => {
-  if (value !== registerForm.password) {
-    callback(new Error('Passwords do not match'))
-  } else {
-    callback()
-  }
-}
+// 错误信息
+const errors = reactive({
+  username: '',
+  realName: '',
+  phone: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+});
 
-const rules = {
-  username: [
-    { required: true, message: 'Please enter username', trigger: 'blur' },
-    { min: 4, max: 20, message: 'Length should be 4 to 20', trigger: 'blur' },
-    { pattern: /^[a-zA-Z0-9_]+$/, message: 'Letters, numbers and underscore only', trigger: 'blur' },
-  ],
-  realName: [{ required: true, message: 'Please enter your real name', trigger: 'blur' }],
-  phone: [{ pattern: /^1[3-9]\\d{9}$/, message: 'Invalid phone number', trigger: 'blur' }],
-  email: [{ type: 'email', message: 'Invalid email address', trigger: 'blur' }],
-  password: [
-    { required: true, message: 'Please enter password', trigger: 'blur' },
-    { min: 6, max: 20, message: 'Length should be 6 to 20', trigger: 'blur' },
-  ],
-  confirmPassword: [
-    { required: true, message: 'Please confirm password', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: 'blur' },
-  ],
-}
+// 验证规则
+const validators = {
+  username: (value: string): string => {
+    if (!value) return 'Please enter username';
+    if (value.length < 4 || value.length > 20) return 'Length should be 4 to 20';
+    if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Letters, numbers and underscore only';
+    return '';
+  },
+  realName: (value: string): string => {
+    if (!value) return 'Please enter your real name';
+    return '';
+  },
+  phone: (value: string): string => {
+    if (value && !/^1[3-9]\d{9}$/.test(value)) return 'Invalid phone number';
+    return '';
+  },
+  email: (value: string): string => {
+    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email address';
+    return '';
+  },
+  password: (value: string): string => {
+    if (!value) return 'Please enter password';
+    if (value.length < 6 || value.length > 20) return 'Length should be 6 to 20';
+    return '';
+  },
+  confirmPassword: (value: string): string => {
+    if (!value) return 'Please confirm password';
+    if (value !== registerForm.password) return 'Passwords do not match';
+    return '';
+  },
+};
 
+// 验证单个字段
+type FieldName = keyof typeof validators;
+const validateField = (field: FieldName) => {
+  errors[field] = validators[field](registerForm[field]);
+};
+
+// 验证表单
+const validateForm = (): boolean => {
+  (Object.keys(validators) as FieldName[]).forEach(validateField);
+  return !Object.values(errors).some(Boolean);
+};
+
+// 注册处理
 const handleRegister = async () => {
-  if (!registerFormRef.value) return
+  if (!validateForm()) return;
 
-  await registerFormRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      try {
-        await userStore.register(registerForm)
-        ElMessage.success('Registration successful')
-        router.push('/home')
-      } catch (error) {
-        console.error('Registration failed:', error)
-      } finally {
-        loading.value = false
-      }
-    }
-  })
-}
+  loading.value = true;
+  try {
+    await userStore.register(registerForm);
+    router.push('/home');
+  } catch (error: any) {
+    // 显示错误信息
+    errors.confirmPassword = error?.message || 'Registration failed, please try again';
+  } finally {
+    loading.value = false;
+  }
+};
 </script>
