@@ -1,228 +1,265 @@
 <template>
-  <div class="learning-plan-page">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1>
-          <el-icon><Calendar /></el-icon>
-          学习计划
-        </h1>
-        <p>制定学习目标，规划学习路径，高效提升技能</p>
+  <div class="page" v-loading="loading">
+    <section class="page-hero glass p-7 md:p-10">
+      <div class="absolute inset-0 pointer-events-none">
+        <div class="absolute -top-24 -right-24 w-72 h-72 bg-primary/15 blur-3xl rounded-full"></div>
+        <div class="absolute -bottom-28 -left-28 w-72 h-72 bg-secondary/20 blur-3xl rounded-full"></div>
       </div>
-      <el-button type="primary" @click="showCreateDialog = true" :icon="Plus">
-        创建新计划
-      </el-button>
-    </div>
 
-    <!-- 当前进行中的计划 -->
-    <div v-if="activePlan" class="active-plan-section">
-      <div class="section-title">
-        <el-icon><Flag /></el-icon>
-        <span>当前计划</span>
+      <div class="relative flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="max-w-2xl">
+          <p class="text-sm text-text-secondary">学习计划</p>
+          <h1 class="mt-2 text-3xl md:text-4xl font-semibold tracking-tight text-text-primary">
+            系统化学习，稳步进阶
+          </h1>
+          <p class="mt-3 text-text-secondary">制定目标，规划路径，把每日投入变成可量化的成长。</p>
+        </div>
+
+        <button type="button" class="btn btn-primary gap-2" @click="showCreateDialog = true">
+          <el-icon><Plus /></el-icon>
+          创建计划
+        </button>
       </div>
-      <div class="active-plan-card">
-        <div class="plan-header">
-          <div class="plan-info">
-            <h2>{{ activePlan.planName }}</h2>
-            <p class="plan-description">{{ activePlan.description || '暂无描述' }}</p>
-          </div>
-          <el-dropdown @command="handlePlanAction">
-            <el-button type="primary" text>
-              <el-icon><MoreFilled /></el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="edit">编辑计划</el-dropdown-item>
-                <el-dropdown-item command="pause">暂停计划</el-dropdown-item>
-                <el-dropdown-item command="complete">完成计划</el-dropdown-item>
-                <el-dropdown-item command="cancel" divided>取消计划</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
-        
-        <div class="plan-progress">
-          <div class="progress-stats">
-            <div class="stat-item">
-              <span class="stat-value">{{ activePlan.progressPercent || 0 }}%</span>
-              <span class="stat-label">完成进度</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ activePlan.completedCourses || 0 }}/{{ activePlan.totalCourses || 0 }}</span>
-              <span class="stat-label">课程完成</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ activePlan.remainingDays || 0 }}</span>
-              <span class="stat-label">剩余天数</span>
-            </div>
-          </div>
-          <el-progress 
-            :percentage="activePlan.progressPercent || 0" 
-            :stroke-width="12"
-            :color="progressColors"
-          />
-        </div>
+    </section>
 
-        <div class="plan-dates">
-          <div class="date-item">
-            <el-icon><Calendar /></el-icon>
-            <span>开始: {{ formatDate(activePlan.startDate) }}</span>
-          </div>
-          <div class="date-item">
-            <el-icon><Timer /></el-icon>
-            <span>结束: {{ formatDate(activePlan.endDate) }}</span>
-          </div>
-          <div class="date-item">
-            <el-icon><Clock /></el-icon>
-            <span>每日目标: {{ activePlan.dailyTargetMinutes || 0 }}分钟</span>
-          </div>
-        </div>
+    <section v-if="activePlan" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-text-primary">当前计划</h2>
+        <span class="badge badge-primary">进行中</span>
+      </div>
 
-        <!-- 目标课程列表 -->
-        <div v-if="activePlan.targetCourses && activePlan.targetCourses.length > 0" class="target-courses">
-          <h3>目标课程</h3>
-          <div class="course-list">
-            <div 
-              v-for="course in activePlan.targetCourses" 
-              :key="course.courseId"
-              class="course-item"
-              :class="{ completed: course.completed }"
-            >
-              <div class="course-info">
-                <el-icon v-if="course.completed" class="check-icon"><CircleCheck /></el-icon>
-                <el-icon v-else class="pending-icon"><Clock /></el-icon>
-                <span class="course-name">{{ course.courseName }}</span>
-                <el-tag size="small" type="info">{{ course.category }}</el-tag>
+      <div class="card p-6 md:p-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+        <div class="relative flex flex-col lg:flex-row gap-8 lg:gap-12">
+          <div class="flex-1 space-y-8">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <h3 class="text-xl md:text-2xl font-semibold tracking-tight text-text-primary truncate">
+                  {{ activePlan.planName }}
+                </h3>
+                <p class="mt-1 text-sm text-text-secondary">
+                  {{ activePlan.description || '暂无描述' }}
+                </p>
               </div>
-              <el-progress 
-                :percentage="course.progressPercent || 0" 
-                :stroke-width="6"
-                :show-text="false"
-                style="width: 100px"
-              />
+
+              <el-dropdown @command="handlePlanAction" trigger="click">
+                <button type="button" class="btn btn-ghost px-3 py-2 !rounded-full">
+                  <el-icon><MoreFilled /></el-icon>
+                </button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="edit">编辑计划</el-dropdown-item>
+                    <el-dropdown-item command="pause">暂停计划</el-dropdown-item>
+                    <el-dropdown-item command="complete">完成计划</el-dropdown-item>
+                    <el-dropdown-item command="cancel" divided class="text-error">取消计划</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div class="rounded-2xl bg-bg-tertiary/60 border border-border-color/60 p-4">
+                <div class="text-text-secondary text-xs">课程完成</div>
+                <div class="mt-1 text-lg font-semibold text-text-primary">
+                  {{ activePlan.completedCourses || 0 }}/{{ activePlan.totalCourses || 0 }}
+                </div>
+              </div>
+              <div class="rounded-2xl bg-bg-tertiary/60 border border-border-color/60 p-4">
+                <div class="text-text-secondary text-xs">剩余天数</div>
+                <div class="mt-1 text-lg font-semibold text-text-primary">{{ activePlan.remainingDays || 0 }}</div>
+              </div>
+              <div class="rounded-2xl bg-bg-tertiary/60 border border-border-color/60 p-4">
+                <div class="text-text-secondary text-xs">开始日期</div>
+                <div class="mt-1 text-base font-semibold text-text-primary">{{ formatDate(activePlan.startDate) }}</div>
+              </div>
+              <div class="rounded-2xl bg-bg-tertiary/60 border border-border-color/60 p-4">
+                <div class="text-text-secondary text-xs">每日目标</div>
+                <div class="mt-1 text-base font-semibold text-text-primary">
+                  {{ activePlan.dailyTargetMinutes || 0 }} 分钟
+                </div>
+              </div>
+            </div>
+
+            <div v-if="activePlan.targetCourses?.length > 0" class="space-y-3">
+              <h4 class="text-sm font-semibold text-text-primary">目标课程</h4>
+              <div class="inset-group">
+                <template v-for="(course, idx) in activePlan.targetCourses" :key="course.courseId">
+                  <div class="inset-item">
+                    <div class="flex items-center gap-4 min-w-0 flex-1">
+                      <div
+                        class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                        :class="
+                          course.completed
+                            ? 'bg-success/15 text-success border border-success/20'
+                            : 'bg-bg-tertiary/60 text-text-muted border border-border-color/60'
+                        "
+                      >
+                        <el-icon v-if="course.completed"><Check /></el-icon>
+                        <span v-else class="text-xs font-semibold">{{ course.progressPercent || 0 }}%</span>
+                      </div>
+
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between gap-3">
+                          <span class="font-medium text-text-primary truncate">{{ course.courseName }}</span>
+                          <span class="text-xs text-text-secondary flex-shrink-0">{{ course.category }}</span>
+                        </div>
+                        <div class="mt-2 h-1.5 bg-bg-tertiary/70 rounded-full overflow-hidden">
+                          <div
+                            class="h-full bg-primary transition-all duration-500"
+                            :style="{ width: (course.progressPercent || 0) + '%' }"
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="idx !== activePlan.targetCourses.length - 1" class="inset-divider"></div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-center lg:w-64 flex-shrink-0">
+            <div class="glass rounded-3xl p-6">
+              <div class="relative w-44 h-44 flex items-center justify-center">
+                <svg class="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="88"
+                    cy="88"
+                    r="80"
+                    stroke="currentColor"
+                    stroke-width="12"
+                    fill="transparent"
+                    class="text-bg-tertiary"
+                  />
+                  <circle
+                    cx="88"
+                    cy="88"
+                    r="80"
+                    stroke="currentColor"
+                    stroke-width="12"
+                    fill="transparent"
+                    :stroke-dasharray="2 * Math.PI * 80"
+                    :stroke-dashoffset="2 * Math.PI * 80 - ((activePlan.progressPercent || 0) / 100) * (2 * Math.PI * 80)"
+                    class="text-primary transition-all duration-1000 ease-out"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="text-3xl font-semibold text-text-primary">{{ activePlan.progressPercent || 0 }}%</span>
+                  <span class="text-sm text-text-secondary mt-1">总进度</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 无进行中计划提示 -->
-    <div v-else class="no-active-plan">
-      <el-empty description="暂无进行中的学习计划">
-        <el-button type="primary" @click="showCreateDialog = true">
-          创建学习计划
-        </el-button>
-      </el-empty>
-    </div>
+    <section v-else class="card">
+      <EmptyState
+        :icon="Target"
+        title="还没有进行中的计划"
+        description="创建一个学习计划，开始系统化学习。"
+        action-text="创建学习计划"
+        @action="showCreateDialog = true"
+      />
+    </section>
 
-    <!-- 历史计划 -->
-    <div class="history-section">
-      <div class="section-title">
-        <el-icon><Document /></el-icon>
-        <span>历史计划</span>
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-text-primary">历史计划</h2>
       </div>
-      
-      <div v-if="historyPlans.length > 0" class="history-list">
-        <div 
-          v-for="plan in historyPlans" 
-          :key="plan.id"
-          class="history-card"
-          :class="plan.status"
-        >
-          <div class="history-header">
-            <h3>{{ plan.planName }}</h3>
-            <el-tag :type="getStatusType(plan.status)" size="small">
+
+      <div v-if="historyPlans.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="plan in historyPlans" :key="plan.id" class="card-hover p-6">
+          <div class="flex justify-between items-start gap-4 mb-4">
+            <h3 class="font-semibold text-text-primary truncate">{{ plan.planName }}</h3>
+            <span class="px-2 py-1 rounded-full text-xs font-semibold" :class="getStatusClass(plan.status)">
               {{ getStatusText(plan.status) }}
-            </el-tag>
+            </span>
           </div>
-          <div class="history-info">
-            <span>{{ formatDate(plan.startDate) }} - {{ formatDate(plan.endDate) }}</span>
-            <span>完成度: {{ plan.progressPercent || 0 }}%</span>
+
+          <div class="space-y-2 text-sm text-text-secondary mb-6">
+            <div class="flex items-center gap-2">
+              <el-icon><Calendar /></el-icon>
+              <span>{{ formatDate(plan.startDate) }} - {{ formatDate(plan.endDate) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <el-icon><Check /></el-icon>
+              <span>完成度: {{ plan.progressPercent || 0 }}%</span>
+            </div>
           </div>
-          <div class="history-actions" v-if="plan.status === 'paused'">
-            <el-button size="small" type="primary" @click="resumePlan(plan.id)">
-              恢复计划
-            </el-button>
-          </div>
+
+          <button
+            v-if="plan.status === 'paused'"
+            type="button"
+            class="btn btn-secondary w-full justify-center"
+            @click="resumePlan(plan.id)"
+          >
+            恢复计划
+          </button>
         </div>
       </div>
-      <el-empty v-else description="暂无历史计划" />
-    </div>
 
-    <!-- 创建/编辑计划对话框 -->
-    <el-dialog 
-      v-model="showCreateDialog" 
+      <div v-else class="card">
+        <EmptyState :icon="Clock" title="暂无历史计划" description="完成或暂停的计划会在这里展示，便于回顾你的成长轨迹。" />
+      </div>
+    </section>
+
+    <el-dialog
+      v-model="showCreateDialog"
       :title="editingPlan ? '编辑学习计划' : '创建学习计划'"
       width="600px"
       @close="resetForm"
+      class="dark-dialog"
     >
-      <el-form 
-        ref="planFormRef"
-        :model="planForm" 
-        :rules="planRules"
-        label-width="100px"
-      >
+      <el-form ref="planFormRef" :model="planForm" :rules="planRules" label-position="top">
         <el-form-item label="计划名称" prop="planName">
-          <el-input v-model="planForm.planName" placeholder="请输入计划名称" />
+          <el-input v-model="planForm.planName" placeholder="给你的计划起个名字" />
         </el-form-item>
-        
+
         <el-form-item label="计划描述" prop="description">
-          <el-input 
-            v-model="planForm.description" 
-            type="textarea" 
-            :rows="3"
-            placeholder="请输入计划描述（可选）" 
-          />
+          <el-input v-model="planForm.description" type="textarea" :rows="3" placeholder="描述你的学习目标（可选）" />
         </el-form-item>
-        
-        <el-form-item label="时间范围" prop="dateRange">
-          <el-date-picker
-            v-model="planForm.dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            :disabled-date="disabledDate"
-            style="width: 100%"
-          />
-        </el-form-item>
-        
-        <el-form-item label="每日目标" prop="dailyTargetMinutes">
-          <el-input-number 
-            v-model="planForm.dailyTargetMinutes" 
-            :min="15" 
-            :max="480"
-            :step="15"
-          />
-          <span class="unit-text">分钟/天</span>
-        </el-form-item>
-        
-        <el-form-item label="目标课程" prop="targetCourseIds">
-          <el-select 
-            v-model="planForm.targetCourseIds" 
-            multiple 
-            filterable
-            placeholder="选择要学习的课程"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="course in availableCourses"
-              :key="course.id"
-              :label="course.name"
-              :value="course.id"
-            >
-              <span>{{ course.name }}</span>
-              <el-tag size="small" style="margin-left: 8px">{{ course.category }}</el-tag>
+
+        <div class="grid grid-cols-2 gap-4">
+          <el-form-item label="时间范围" prop="dateRange">
+            <el-date-picker
+              v-model="planForm.dateRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              :disabled-date="disabledDate"
+              style="width: 100%"
+            />
+          </el-form-item>
+
+          <el-form-item label="每日目标 (分钟)" prop="dailyTargetMinutes">
+            <el-input-number v-model="planForm.dailyTargetMinutes" :min="15" :max="480" :step="15" style="width: 100%" />
+          </el-form-item>
+        </div>
+
+        <el-form-item label="选择课程" prop="targetCourseIds">
+          <el-select v-model="planForm.targetCourseIds" multiple filterable placeholder="选择要加入计划的课程" style="width: 100%">
+            <el-option v-for="course in availableCourses" :key="course.id" :label="course.name" :value="course.id">
+              <div class="flex items-center justify-between">
+                <span>{{ course.name }}</span>
+                <span class="text-xs text-text-secondary">{{ course.category }}</span>
+              </div>
             </el-option>
           </el-select>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitPlan" :loading="submitting">
-          {{ editingPlan ? '保存修改' : '创建计划' }}
-        </el-button>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn btn-secondary" @click="showCreateDialog = false">取消</button>
+          <button type="button" class="btn btn-primary" :disabled="submitting" @click="submitPlan">
+            {{ submitting ? '保存中...' : editingPlan ? '保存修改' : '创建计划' }}
+          </button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -231,18 +268,21 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  Calendar, Plus, Flag, MoreFilled, Timer, Clock, 
-  CircleCheck, Document 
-} from '@element-plus/icons-vue'
-import { 
-  getUserPlans, getActivePlan, createPlan, updatePlan,
-  pausePlan as pausePlanApi, resumePlan as resumePlanApi, 
-  cancelPlan, completePlan 
+import { Plus, MoreFilled, Calendar, Check } from '@element-plus/icons-vue'
+import { Clock, Target } from 'lucide-vue-next'
+import EmptyState from '@/components/EmptyState.vue'
+import {
+  getUserPlans,
+  getActivePlan,
+  createPlan,
+  updatePlan,
+  pausePlan as pausePlanApi,
+  resumePlan as resumePlanApi,
+  cancelPlan,
+  completePlan,
 } from '@/api/learning'
 import { getCourses } from '@/api/course'
 
-// 状态
 const loading = ref(false)
 const submitting = ref(false)
 const showCreateDialog = ref(false)
@@ -252,87 +292,62 @@ const allPlans = ref([])
 const availableCourses = ref([])
 const planFormRef = ref(null)
 
-// 表单数据
 const planForm = reactive({
   planName: '',
   description: '',
   dateRange: [],
   dailyTargetMinutes: 60,
-  targetCourseIds: []
+  targetCourseIds: [],
 })
 
-// 表单验证规则
 const planRules = {
   planName: [
     { required: true, message: '请输入计划名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '计划名称长度在2-50个字符', trigger: 'blur' }
+    { min: 2, max: 50, message: '计划名称长度在2-50个字符', trigger: 'blur' },
   ],
-  dateRange: [
-    { required: true, message: '请选择时间范围', trigger: 'change' }
-  ],
-  dailyTargetMinutes: [
-    { required: true, message: '请设置每日目标', trigger: 'change' }
-  ]
+  dateRange: [{ required: true, message: '请选择时间范围', trigger: 'change' }],
+  dailyTargetMinutes: [{ required: true, message: '请设置每日目标', trigger: 'change' }],
 }
 
-// 进度条颜色
-const progressColors = [
-  { color: '#f56c6c', percentage: 20 },
-  { color: '#e6a23c', percentage: 40 },
-  { color: '#5cb87a', percentage: 60 },
-  { color: '#1989fa', percentage: 80 },
-  { color: '#6f7ad3', percentage: 100 }
-]
+const historyPlans = computed(() => allPlans.value.filter((plan) => plan.status !== 'active'))
 
-// 计算历史计划
-const historyPlans = computed(() => {
-  return allPlans.value.filter(p => p.status !== 'active')
-})
+const disabledDate = (time) => time.getTime() < Date.now() - 24 * 60 * 60 * 1000
 
-// 禁用过去的日期
-const disabledDate = (time) => {
-  return time.getTime() < Date.now() - 24 * 60 * 60 * 1000
-}
-
-// 格式化日期
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-// 获取状态类型
-const getStatusType = (status) => {
-  const types = {
-    active: 'success',
-    completed: 'info',
-    paused: 'warning',
-    canceled: 'danger'
+const getStatusClass = (status) => {
+  const classes = {
+    active: 'bg-success/20 text-success',
+    completed: 'bg-info/20 text-info',
+    paused: 'bg-warning/20 text-warning',
+    canceled: 'bg-error/20 text-error',
   }
-  return types[status] || 'info'
+  return classes[status] || 'bg-bg-tertiary/60 text-text-secondary'
 }
 
-// 获取状态文本
 const getStatusText = (status) => {
   const texts = {
     active: '进行中',
     completed: '已完成',
     paused: '已暂停',
-    canceled: '已取消'
+    canceled: '已取消',
   }
   return texts[status] || status
 }
 
-// 加载数据
 const loadData = async () => {
   loading.value = true
   try {
     const [plansRes, activeRes, coursesRes] = await Promise.all([
       getUserPlans(),
       getActivePlan(),
-      getCourses({ page: 1, size: 100 })
+      getCourses({ page: 1, size: 100 }),
     ])
-    
+
     allPlans.value = plansRes.data || []
     activePlan.value = activeRes.data
     availableCourses.value = coursesRes.data?.records || coursesRes.data || []
@@ -344,43 +359,40 @@ const loadData = async () => {
   }
 }
 
-// 处理计划操作
 const handlePlanAction = async (command) => {
   if (!activePlan.value) return
-  
+
   const planId = activePlan.value.id
-  
+
   switch (command) {
     case 'edit':
       editingPlan.value = activePlan.value
       planForm.planName = activePlan.value.planName
       planForm.description = activePlan.value.description
-      planForm.dateRange = [
-        new Date(activePlan.value.startDate),
-        new Date(activePlan.value.endDate)
-      ]
+      planForm.dateRange = [new Date(activePlan.value.startDate), new Date(activePlan.value.endDate)]
       planForm.dailyTargetMinutes = activePlan.value.dailyTargetMinutes
-      planForm.targetCourseIds = activePlan.value.targetCourses?.map(c => c.courseId) || []
+      planForm.targetCourseIds = activePlan.value.targetCourses?.map((course) => course.courseId) || []
       showCreateDialog.value = true
       break
-      
+
     case 'pause':
-      await ElMessageBox.confirm('确定要暂停当前学习计划吗？', '暂停计划')
+      await ElMessageBox.confirm('确定要暂停当前学习计划吗？', '暂停计划', { customClass: 'dark-message-box' })
       await pausePlanApi(planId)
       ElMessage.success('计划已暂停')
       loadData()
       break
-      
+
     case 'complete':
-      await ElMessageBox.confirm('确定要标记当前计划为已完成吗？', '完成计划')
+      await ElMessageBox.confirm('确定要标记当前计划为已完成吗？', '完成计划', { customClass: 'dark-message-box' })
       await completePlan(planId)
       ElMessage.success('恭喜完成学习计划！')
       loadData()
       break
-      
+
     case 'cancel':
       await ElMessageBox.confirm('确定要取消当前学习计划吗？此操作不可恢复。', '取消计划', {
-        type: 'warning'
+        type: 'warning',
+        customClass: 'dark-message-box',
       })
       await cancelPlan(planId)
       ElMessage.success('计划已取消')
@@ -389,7 +401,6 @@ const handlePlanAction = async (command) => {
   }
 }
 
-// 恢复计划
 const resumePlan = async (planId) => {
   try {
     await resumePlanApi(planId)
@@ -400,12 +411,11 @@ const resumePlan = async (planId) => {
   }
 }
 
-// 提交计划
 const submitPlan = async () => {
   if (!planFormRef.value) return
-  
+
   await planFormRef.value.validate()
-  
+
   submitting.value = true
   try {
     const data = {
@@ -414,9 +424,9 @@ const submitPlan = async () => {
       startDate: formatDate(planForm.dateRange[0]),
       endDate: formatDate(planForm.dateRange[1]),
       dailyTargetMinutes: planForm.dailyTargetMinutes,
-      targetCourseIds: planForm.targetCourseIds
+      targetCourseIds: planForm.targetCourseIds,
     }
-    
+
     if (editingPlan.value) {
       await updatePlan(editingPlan.value.id, data)
       ElMessage.success('计划已更新')
@@ -424,7 +434,7 @@ const submitPlan = async () => {
       await createPlan(data)
       ElMessage.success('计划创建成功')
     }
-    
+
     showCreateDialog.value = false
     loadData()
   } catch (error) {
@@ -434,7 +444,6 @@ const submitPlan = async () => {
   }
 }
 
-// 重置表单
 const resetForm = () => {
   editingPlan.value = null
   planForm.planName = ''
@@ -448,247 +457,3 @@ onMounted(() => {
   loadData()
 })
 </script>
-
-<style scoped>
-.learning-plan-page {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-}
-
-.header-content h1 {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin: 0 0 8px 0;
-}
-
-.header-content p {
-  color: var(--el-text-color-secondary);
-  margin: 0;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin-bottom: 16px;
-}
-
-/* 当前计划卡片 */
-.active-plan-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 24px;
-  color: white;
-}
-
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-.plan-info h2 {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-}
-
-.plan-description {
-  opacity: 0.9;
-  margin: 0;
-}
-
-.plan-progress {
-  margin-bottom: 24px;
-}
-
-.progress-stats {
-  display: flex;
-  gap: 48px;
-  margin-bottom: 16px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.stat-label {
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-.plan-dates {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.date-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  opacity: 0.9;
-}
-
-/* 目标课程 */
-.target-courses h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 0 12px 0;
-  opacity: 0.9;
-}
-
-.course-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.course-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 12px 16px;
-}
-
-.course-item.completed {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.course-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.check-icon {
-  color: #67c23a;
-}
-
-.pending-icon {
-  opacity: 0.7;
-}
-
-.course-name {
-  font-weight: 500;
-}
-
-/* 无计划提示 */
-.no-active-plan {
-  background: var(--el-bg-color);
-  border-radius: 16px;
-  padding: 48px;
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-/* 历史计划 */
-.history-section {
-  margin-top: 32px;
-}
-
-.history-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-}
-
-.history-card {
-  background: var(--el-bg-color);
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid var(--el-border-color-light);
-}
-
-.history-card.completed {
-  border-left: 4px solid var(--el-color-success);
-}
-
-.history-card.paused {
-  border-left: 4px solid var(--el-color-warning);
-}
-
-.history-card.canceled {
-  border-left: 4px solid var(--el-color-danger);
-}
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.history-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.history-info {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-.history-actions {
-  margin-top: 12px;
-  text-align: right;
-}
-
-/* 表单样式 */
-.unit-text {
-  margin-left: 8px;
-  color: var(--el-text-color-secondary);
-}
-
-/* 深色模式适配 */
-:deep(.el-progress__text) {
-  color: white !important;
-}
-
-.active-plan-card :deep(.el-progress-bar__outer) {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.active-plan-card :deep(.el-progress-bar__inner) {
-  background: white;
-}
-
-.active-plan-card :deep(.el-button) {
-  color: white;
-}
-
-.active-plan-card :deep(.el-tag) {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-}
-</style>

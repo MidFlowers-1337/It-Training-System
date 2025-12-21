@@ -1,196 +1,190 @@
 <template>
-  <div class="user-profile-container">
-    <!-- 用户基本信息卡片 -->
-    <el-row :gutter="20">
-      <el-col :span="8">
-        <el-card class="profile-card">
-          <div class="profile-header">
-            <el-avatar :size="80" :src="profile.avatar || defaultAvatar">
-              {{ profile.username?.charAt(0)?.toUpperCase() }}
-            </el-avatar>
-            <div class="profile-info">
-              <h2>{{ profile.realName || profile.username }}</h2>
-              <el-tag :type="getLevelTagType(profile.learningLevel)">
+  <div class="page" v-loading="loading">
+    <!-- Hero -->
+    <section class="page-hero glass p-8 md:p-10">
+      <div class="absolute inset-0 pointer-events-none" style="background: var(--gradient-hero)"></div>
+      <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div class="flex items-center gap-4 min-w-0">
+          <el-avatar :size="72" :src="profile.avatar || defaultAvatar" class="flex-shrink-0">
+            {{ profile.username?.charAt(0)?.toUpperCase() }}
+          </el-avatar>
+          <div class="min-w-0">
+            <h1 class="text-2xl md:text-4xl font-semibold tracking-tight text-text-primary truncate">
+              {{ profile.realName || profile.username || '—' }}
+            </h1>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+              <el-tag v-if="profile.levelName" :type="getLevelTagType(profile.learningLevel)">
                 {{ profile.levelName }}
               </el-tag>
+              <span v-if="profile.username" class="text-sm text-text-muted truncate">@{{ profile.username }}</span>
             </div>
           </div>
-          <el-divider />
-          <div class="profile-stats">
-            <div class="stat-item">
-              <div class="stat-value">{{ profile.totalStudyMinutes || 0 }}</div>
-              <div class="stat-label">学习时长(分钟)</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value">{{ profile.completedCourses || 0 }}</div>
-              <div class="stat-label">完成课程</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value">{{ profile.achievementCount || 0 }}</div>
-              <div class="stat-label">获得成就</div>
-            </div>
-          </div>
-          <el-divider />
-          <div class="streak-info">
-            <el-icon><Calendar /></el-icon>
-            <span>连续打卡 <strong>{{ profile.currentStreak || 0 }}</strong> 天</span>
-            <span class="max-streak">（最长 {{ profile.maxStreak || 0 }} 天）</span>
-          </div>
-          <div class="points-info">
-            <el-icon><Trophy /></el-icon>
-            <span>成就积分 <strong>{{ profile.achievementPoints || 0 }}</strong></span>
-          </div>
-        </el-card>
-      </el-col>
+        </div>
 
-      <!-- 能力雷达图 -->
-      <el-col :span="8">
-        <el-card class="radar-card">
-          <template #header>
-            <div class="card-header">
-              <span>学习能力评估</span>
-              <el-tag v-if="assessment.learnerType" type="success">
-                {{ assessment.learnerType }}
-              </el-tag>
-            </div>
-          </template>
-          <div ref="radarChart" class="chart-container"></div>
-          <div class="overall-score" v-if="assessment.overallScore">
-            综合评分: <strong>{{ assessment.overallScore }}</strong>/100
+        <div class="grid grid-cols-3 gap-3 w-full md:w-auto">
+          <div class="card p-4 text-center">
+            <p class="text-xs text-text-muted">学习时长</p>
+            <p class="mt-1 text-lg font-semibold text-text-primary">{{ profile.totalStudyMinutes || 0 }}</p>
+            <p class="text-xs text-text-muted">分钟</p>
           </div>
-        </el-card>
-      </el-col>
+          <div class="card p-4 text-center">
+            <p class="text-xs text-text-muted">完成课程</p>
+            <p class="mt-1 text-lg font-semibold text-text-primary">{{ profile.completedCourses || 0 }}</p>
+            <p class="text-xs text-text-muted">门</p>
+          </div>
+          <div class="card p-4 text-center">
+            <p class="text-xs text-text-muted">获得成就</p>
+            <p class="mt-1 text-lg font-semibold text-text-primary">{{ profile.achievementCount || 0 }}</p>
+            <p class="text-xs text-text-muted">个</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-      <!-- 技能标签 -->
-      <el-col :span="8">
-        <el-card class="skills-card">
-          <template #header>
-            <div class="card-header">
-              <span>技能标签</span>
-              <el-button type="primary" link @click="showSkillDialog = true">
-                <el-icon><Edit /></el-icon> 编辑
-              </el-button>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Streak -->
+      <section class="card p-6">
+        <h2 class="text-lg font-semibold tracking-tight text-text-primary mb-4">学习状态</h2>
+        <div class="inset-group">
+          <div class="inset-item">
+            <div class="flex items-center gap-2 text-sm text-text-secondary">
+              <el-icon><Calendar /></el-icon>
+              <span>连续打卡</span>
             </div>
-          </template>
-          <div class="skills-container">
-            <el-tag
-              v-for="skill in profile.skillTags"
-              :key="skill.tag"
-              :type="getSkillTagType(skill.level)"
-              class="skill-tag"
-            >
-              {{ skill.tag }}
-              <el-rate
-                v-model="skill.level"
-                disabled
-                :max="5"
-                size="small"
-                class="skill-rate"
-              />
+            <div class="text-sm text-text-primary font-medium">
+              {{ profile.currentStreak || 0 }} 天
+              <span class="text-text-muted font-normal">（最长 {{ profile.maxStreak || 0 }} 天）</span>
+            </div>
+          </div>
+          <div class="inset-divider"></div>
+          <div class="inset-item">
+            <div class="flex items-center gap-2 text-sm text-text-secondary">
+              <el-icon><Trophy /></el-icon>
+              <span>成就积分</span>
+            </div>
+            <div class="text-sm text-text-primary font-medium">{{ profile.achievementPoints || 0 }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Radar -->
+      <section class="card p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-lg font-semibold tracking-tight text-text-primary">学习能力评估</h2>
+          <el-tag v-if="assessment.learnerType" type="success">{{ assessment.learnerType }}</el-tag>
+        </div>
+        <div ref="radarChart" class="h-64 w-full"></div>
+        <p v-if="assessment.overallScore" class="mt-3 text-sm text-text-secondary">
+          综合评分：<span class="font-semibold text-text-primary">{{ assessment.overallScore }}</span>/100
+        </p>
+      </section>
+
+      <!-- Skills -->
+      <section class="card p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-lg font-semibold tracking-tight text-text-primary">技能标签</h2>
+          <el-button type="primary" link @click="showSkillDialog = true">
+            <el-icon><Edit /></el-icon>
+            编辑
+          </el-button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <el-tag
+            v-for="skill in profile.skillTags"
+            :key="skill.tag"
+            :type="getSkillTagType(skill.level)"
+            class="!inline-flex items-center gap-2"
+          >
+            {{ skill.tag }}
+            <el-rate v-model="skill.level" disabled :max="5" size="small" />
+          </el-tag>
+          <el-empty v-if="!profile.skillTags?.length" description="暂无技能标签" :image-size="80" />
+        </div>
+      </section>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Preference -->
+      <section class="card p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-lg font-semibold tracking-tight text-text-primary">学习偏好</h2>
+          <el-button type="primary" link @click="showPreferenceDialog = true">
+            <el-icon><Setting /></el-icon>
+            设置
+          </el-button>
+        </div>
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="偏好类别">
+            <el-tag v-for="cat in profile.preference?.preferredCategories" :key="cat" class="mr-2">
+              {{ cat }}
             </el-tag>
-            <el-empty v-if="!profile.skillTags?.length" description="暂无技能标签" />
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+            <span v-if="!profile.preference?.preferredCategories?.length">未设置</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="偏好难度">
+            {{ profile.preference?.preferredDifficulty || '未设置' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="每日学习目标">
+            {{ profile.preference?.dailyStudyGoal || 30 }} 分钟
+          </el-descriptions-item>
+          <el-descriptions-item label="偏好学习时间">
+            {{ profile.preference?.preferredStudyTime || '未设置' }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </section>
 
-    <!-- 学习偏好和时间分布 -->
-    <el-row :gutter="20" class="mt-20">
-      <el-col :span="12">
-        <el-card class="preference-card">
-          <template #header>
-            <div class="card-header">
-              <span>学习偏好</span>
-              <el-button type="primary" link @click="showPreferenceDialog = true">
-                <el-icon><Setting /></el-icon> 设置
-              </el-button>
-            </div>
-          </template>
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="偏好类别">
-              <el-tag
-                v-for="cat in profile.preference?.preferredCategories"
-                :key="cat"
-                class="mr-5"
-              >
-                {{ cat }}
-              </el-tag>
-              <span v-if="!profile.preference?.preferredCategories?.length">未设置</span>
-            </el-descriptions-item>
-            <el-descriptions-item label="偏好难度">
-              {{ profile.preference?.preferredDifficulty || '未设置' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="每日学习目标">
-              {{ profile.preference?.dailyStudyGoal || 30 }} 分钟
-            </el-descriptions-item>
-            <el-descriptions-item label="偏好学习时间">
-              {{ profile.preference?.preferredStudyTime || '未设置' }}
-            </el-descriptions-item>
-          </el-descriptions>
-        </el-card>
-      </el-col>
+      <!-- Time -->
+      <section class="card p-6">
+        <h2 class="text-lg font-semibold tracking-tight text-text-primary mb-4">学习时间分布</h2>
+        <div ref="timeChart" class="h-64 w-full"></div>
+      </section>
+    </div>
 
-      <el-col :span="12">
-        <el-card class="time-distribution-card">
-          <template #header>
-            <span>学习时间分布</span>
-          </template>
-          <div ref="timeChart" class="chart-container"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Suggestions -->
+      <section class="card p-6">
+        <h2 class="text-lg font-semibold tracking-tight text-text-primary mb-4">学习建议</h2>
+        <el-timeline>
+          <el-timeline-item
+            v-for="(suggestion, index) in assessment.suggestions"
+            :key="index"
+            :type="index === 0 ? 'primary' : 'info'"
+            :hollow="index !== 0"
+          >
+            {{ suggestion }}
+          </el-timeline-item>
+        </el-timeline>
+        <el-empty v-if="!assessment.suggestions?.length" description="暂无建议" :image-size="80" />
+      </section>
 
-    <!-- 学习建议和里程碑 -->
-    <el-row :gutter="20" class="mt-20">
-      <el-col :span="12">
-        <el-card class="suggestions-card">
-          <template #header>
-            <span>学习建议</span>
-          </template>
-          <el-timeline>
-            <el-timeline-item
-              v-for="(suggestion, index) in assessment.suggestions"
-              :key="index"
-              :type="index === 0 ? 'primary' : 'info'"
-              :hollow="index !== 0"
-            >
-              {{ suggestion }}
-            </el-timeline-item>
-          </el-timeline>
-          <el-empty v-if="!assessment.suggestions?.length" description="暂无建议" />
-        </el-card>
-      </el-col>
-
-      <el-col :span="12">
-        <el-card class="milestones-card">
-          <template #header>
-            <span>学习里程碑</span>
-          </template>
-          <el-timeline>
-            <el-timeline-item
-              v-for="milestone in profile.milestones"
-              :key="milestone.title"
-              :timestamp="formatDate(milestone.achievedAt)"
-              placement="top"
-            >
-              <el-card shadow="hover" class="milestone-item">
-                <div class="milestone-content">
-                  <span class="milestone-icon">{{ milestone.icon || '🏆' }}</span>
-                  <div>
-                    <h4>{{ milestone.title }}</h4>
-                    <p>{{ milestone.description }}</p>
-                  </div>
+      <!-- Milestones -->
+      <section class="card p-6">
+        <h2 class="text-lg font-semibold tracking-tight text-text-primary mb-4">学习里程碑</h2>
+        <el-timeline>
+          <el-timeline-item
+            v-for="milestone in profile.milestones"
+            :key="milestone.title"
+            :timestamp="formatDate(milestone.achievedAt)"
+            placement="top"
+          >
+            <div class="card p-4">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-bg-tertiary/70 border border-border-color/60 flex items-center justify-center">
+                  <span class="text-text-primary">{{ milestone.icon || '•' }}</span>
                 </div>
-              </el-card>
-            </el-timeline-item>
-          </el-timeline>
-          <el-empty v-if="!profile.milestones?.length" description="暂无里程碑" />
-        </el-card>
-      </el-col>
-    </el-row>
+                <div class="min-w-0">
+                  <h4 class="font-semibold text-text-primary">{{ milestone.title }}</h4>
+                  <p class="mt-1 text-sm text-text-secondary">{{ milestone.description }}</p>
+                </div>
+              </div>
+            </div>
+          </el-timeline-item>
+        </el-timeline>
+        <el-empty v-if="!profile.milestones?.length" description="暂无里程碑" :image-size="80" />
+      </section>
+    </div>
 
     <!-- 编辑技能标签对话框 -->
-    <el-dialog v-model="showSkillDialog" title="编辑技能标签" width="500px">
+    <el-dialog v-model="showSkillDialog" title="编辑技能标签" width="520px">
       <el-form>
         <el-form-item label="技能标签">
           <el-select
@@ -202,12 +196,7 @@
             placeholder="选择或输入技能标签"
             style="width: 100%"
           >
-            <el-option
-              v-for="skill in availableSkills"
-              :key="skill"
-              :label="skill"
-              :value="skill"
-            />
+            <el-option v-for="skill in availableSkills" :key="skill" :label="skill" :value="skill" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -218,7 +207,7 @@
     </el-dialog>
 
     <!-- 编辑学习偏好对话框 -->
-    <el-dialog v-model="showPreferenceDialog" title="设置学习偏好" width="500px">
+    <el-dialog v-model="showPreferenceDialog" title="设置学习偏好" width="520px">
       <el-form :model="editPreference" label-width="100px">
         <el-form-item label="偏好类别">
           <el-checkbox-group v-model="editPreference.preferredCategories">
@@ -239,14 +228,8 @@
           </el-select>
         </el-form-item>
         <el-form-item label="每日目标">
-          <el-slider
-            v-model="editPreference.dailyStudyGoal"
-            :min="15"
-            :max="180"
-            :step="15"
-            show-input
-          />
-          <span class="goal-hint">分钟/天</span>
+          <el-slider v-model="editPreference.dailyStudyGoal" :min="15" :max="180" :step="15" show-input />
+          <span class="ml-2 text-xs text-text-muted">分钟/天</span>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -258,16 +241,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Calendar, Trophy, Edit, Setting } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
-import {
-  getUserProfile,
-  updateSkillTags,
-  updatePreferences,
-  getLearningAbilityAssessment
-} from '@/api/learning'
+import { getUserProfile, updateSkillTags, updatePreferences, getLearningAbilityAssessment } from '@/api/learning'
 
 const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
@@ -282,32 +260,65 @@ const editSkills = ref([])
 const editPreference = ref({
   preferredCategories: [],
   preferredDifficulty: '中级',
-  dailyStudyGoal: 30
+  dailyStudyGoal: 30,
 })
 
 const availableSkills = [
-  'Java', 'Python', 'JavaScript', 'TypeScript', 'Vue.js', 'React',
-  'Spring Boot', 'MySQL', 'Redis', 'Docker', 'Kubernetes', 'Git',
-  'Linux', 'AWS', 'Node.js', 'Go', 'Rust', 'C++', 'HTML/CSS'
+  'Java',
+  'Python',
+  'JavaScript',
+  'TypeScript',
+  'Vue.js',
+  'React',
+  'Spring Boot',
+  'MySQL',
+  'Redis',
+  'Docker',
+  'Kubernetes',
+  'Git',
+  'Linux',
+  'AWS',
+  'Node.js',
+  'Go',
+  'Rust',
+  'C++',
+  'HTML/CSS',
 ]
 
 const radarChart = ref(null)
 const timeChart = ref(null)
 let radarChartInstance = null
 let timeChartInstance = null
+let themeObserver = null
 
-// 获取用户画像
+const normalizeRgb = (value, fallback) => {
+  const cleaned = (value || '').trim()
+  if (!cleaned) return fallback
+  return cleaned.replace(/\s+/g, ' ')
+}
+
+const rgba = (rgb, alpha) => `rgba(${rgb.replace(/\s+/g, ',')}, ${alpha})`
+
+const getThemeColors = () => {
+  const style = getComputedStyle(document.documentElement)
+  const primaryRgb = normalizeRgb(style.getPropertyValue('--primary-color-rgb'), '37 99 235')
+  const textSecondaryRgb = normalizeRgb(style.getPropertyValue('--text-secondary-rgb'), '75 85 99')
+  const borderRgb = normalizeRgb(style.getPropertyValue('--border-color-rgb'), '229 231 235')
+  const bgSecondaryRgb = normalizeRgb(style.getPropertyValue('--bg-secondary-rgb'), '255 255 255')
+  return { primaryRgb, textSecondaryRgb, borderRgb, bgSecondaryRgb }
+}
+
 const fetchProfile = async () => {
   loading.value = true
   try {
     const res = await getUserProfile()
     profile.value = res.data || {}
-    editSkills.value = profile.value.skillTags?.map(s => s.tag) || []
+    editSkills.value = profile.value.skillTags?.map((s) => s.tag) || []
     if (profile.value.preference) {
       editPreference.value = {
         preferredCategories: profile.value.preference.preferredCategories || [],
         preferredDifficulty: profile.value.preference.preferredDifficulty || '中级',
-        dailyStudyGoal: profile.value.preference.dailyStudyGoal || 30
+        dailyStudyGoal: profile.value.preference.dailyStudyGoal || 30,
       }
     }
   } catch (error) {
@@ -317,31 +328,27 @@ const fetchProfile = async () => {
   }
 }
 
-// 获取能力评估
 const fetchAssessment = async () => {
   try {
     const res = await getLearningAbilityAssessment()
     assessment.value = res.data || {}
-    nextTick(() => {
-      initRadarChart()
-    })
+    nextTick(() => initRadarChart())
   } catch (error) {
     console.error('获取能力评估失败:', error)
   }
 }
 
-// 初始化雷达图
 const initRadarChart = () => {
   if (!radarChart.value) return
-  
-  if (radarChartInstance) {
-    radarChartInstance.dispose()
-  }
-  
+
+  radarChartInstance?.dispose()
   radarChartInstance = echarts.init(radarChart.value)
-  
+
+  const { primaryRgb, textSecondaryRgb, borderRgb, bgSecondaryRgb } = getThemeColors()
   const radar = assessment.value.radar || {}
-  const option = {
+
+  radarChartInstance.setOption({
+    backgroundColor: 'transparent',
     tooltip: {},
     radar: {
       indicator: [
@@ -350,98 +357,98 @@ const initRadarChart = () => {
         { name: '理解力', max: 100 },
         { name: '实践能力', max: 100 },
         { name: '知识广度', max: 100 },
-        { name: '知识深度', max: 100 }
+        { name: '知识深度', max: 100 },
       ],
       shape: 'polygon',
       splitNumber: 5,
       axisName: {
-        color: '#666'
+        color: rgba(textSecondaryRgb, 0.9),
       },
       splitLine: {
         lineStyle: {
-          color: ['#e5e5e5']
-        }
+          color: [rgba(borderRgb, 0.9)],
+        },
+      },
+      axisLine: {
+        lineStyle: {
+          color: rgba(borderRgb, 0.7),
+        },
       },
       splitArea: {
         show: true,
         areaStyle: {
-          color: ['rgba(64, 158, 255, 0.1)', 'rgba(64, 158, 255, 0.2)']
-        }
-      }
+          color: [rgba(primaryRgb, 0.05), rgba(bgSecondaryRgb, 0.0)],
+        },
+      },
     },
-    series: [{
-      type: 'radar',
-      data: [{
-        value: [
-          radar.learningSpeed || 50,
-          radar.persistence || 50,
-          radar.comprehension || 50,
-          radar.practiceAbility || 50,
-          radar.breadth || 50,
-          radar.depth || 50
+    series: [
+      {
+        type: 'radar',
+        data: [
+          {
+            value: [
+              radar.learningSpeed || 50,
+              radar.persistence || 50,
+              radar.comprehension || 50,
+              radar.practiceAbility || 50,
+              radar.breadth || 50,
+              radar.depth || 50,
+            ],
+            name: '能力值',
+            areaStyle: { color: rgba(primaryRgb, 0.22) },
+            lineStyle: { color: rgba(primaryRgb, 0.85), width: 2 },
+            itemStyle: { color: rgba(primaryRgb, 0.95) },
+          },
         ],
-        name: '能力值',
-        areaStyle: {
-          color: 'rgba(64, 158, 255, 0.4)'
-        },
-        lineStyle: {
-          color: '#409EFF'
-        },
-        itemStyle: {
-          color: '#409EFF'
-        }
-      }]
-    }]
-  }
-  
-  radarChartInstance.setOption(option)
+      },
+    ],
+  })
 }
 
-// 初始化时间分布图
 const initTimeChart = () => {
   if (!timeChart.value) return
-  
-  if (timeChartInstance) {
-    timeChartInstance.dispose()
-  }
-  
+
+  timeChartInstance?.dispose()
   timeChartInstance = echarts.init(timeChart.value)
-  
+
+  const { primaryRgb, textSecondaryRgb, borderRgb } = getThemeColors()
   const timeData = profile.value.timeDistribution || []
-  const option = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      }
-    },
+
+  timeChartInstance.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 32, right: 16, top: 18, bottom: 46, containLabel: true },
     xAxis: {
       type: 'category',
-      data: timeData.map(t => t.timeSlot),
-      axisLabel: {
-        rotate: 45
-      }
+      data: timeData.map((t) => t.timeSlot),
+      axisLabel: { rotate: 35, color: rgba(textSecondaryRgb, 0.9) },
+      axisLine: { lineStyle: { color: rgba(borderRgb, 0.8) } },
+      axisTick: { show: false },
     },
     yAxis: {
       type: 'value',
-      name: '学习时长(分钟)'
+      name: '分钟',
+      nameTextStyle: { color: rgba(textSecondaryRgb, 0.7) },
+      axisLabel: { color: rgba(textSecondaryRgb, 0.85) },
+      splitLine: { lineStyle: { color: rgba(borderRgb, 0.6) } },
     },
-    series: [{
-      type: 'bar',
-      data: timeData.map(t => t.minutes),
-      itemStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: '#409EFF' },
-          { offset: 1, color: '#67C23A' }
-        ])
-      }
-    }]
-  }
-  
-  timeChartInstance.setOption(option)
+    series: [
+      {
+        type: 'bar',
+        data: timeData.map((t) => t.minutes),
+        barWidth: 18,
+        itemStyle: {
+          borderRadius: [10, 10, 6, 6],
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: rgba(primaryRgb, 0.9) },
+            { offset: 1, color: rgba(primaryRgb, 0.18) },
+          ]),
+        },
+      },
+    ],
+  })
 }
 
-// 保存技能标签
 const saveSkills = async () => {
   saving.value = true
   try {
@@ -456,7 +463,6 @@ const saveSkills = async () => {
   }
 }
 
-// 保存学习偏好
 const savePreferences = async () => {
   saving.value = true
   try {
@@ -471,7 +477,6 @@ const savePreferences = async () => {
   }
 }
 
-// 获取等级标签类型
 const getLevelTagType = (level) => {
   if (level >= 7) return 'danger'
   if (level >= 5) return 'warning'
@@ -479,7 +484,6 @@ const getLevelTagType = (level) => {
   return 'info'
 }
 
-// 获取技能标签类型
 const getSkillTagType = (level) => {
   if (level >= 4) return 'danger'
   if (level >= 3) return 'warning'
@@ -487,14 +491,12 @@ const getSkillTagType = (level) => {
   return 'info'
 }
 
-// 格式化日期
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return date.toLocaleDateString('zh-CN')
 }
 
-// 监听窗口大小变化
 const handleResize = () => {
   radarChartInstance?.resize()
   timeChartInstance?.resize()
@@ -504,141 +506,28 @@ onMounted(() => {
   fetchProfile()
   fetchAssessment()
   window.addEventListener('resize', handleResize)
+
+  themeObserver = new MutationObserver(() => {
+    nextTick(() => {
+      initRadarChart()
+      initTimeChart()
+    })
+  })
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
 })
 
-watch(() => profile.value.timeDistribution, () => {
-  nextTick(() => {
-    initTimeChart()
-  })
-}, { deep: true })
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  themeObserver?.disconnect()
+  radarChartInstance?.dispose()
+  timeChartInstance?.dispose()
+})
+
+watch(
+  () => profile.value.timeDistribution,
+  () => {
+    nextTick(() => initTimeChart())
+  },
+  { deep: true }
+)
 </script>
-
-<style scoped>
-.user-profile-container {
-  padding: 20px;
-}
-
-.profile-card {
-  text-align: center;
-}
-
-.profile-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
-
-.profile-info h2 {
-  margin: 10px 0 5px;
-}
-
-.profile-stats {
-  display: flex;
-  justify-content: space-around;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #409EFF;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #999;
-}
-
-.streak-info,
-.points-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0;
-  justify-content: center;
-}
-
-.max-streak {
-  color: #999;
-  font-size: 12px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chart-container {
-  height: 250px;
-}
-
-.overall-score {
-  text-align: center;
-  margin-top: 10px;
-  font-size: 16px;
-}
-
-.overall-score strong {
-  color: #409EFF;
-  font-size: 24px;
-}
-
-.skills-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.skill-tag {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-}
-
-.skill-rate {
-  margin-left: 5px;
-}
-
-.mt-20 {
-  margin-top: 20px;
-}
-
-.mr-5 {
-  margin-right: 5px;
-}
-
-.milestone-item {
-  padding: 10px;
-}
-
-.milestone-content {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.milestone-icon {
-  font-size: 24px;
-}
-
-.milestone-content h4 {
-  margin: 0;
-}
-
-.milestone-content p {
-  margin: 5px 0 0;
-  color: #666;
-  font-size: 12px;
-}
-
-.goal-hint {
-  margin-left: 10px;
-  color: #999;
-}
-</style>

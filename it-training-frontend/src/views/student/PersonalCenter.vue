@@ -1,264 +1,322 @@
 <template>
-  <div class="personal-center">
-    <el-row :gutter="20">
-      <!-- 左侧个人信息卡片 -->
-      <el-col :span="8">
-        <el-card class="profile-card">
-          <div class="profile-header">
-            <div class="avatar-wrapper">
-              <el-avatar :size="100" :src="userInfo.avatar || defaultAvatar">
-                {{ userInfo.realName?.charAt(0) || userInfo.username?.charAt(0) || 'U' }}
-              </el-avatar>
-              <el-button 
-                type="primary" 
-                link 
-                class="change-avatar-btn"
-                @click="showAvatarDialog = true"
-              >
-                更换头像
-              </el-button>
-            </div>
-            <h2 class="username">{{ userInfo.realName || userInfo.username }}</h2>
-            <p class="user-id">@{{ userInfo.username }}</p>
-            <el-tag :type="getRoleTagType(userInfo.role)">
-              {{ getRoleName(userInfo.role) }}
-            </el-tag>
-          </div>
-          
-          <el-divider />
-          
-          <div class="profile-stats">
-            <div class="stat-item">
-              <div class="stat-value">{{ learningStats.totalStudyMinutes || 0 }}</div>
-              <div class="stat-label">学习时长(分钟)</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value">{{ learningStats.completedCourses || 0 }}</div>
-              <div class="stat-label">完成课程</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value">{{ learningStats.achievementCount || 0 }}</div>
-              <div class="stat-label">获得成就</div>
-            </div>
-          </div>
-          
-          <el-divider />
-          
-          <div class="profile-info-list">
-            <div class="info-item">
-              <el-icon><Message /></el-icon>
-              <span>{{ userInfo.email || '未绑定邮箱' }}</span>
-            </div>
-            <div class="info-item">
-              <el-icon><Phone /></el-icon>
-              <span>{{ userInfo.phone || '未绑定手机' }}</span>
-            </div>
-            <div class="info-item">
-              <el-icon><Calendar /></el-icon>
-              <span>注册于 {{ formatDate(userInfo.createdAt) }}</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
+  <div class="page">
+    <section class="page-hero glass p-7 md:p-10">
+      <div class="absolute inset-0 pointer-events-none">
+        <div class="absolute -top-24 -right-24 w-72 h-72 bg-primary/15 blur-3xl rounded-full"></div>
+        <div class="absolute -bottom-28 -left-28 w-72 h-72 bg-secondary/20 blur-3xl rounded-full"></div>
+      </div>
 
-      <!-- 右侧内容区 -->
-      <el-col :span="16">
-        <el-card>
-          <el-tabs v-model="activeTab">
-            <!-- 基本资料 -->
-            <el-tab-pane label="基本资料" name="profile">
-              <el-form 
-                ref="profileFormRef"
-                :model="profileForm" 
-                :rules="profileRules"
-                label-width="100px"
-                class="profile-form"
-              >
-                <el-form-item label="用户名">
-                  <el-input v-model="userInfo.username" disabled />
-                </el-form-item>
-                <el-form-item label="真实姓名" prop="realName">
-                  <el-input v-model="profileForm.realName" placeholder="请输入真实姓名" />
-                </el-form-item>
-                <el-form-item label="邮箱" prop="email">
-                  <el-input v-model="profileForm.email" placeholder="请输入邮箱" />
-                </el-form-item>
-                <el-form-item label="手机号" prop="phone">
-                  <el-input v-model="profileForm.phone" placeholder="请输入手机号" />
-                </el-form-item>
-                <el-form-item>
-                  <el-button type="primary" @click="saveProfile" :loading="saving">
-                    保存修改
-                  </el-button>
-                </el-form-item>
-              </el-form>
-            </el-tab-pane>
+      <div class="relative flex flex-col md:flex-row md:items-center gap-6">
+        <div class="flex items-center gap-4 min-w-0">
+          <el-avatar :size="64" :src="userInfo.avatar || defaultAvatar" class="ring-1 ring-border-color/60">
+            {{ userInfo.realName?.charAt(0) || userInfo.username?.charAt(0) || 'U' }}
+          </el-avatar>
 
-            <!-- 账号安全 -->
-            <el-tab-pane label="账号安全" name="security">
-              <div class="security-section">
-                <div class="security-item">
-                  <div class="security-info">
-                    <h4>登录密码</h4>
-                    <p>定期更换密码可以保护账号安全</p>
-                  </div>
-                  <el-button type="primary" @click="showPasswordDialog = true">
-                    修改密码
-                  </el-button>
-                </div>
-                
-                <el-divider />
-                
-                <div class="security-item">
-                  <div class="security-info">
-                    <h4>绑定邮箱</h4>
-                    <p v-if="securityInfo.emailBound">
-                      已绑定: {{ securityInfo.email }}
-                    </p>
-                    <p v-else>未绑定邮箱，绑定后可用于找回密码</p>
-                  </div>
-                  <el-button @click="showEmailDialog = true">
-                    {{ securityInfo.emailBound ? '更换邮箱' : '绑定邮箱' }}
-                  </el-button>
-                </div>
-                
-                <el-divider />
-                
-                <div class="security-item">
-                  <div class="security-info">
-                    <h4>绑定手机</h4>
-                    <p v-if="securityInfo.phoneBound">
-                      已绑定: {{ securityInfo.phone }}
-                    </p>
-                    <p v-else>未绑定手机，绑定后可用于找回密码</p>
-                  </div>
-                  <el-button @click="showPhoneDialog = true">
-                    {{ securityInfo.phoneBound ? '更换手机' : '绑定手机' }}
-                  </el-button>
-                </div>
-                
-                <el-divider />
-                
-                <div class="security-item danger">
-                  <div class="security-info">
-                    <h4>注销账号</h4>
-                    <p>注销后账号将无法恢复，请谨慎操作</p>
-                  </div>
-                  <el-button type="danger" @click="showDeleteDialog = true">
-                    注销账号
-                  </el-button>
-                </div>
+          <div class="min-w-0">
+            <p class="text-sm text-text-secondary">个人中心</p>
+            <h1 class="mt-1 text-2xl md:text-3xl font-semibold tracking-tight text-text-primary truncate">
+              {{ userInfo.realName || userInfo.username || '未登录用户' }}
+            </h1>
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-text-secondary">
+              <span class="truncate">@{{ userInfo.username }}</span>
+              <span class="text-text-muted">·</span>
+              <span class="badge badge-secondary">{{ getRoleName(userInfo.role) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 md:ml-auto">
+          <button type="button" class="btn btn-secondary" @click="showAvatarDialog = true">更换头像</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-4 space-y-6">
+        <div class="card p-6">
+          <h2 class="text-sm font-semibold text-text-primary mb-4">概览</h2>
+          <div class="inset-group">
+            <div class="inset-item">
+              <div class="text-sm text-text-secondary">学习时长</div>
+              <div class="font-semibold text-text-primary">{{ learningStats.totalStudyMinutes || 0 }} 分钟</div>
+            </div>
+            <div class="inset-divider"></div>
+            <div class="inset-item">
+              <div class="text-sm text-text-secondary">完成课程</div>
+              <div class="font-semibold text-text-primary">{{ learningStats.completedCourses || 0 }}</div>
+            </div>
+            <div class="inset-divider"></div>
+            <div class="inset-item">
+              <div class="text-sm text-text-secondary">获得成就</div>
+              <div class="font-semibold text-text-primary">{{ learningStats.achievementCount || 0 }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-6">
+          <h2 class="text-sm font-semibold text-text-primary mb-4">账号信息</h2>
+          <div class="inset-group">
+            <div class="inset-item">
+              <div class="flex items-center gap-2 text-sm text-text-secondary">
+                <el-icon><Message /></el-icon>
+                <span>邮箱</span>
               </div>
-            </el-tab-pane>
-
-            <!-- 学习数据 -->
-            <el-tab-pane label="学习数据" name="learning">
-              <div class="learning-data">
-                <el-descriptions :column="2" border>
-                  <el-descriptions-item label="总学习时长">
-                    {{ formatStudyTime(learningStats.totalStudyMinutes) }}
-                  </el-descriptions-item>
-                  <el-descriptions-item label="完成课程数">
-                    {{ learningStats.completedCourses || 0 }} 门
-                  </el-descriptions-item>
-                  <el-descriptions-item label="进行中课程">
-                    {{ learningStats.inProgressCourses || 0 }} 门
-                  </el-descriptions-item>
-                  <el-descriptions-item label="获得成就">
-                    {{ learningStats.achievementCount || 0 }} 个
-                  </el-descriptions-item>
-                  <el-descriptions-item label="连续打卡">
-                    {{ learningStats.currentStreak || 0 }} 天
-                  </el-descriptions-item>
-                  <el-descriptions-item label="最长连续打卡">
-                    {{ learningStats.maxStreak || 0 }} 天
-                  </el-descriptions-item>
-                  <el-descriptions-item label="成就积分">
-                    {{ learningStats.achievementPoints || 0 }} 分
-                  </el-descriptions-item>
-                  <el-descriptions-item label="学习等级">
-                    {{ learningStats.levelName || '学习新手' }}
-                  </el-descriptions-item>
-                </el-descriptions>
-                
-                <div class="quick-links">
-                  <h4>快捷入口</h4>
-                  <el-row :gutter="20">
-                    <el-col :span="6">
-                      <el-card shadow="hover" class="link-card" @click="$router.push('/learning')">
-                        <el-icon :size="32"><TrendCharts /></el-icon>
-                        <span>学习中心</span>
-                      </el-card>
-                    </el-col>
-                    <el-col :span="6">
-                      <el-card shadow="hover" class="link-card" @click="$router.push('/learning-report')">
-                        <el-icon :size="32"><DataAnalysis /></el-icon>
-                        <span>学习报告</span>
-                      </el-card>
-                    </el-col>
-                    <el-col :span="6">
-                      <el-card shadow="hover" class="link-card" @click="$router.push('/achievements')">
-                        <el-icon :size="32"><Trophy /></el-icon>
-                        <span>我的成就</span>
-                      </el-card>
-                    </el-col>
-                    <el-col :span="6">
-                      <el-card shadow="hover" class="link-card" @click="$router.push('/profile')">
-                        <el-icon :size="32"><User /></el-icon>
-                        <span>我的画像</span>
-                      </el-card>
-                    </el-col>
-                  </el-row>
-                </div>
+              <div class="text-sm font-medium text-text-primary truncate max-w-[60%]">
+                {{ userInfo.email || '未绑定邮箱' }}
               </div>
-            </el-tab-pane>
-          </el-tabs>
-        </el-card>
-      </el-col>
-    </el-row>
+            </div>
+            <div class="inset-divider"></div>
+            <div class="inset-item">
+              <div class="flex items-center gap-2 text-sm text-text-secondary">
+                <el-icon><Phone /></el-icon>
+                <span>手机</span>
+              </div>
+              <div class="text-sm font-medium text-text-primary truncate max-w-[60%]">
+                {{ userInfo.phone || '未绑定手机' }}
+              </div>
+            </div>
+            <div class="inset-divider"></div>
+            <div class="inset-item">
+              <div class="flex items-center gap-2 text-sm text-text-secondary">
+                <el-icon><Calendar /></el-icon>
+                <span>注册时间</span>
+              </div>
+              <div class="text-sm font-medium text-text-primary">{{ formatDate(userInfo.createdAt) || '-' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <!-- 修改密码对话框 -->
+      <div class="lg:col-span-8">
+        <div class="card p-6 md:p-8">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-semibold text-text-primary">账号设置</h2>
+              <p class="mt-1 text-sm text-text-secondary">管理个人资料与安全信息</p>
+            </div>
+
+            <div class="segmented">
+              <button
+                type="button"
+                class="segmented-item"
+                :class="{ 'is-active': activeTab === 'profile' }"
+                @click="activeTab = 'profile'"
+              >
+                资料
+              </button>
+              <button
+                type="button"
+                class="segmented-item"
+                :class="{ 'is-active': activeTab === 'security' }"
+                @click="activeTab = 'security'"
+              >
+                安全
+              </button>
+              <button
+                type="button"
+                class="segmented-item"
+                :class="{ 'is-active': activeTab === 'learning' }"
+                @click="activeTab = 'learning'"
+              >
+                数据
+              </button>
+            </div>
+          </div>
+
+          <div v-if="activeTab === 'profile'">
+            <el-form
+              ref="profileFormRef"
+              :model="profileForm"
+              :rules="profileRules"
+              label-position="top"
+              class="max-w-xl"
+            >
+              <el-form-item label="用户名">
+                <el-input v-model="userInfo.username" disabled />
+              </el-form-item>
+              <el-form-item label="真实姓名" prop="realName">
+                <el-input v-model="profileForm.realName" placeholder="请输入真实姓名" />
+              </el-form-item>
+              <el-form-item label="邮箱" prop="email">
+                <el-input v-model="profileForm.email" placeholder="请输入邮箱" />
+              </el-form-item>
+              <el-form-item label="手机号" prop="phone">
+                <el-input v-model="profileForm.phone" placeholder="请输入手机号" />
+              </el-form-item>
+              <el-form-item>
+                <button type="button" class="btn btn-primary" :disabled="saving" @click="saveProfile">
+                  {{ saving ? '保存中...' : '保存修改' }}
+                </button>
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <div v-else-if="activeTab === 'security'" class="space-y-4">
+            <div class="inset-group">
+              <div class="inset-item">
+                <div class="space-y-1">
+                  <div class="font-medium text-text-primary">登录密码</div>
+                  <div class="text-sm text-text-secondary">定期更换密码可以保护账号安全</div>
+                </div>
+                <button type="button" class="btn btn-secondary" @click="showPasswordDialog = true">修改</button>
+              </div>
+              <div class="inset-divider"></div>
+
+              <div class="inset-item">
+                <div class="space-y-1">
+                  <div class="font-medium text-text-primary">绑定邮箱</div>
+                  <div class="text-sm text-text-secondary">
+                    <span v-if="securityInfo.emailBound">已绑定：{{ securityInfo.email }}</span>
+                    <span v-else>未绑定邮箱，绑定后可用于找回密码</span>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-secondary" @click="showEmailDialog = true">
+                  {{ securityInfo.emailBound ? '更换' : '绑定' }}
+                </button>
+              </div>
+              <div class="inset-divider"></div>
+
+              <div class="inset-item">
+                <div class="space-y-1">
+                  <div class="font-medium text-text-primary">绑定手机</div>
+                  <div class="text-sm text-text-secondary">
+                    <span v-if="securityInfo.phoneBound">已绑定：{{ securityInfo.phone }}</span>
+                    <span v-else>未绑定手机，绑定后可用于找回密码</span>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-secondary" @click="showPhoneDialog = true">
+                  {{ securityInfo.phoneBound ? '更换' : '绑定' }}
+                </button>
+              </div>
+              <div class="inset-divider"></div>
+
+              <div class="inset-item">
+                <div class="space-y-1">
+                  <div class="font-medium text-text-primary">注销账号</div>
+                  <div class="text-sm text-text-secondary">注销后账号将无法恢复，请谨慎操作</div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-secondary text-error border-error/30 hover:bg-error/10"
+                  @click="showDeleteDialog = true"
+                >
+                  注销
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="space-y-6">
+            <div class="inset-group">
+              <div class="inset-item">
+                <div class="text-sm text-text-secondary">总学习时长</div>
+                <div class="font-semibold text-text-primary">{{ formatStudyTime(learningStats.totalStudyMinutes) }}</div>
+              </div>
+              <div class="inset-divider"></div>
+              <div class="inset-item">
+                <div class="text-sm text-text-secondary">完成课程数</div>
+                <div class="font-semibold text-text-primary">{{ learningStats.completedCourses || 0 }} 门</div>
+              </div>
+              <div class="inset-divider"></div>
+              <div class="inset-item">
+                <div class="text-sm text-text-secondary">进行中课程</div>
+                <div class="font-semibold text-text-primary">{{ learningStats.inProgressCourses || 0 }} 门</div>
+              </div>
+              <div class="inset-divider"></div>
+              <div class="inset-item">
+                <div class="text-sm text-text-secondary">成就积分</div>
+                <div class="font-semibold text-text-primary">{{ learningStats.achievementPoints || 0 }} 分</div>
+              </div>
+              <div class="inset-divider"></div>
+              <div class="inset-item">
+                <div class="text-sm text-text-secondary">学习等级</div>
+                <div class="font-semibold text-text-primary">{{ learningStats.levelName || '学习新手' }}</div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-text-primary mb-3">快捷入口</h3>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button
+                  type="button"
+                  class="card-hover p-4 text-left"
+                  @click="$router.push('/learning')"
+                >
+                  <div
+                    class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary"
+                  >
+                    <el-icon><TrendCharts /></el-icon>
+                  </div>
+                  <div class="mt-3 text-sm font-semibold text-text-primary">学习中心</div>
+                  <div class="mt-1 text-xs text-text-secondary">任务与进度</div>
+                </button>
+
+                <button
+                  type="button"
+                  class="card-hover p-4 text-left"
+                  @click="$router.push('/learning-report')"
+                >
+                  <div
+                    class="w-10 h-10 rounded-full bg-info/10 border border-info/20 flex items-center justify-center text-info"
+                  >
+                    <el-icon><DataAnalysis /></el-icon>
+                  </div>
+                  <div class="mt-3 text-sm font-semibold text-text-primary">学习报告</div>
+                  <div class="mt-1 text-xs text-text-secondary">趋势与总结</div>
+                </button>
+
+                <button
+                  type="button"
+                  class="card-hover p-4 text-left"
+                  @click="$router.push('/achievements')"
+                >
+                  <div
+                    class="w-10 h-10 rounded-full bg-warning/10 border border-warning/20 flex items-center justify-center text-warning"
+                  >
+                    <el-icon><Trophy /></el-icon>
+                  </div>
+                  <div class="mt-3 text-sm font-semibold text-text-primary">我的成就</div>
+                  <div class="mt-1 text-xs text-text-secondary">勋章与里程碑</div>
+                </button>
+
+                <button
+                  type="button"
+                  class="card-hover p-4 text-left"
+                  @click="$router.push('/profile')"
+                >
+                  <div
+                    class="w-10 h-10 rounded-full bg-bg-tertiary/60 border border-border-color/60 flex items-center justify-center text-text-secondary"
+                  >
+                    <el-icon><User /></el-icon>
+                  </div>
+                  <div class="mt-3 text-sm font-semibold text-text-primary">我的画像</div>
+                  <div class="mt-1 text-xs text-text-secondary">偏好与能力</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <el-dialog v-model="showPasswordDialog" title="修改密码" width="400px">
-      <el-form 
-        ref="passwordFormRef"
-        :model="passwordForm" 
-        :rules="passwordRules"
-        label-width="100px"
-      >
+      <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="80px">
         <el-form-item label="当前密码" prop="currentPassword">
-          <el-input 
-            v-model="passwordForm.currentPassword" 
-            type="password" 
-            show-password
-            placeholder="请输入当前密码"
-          />
+          <el-input v-model="passwordForm.currentPassword" type="password" show-password placeholder="请输入当前密码" />
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
-          <el-input 
-            v-model="passwordForm.newPassword" 
-            type="password" 
-            show-password
-            placeholder="请输入新密码"
-          />
+          <el-input v-model="passwordForm.newPassword" type="password" show-password placeholder="请输入新密码" />
         </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input 
-            v-model="passwordForm.confirmPassword" 
-            type="password" 
-            show-password
-            placeholder="请再次输入新密码"
-          />
+          <el-input v-model="passwordForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showPasswordDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleChangePassword" :loading="saving">
-          确认修改
-        </el-button>
+        <el-button type="primary" @click="handleChangePassword" :loading="saving">确认修改</el-button>
       </template>
     </el-dialog>
 
-    <!-- 绑定邮箱对话框 -->
     <el-dialog v-model="showEmailDialog" title="绑定邮箱" width="400px">
       <el-form :model="emailForm" label-width="80px">
         <el-form-item label="邮箱">
@@ -276,13 +334,10 @@
       </el-form>
       <template #footer>
         <el-button @click="showEmailDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleBindEmail" :loading="saving">
-          确认绑定
-        </el-button>
+        <el-button type="primary" @click="handleBindEmail" :loading="saving">确认绑定</el-button>
       </template>
     </el-dialog>
 
-    <!-- 绑定手机对话框 -->
     <el-dialog v-model="showPhoneDialog" title="绑定手机" width="400px">
       <el-form :model="phoneForm" label-width="80px">
         <el-form-item label="手机号">
@@ -300,40 +355,29 @@
       </el-form>
       <template #footer>
         <el-button @click="showPhoneDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleBindPhone" :loading="saving">
-          确认绑定
-        </el-button>
+        <el-button type="primary" @click="handleBindPhone" :loading="saving">确认绑定</el-button>
       </template>
     </el-dialog>
 
-    <!-- 注销账号对话框 -->
     <el-dialog v-model="showDeleteDialog" title="注销账号" width="400px">
-      <el-alert 
-        type="error" 
+      <el-alert
+        type="error"
         :closable="false"
         show-icon
         title="警告"
         description="注销账号后，您的所有数据将被清除且无法恢复，请谨慎操作！"
       />
-      <el-form :model="deleteForm" label-width="80px" class="mt-20">
+      <el-form :model="deleteForm" label-width="80px" class="mt-4">
         <el-form-item label="密码确认">
-          <el-input 
-            v-model="deleteForm.password" 
-            type="password" 
-            show-password
-            placeholder="请输入密码确认注销"
-          />
+          <el-input v-model="deleteForm.password" type="password" show-password placeholder="请输入密码确认注销" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showDeleteDialog = false">取消</el-button>
-        <el-button type="danger" @click="handleDeleteAccount" :loading="saving">
-          确认注销
-        </el-button>
+        <el-button type="danger" @click="handleDeleteAccount" :loading="saving">确认注销</el-button>
       </template>
     </el-dialog>
 
-    <!-- 更换头像对话框 -->
     <el-dialog v-model="showAvatarDialog" title="更换头像" width="400px">
       <el-form label-width="80px">
         <el-form-item label="头像URL">
@@ -345,20 +389,16 @@
       </el-form>
       <template #footer>
         <el-button @click="showAvatarDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleUpdateAvatar" :loading="saving">
-          确认更换
-        </el-button>
+        <el-button type="primary" @click="handleUpdateAvatar" :loading="saving">确认更换</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  Message, Phone, Calendar, TrendCharts, DataAnalysis, Trophy, User 
-} from '@element-plus/icons-vue'
+import { Message, Phone, Calendar, TrendCharts, DataAnalysis, Trophy, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import {
   getCurrentUser,
@@ -370,7 +410,7 @@ import {
   bindPhone,
   sendEmailCode,
   sendPhoneCode,
-  deleteAccount
+  deleteAccount,
 } from '@/api/user'
 import { getUserProfile } from '@/api/learning'
 
@@ -383,87 +423,70 @@ const userInfo = ref({})
 const learningStats = ref({})
 const securityInfo = ref({})
 
-// 表单引用
 const profileFormRef = ref(null)
 const passwordFormRef = ref(null)
 
-// 对话框状态
 const showPasswordDialog = ref(false)
 const showEmailDialog = ref(false)
 const showPhoneDialog = ref(false)
 const showDeleteDialog = ref(false)
 const showAvatarDialog = ref(false)
 
-// 倒计时
 const emailCountdown = ref(0)
 const phoneCountdown = ref(0)
 
-// 表单数据
 const profileForm = reactive({
   realName: '',
   email: '',
-  phone: ''
+  phone: '',
 })
 
 const passwordForm = reactive({
   currentPassword: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
 const emailForm = reactive({
   email: '',
-  code: ''
+  code: '',
 })
 
 const phoneForm = reactive({
   phone: '',
-  code: ''
+  code: '',
 })
 
 const deleteForm = reactive({
-  password: ''
+  password: '',
 })
 
 const avatarUrl = ref('')
 
-// 表单验证规则
 const profileRules = {
-  realName: [
-    { max: 50, message: '姓名长度不能超过50个字符', trigger: 'blur' }
-  ],
-  email: [
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
-  ],
-  phone: [
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
-  ]
+  realName: [{ max: 50, message: '姓名长度不能超过50个字符', trigger: 'blur' }],
+  email: [{ type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }],
+  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }],
 }
 
 const passwordRules = {
-  currentPassword: [
-    { required: true, message: '请输入当前密码', trigger: 'blur' }
-  ],
+  currentPassword: [{ required: true, message: '请输入当前密码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度在6-20个字符之间', trigger: 'blur' }
+    { min: 6, max: 20, message: '密码长度在6-20个字符之间', trigger: 'blur' },
   ],
   confirmPassword: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
-        if (value !== passwordForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'))
-        } else {
-          callback()
-        }
+        if (value !== passwordForm.newPassword) callback(new Error('两次输入的密码不一致'))
+        else callback()
       },
-      trigger: 'blur'
-    }
-  ]
+      trigger: 'blur',
+    },
+  ],
 }
 
-// 获取用户信息
 const fetchUserInfo = async () => {
   try {
     const res = await getCurrentUser()
@@ -477,7 +500,6 @@ const fetchUserInfo = async () => {
   }
 }
 
-// 获取学习统计
 const fetchLearningStats = async () => {
   try {
     const res = await getUserProfile()
@@ -487,7 +509,6 @@ const fetchLearningStats = async () => {
   }
 }
 
-// 获取安全信息
 const fetchSecurityInfo = async () => {
   try {
     const res = await getSecurityInfo()
@@ -497,7 +518,6 @@ const fetchSecurityInfo = async () => {
   }
 }
 
-// 保存个人资料
 const saveProfile = async () => {
   try {
     await profileFormRef.value?.validate()
@@ -505,23 +525,19 @@ const saveProfile = async () => {
     await updateProfile(profileForm)
     ElMessage.success('保存成功')
     fetchUserInfo()
-    // 更新 store 中的用户信息
     userStore.setUserInfo({
       ...userStore.userInfo,
       realName: profileForm.realName,
       email: profileForm.email,
-      phone: profileForm.phone
+      phone: profileForm.phone,
     })
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('保存失败')
-    }
+    if (error !== 'cancel') ElMessage.error('保存失败')
   } finally {
     saving.value = false
   }
 }
 
-// 修改密码
 const handleChangePassword = async () => {
   try {
     await passwordFormRef.value?.validate()
@@ -529,22 +545,17 @@ const handleChangePassword = async () => {
     await changePassword(passwordForm)
     ElMessage.success('密码修改成功，请重新登录')
     showPasswordDialog.value = false
-    // 清空表单
     passwordForm.currentPassword = ''
     passwordForm.newPassword = ''
     passwordForm.confirmPassword = ''
-    // 退出登录
     userStore.logout()
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.message || '修改失败')
-    }
+    if (error !== 'cancel') ElMessage.error(error.message || '修改失败')
   } finally {
     saving.value = false
   }
 }
 
-// 发送邮箱验证码
 const handleSendEmailCode = async () => {
   if (!emailForm.email) {
     ElMessage.warning('请输入邮箱')
@@ -556,16 +567,13 @@ const handleSendEmailCode = async () => {
     emailCountdown.value = 60
     const timer = setInterval(() => {
       emailCountdown.value--
-      if (emailCountdown.value <= 0) {
-        clearInterval(timer)
-      }
+      if (emailCountdown.value <= 0) clearInterval(timer)
     }, 1000)
   } catch (error) {
     ElMessage.error('发送失败')
   }
 }
 
-// 绑定邮箱
 const handleBindEmail = async () => {
   if (!emailForm.email || !emailForm.code) {
     ElMessage.warning('请填写完整信息')
@@ -585,7 +593,6 @@ const handleBindEmail = async () => {
   }
 }
 
-// 发送手机验证码
 const handleSendPhoneCode = async () => {
   if (!phoneForm.phone) {
     ElMessage.warning('请输入手机号')
@@ -597,16 +604,13 @@ const handleSendPhoneCode = async () => {
     phoneCountdown.value = 60
     const timer = setInterval(() => {
       phoneCountdown.value--
-      if (phoneCountdown.value <= 0) {
-        clearInterval(timer)
-      }
+      if (phoneCountdown.value <= 0) clearInterval(timer)
     }, 1000)
   } catch (error) {
     ElMessage.error('发送失败')
   }
 }
 
-// 绑定手机
 const handleBindPhone = async () => {
   if (!phoneForm.phone || !phoneForm.code) {
     ElMessage.warning('请填写完整信息')
@@ -626,7 +630,6 @@ const handleBindPhone = async () => {
   }
 }
 
-// 更新头像
 const handleUpdateAvatar = async () => {
   if (!avatarUrl.value) {
     ElMessage.warning('请输入头像URL')
@@ -640,7 +643,7 @@ const handleUpdateAvatar = async () => {
     fetchUserInfo()
     userStore.setUserInfo({
       ...userStore.userInfo,
-      avatar: avatarUrl.value
+      avatar: avatarUrl.value,
     })
   } catch (error) {
     ElMessage.error('更新失败')
@@ -649,48 +652,31 @@ const handleUpdateAvatar = async () => {
   }
 }
 
-// 注销账号
 const handleDeleteAccount = async () => {
   if (!deleteForm.password) {
     ElMessage.warning('请输入密码')
     return
   }
   try {
-    await ElMessageBox.confirm(
-      '确定要注销账号吗？此操作不可恢复！',
-      '最后确认',
-      { type: 'error' }
-    )
+    await ElMessageBox.confirm('确定要注销账号吗？此操作不可恢复！', '最后确认', { type: 'error' })
     saving.value = true
     await deleteAccount(deleteForm.password)
     ElMessage.success('账号已注销')
     userStore.logout()
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.message || '注销失败')
-    }
+    if (error !== 'cancel') ElMessage.error(error.message || '注销失败')
   } finally {
     saving.value = false
   }
 }
 
-// 工具函数
 const getRoleName = (role) => {
   const roleMap = {
-    'ADMIN': '管理员',
-    'INSTRUCTOR': '讲师',
-    'STUDENT': '学员'
+    ADMIN: '管理员',
+    INSTRUCTOR: '讲师',
+    STUDENT: '学员',
   }
   return roleMap[role] || '用户'
-}
-
-const getRoleTagType = (role) => {
-  const typeMap = {
-    'ADMIN': 'danger',
-    'INSTRUCTOR': 'warning',
-    'STUDENT': 'success'
-  }
-  return typeMap[role] || 'info'
 }
 
 const formatDate = (dateStr) => {
@@ -713,137 +699,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.personal-center {
-  padding: 20px;
-}
-
-.profile-card {
-  text-align: center;
-}
-
-.profile-header {
-  padding: 20px 0;
-}
-
-.avatar-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
-.change-avatar-btn {
-  display: block;
-  margin-top: 10px;
-}
-
-.username {
-  margin: 15px 0 5px;
-  font-size: 20px;
-}
-
-.user-id {
-  color: #999;
-  margin-bottom: 10px;
-}
-
-.profile-stats {
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #409EFF;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #999;
-  margin-top: 5px;
-}
-
-.profile-info-list {
-  text-align: left;
-  padding: 0 20px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-  color: #666;
-}
-
-.profile-form {
-  max-width: 500px;
-  padding: 20px;
-}
-
-.security-section {
-  padding: 20px;
-}
-
-.security-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 0;
-}
-
-.security-item.danger .security-info h4 {
-  color: #F56C6C;
-}
-
-.security-info h4 {
-  margin: 0 0 5px;
-}
-
-.security-info p {
-  margin: 0;
-  color: #999;
-  font-size: 13px;
-}
-
-.learning-data {
-  padding: 20px;
-}
-
-.quick-links {
-  margin-top: 30px;
-}
-
-.quick-links h4 {
-  margin-bottom: 15px;
-}
-
-.link-card {
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.link-card:hover {
-  transform: translateY(-5px);
-}
-
-.link-card .el-icon {
-  color: #409EFF;
-  margin-bottom: 10px;
-}
-
-.link-card span {
-  display: block;
-  font-size: 14px;
-}
-
-.mt-20 {
-  margin-top: 20px;
-}
-</style>
