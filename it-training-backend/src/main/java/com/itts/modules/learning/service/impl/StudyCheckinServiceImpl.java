@@ -12,6 +12,8 @@ import com.itts.modules.learning.mapper.StudyCheckinMapper;
 import com.itts.modules.learning.service.AchievementService;
 import com.itts.modules.learning.service.StudyCheckinService;
 import com.itts.modules.learning.service.UserLearningStatsService;
+import com.itts.modules.student.entity.UserLearningStreak;
+import com.itts.modules.student.mapper.UserLearningStreakMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,25 +35,29 @@ public class StudyCheckinServiceImpl extends ServiceImpl<StudyCheckinMapper, Stu
         implements StudyCheckinService {
 
     private static final ZoneId CHINA_ZONE = ZoneId.of("Asia/Shanghai");
-    
+
     private final CourseMapper courseMapper;
     private final UserLearningStatsService userLearningStatsService;
     private final AchievementService achievementService;
+    private final UserLearningStreakMapper userLearningStreakMapper;
+    private final com.itts.modules.student.service.StudentService studentService;
 
     @Override
     @Transactional
     public StudyCheckinResponse checkin(Long userId, StudyCheckinRequest request) {
         LocalDate today = LocalDate.now(CHINA_ZONE);
         log.info("用户打卡 - userId: {}, 当前日期: {}, 时区: {}", userId, today, CHINA_ZONE);
-        
+
         // 检查今日是否已打卡
         StudyCheckin existingCheckin = getOne(
             new LambdaQueryWrapper<StudyCheckin>()
                 .eq(StudyCheckin::getUserId, userId)
                 .eq(StudyCheckin::getCheckinDate, today)
         );
-        
+
         StudyCheckin checkin;
+        boolean isFirstCheckinToday = (existingCheckin == null);
+
         if (existingCheckin != null) {
             // 更新今日打卡记录
             existingCheckin.setStudyMinutes(
@@ -86,31 +93,91 @@ public class StudyCheckinServiceImpl extends ServiceImpl<StudyCheckinMapper, Stu
                 checkin.setCoursesStudied("[" + request.getCourseId() + "]");
             }
             save(checkin);
-            
-            // 更新连续打卡天数
+
+            // 首次打卡时更新连续打卡天数（user_learning_stats 和 user_learning_streak）
             userLearningStatsService.updateStreakDays(userId);
+            updateUserLearningStreak(userId, today);
+
+            // 首次打卡奖励经验值
+            int rewardExp = 20; // 每次打卡奖励20经验
+            studentService.addExperience(userId, rewardExp);
+            log.info("首次打卡奖励经验值, userId: {}, exp: {}", userId, rewardExp);
         }
-        
+
         // 更新学习时长统计
         if (request.getStudyMinutes() != null && request.getStudyMinutes() > 0) {
             userLearningStatsService.addStudyTime(userId, request.getStudyMinutes());
         }
-        
+
         // 检查并授予成就
         List<AchievementResponse> newAchievements = achievementService.checkAndGrantAchievements(userId);
-        
+
         // 构建响应
         StudyCheckinResponse response = convertToResponse(checkin);
         response.setCurrentStreak(getCurrentStreak(userId));
-        
+
         if (!newAchievements.isEmpty()) {
             response.setNewAchievementEarned(true);
             response.setNewAchievement(newAchievements.get(0));
         } else {
             response.setNewAchievementEarned(false);
         }
-        
+
         return response;
+    }
+
+    /**
+     * 更新 user_learning_streak 表（用于首页 Dashboard）
+     */
+    private void updateUserLearningStreak(Long userId, LocalDate today) {
+        LambdaQueryWrapper<UserLearningStreak> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserLearningStreak::getUserId, userId);
+
+        UserLearningStreak streak = userLearningStreakMapper.selectOne(wrapper);
+
+        if (streak == null) {
+            // 创建新记录
+            streak = new UserLearningStreak();
+            streak.setUserId(userId);
+            streak.setStreakDays(1);
+            streak.setMaxStreakDays(1);
+            streak.setLastCheckinDate(today);
+            streak.setTotalCheckinDays(1);
+            userLearningStreakMapper.insert(streak);
+        } else {
+            // 更新现有记录
+            LocalDate lastCheckin = streak.getLastCheckinDate();
+
+            if (lastCheckin != null && lastCheckin.equals(today)) {
+                // 今天已经打过卡，不更新
+                return;
+            }
+
+            if (lastCheckin == null) {
+                // 首次打卡
+                streak.setStreakDays(1);
+                streak.setMaxStreakDays(1);
+                streak.setTotalCheckinDays(1);
+            } else {
+                long daysBetween = ChronoUnit.DAYS.between(lastCheckin, today);
+
+                if (daysBetween == 1) {
+                    // 连续打卡
+                    streak.setStreakDays(streak.getStreakDays() + 1);
+                    if (streak.getStreakDays() > streak.getMaxStreakDays()) {
+                        streak.setMaxStreakDays(streak.getStreakDays());
+                    }
+                } else {
+                    // 断签，重新开始
+                    streak.setStreakDays(1);
+                }
+
+                streak.setTotalCheckinDays(streak.getTotalCheckinDays() + 1);
+            }
+
+            streak.setLastCheckinDate(today);
+            userLearningStreakMapper.updateById(streak);
+        }
     }
 
     @Override

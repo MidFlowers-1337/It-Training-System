@@ -11,6 +11,8 @@ import com.itts.modules.learning.service.UserLearningStatsService;
 import com.itts.modules.user.entity.SysUser;
 import com.itts.modules.user.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +25,18 @@ import java.util.List;
  * 用户学习统计服务实现
  */
 @Service
-@RequiredArgsConstructor
 public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsMapper, UserLearningStats>
         implements UserLearningStatsService {
 
-    private final SysUserMapper userMapper;
-    private final StudyCheckinMapper checkinMapper;
+    @Autowired
+    private SysUserMapper userMapper;
+
+    @Autowired
+    private StudyCheckinMapper checkinMapper;
+
+    @Lazy
+    @Autowired
+    private com.itts.modules.learning.service.AchievementService achievementService;
 
     @Override
     public UserStatsResponse getUserStats(Long userId) {
@@ -62,7 +70,11 @@ public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsM
 
         // 成就统计
         response.setTotalAchievementPoints(stats.getTotalAchievementPoints());
-        // TODO: 获取成就数量
+
+        // 获取成就数量
+        List<com.itts.modules.learning.dto.AchievementResponse> achievements =
+            achievementService.getUserAchievements(userId);
+        response.setAchievementsEarned(achievements.size());
 
         // 时间分布统计
         response.setWeeklyStudyMinutes(calculateWeeklyStudyMinutes(userId));
