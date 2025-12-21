@@ -1,8 +1,26 @@
 <template>
-  <div class="sessions-page">
-    <!-- 搜索和操作栏 -->
-    <el-card shadow="never" class="search-card">
-      <el-form :inline="true" :model="searchForm" class="search-form">
+  <div class="space-y-6">
+    <section class="page-hero glass p-8 md:p-10">
+      <div class="absolute inset-0 pointer-events-none" style="background: var(--gradient-hero)"></div>
+      <div class="relative flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <p class="inline-flex items-center gap-2 text-sm text-text-secondary">
+            <el-icon><Calendar /></el-icon>
+            班期管理
+          </p>
+          <h1 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-text-primary">Sessions</h1>
+          <p class="mt-2 text-sm md:text-base text-text-secondary">管理课程班期、讲师与报名状态。</p>
+        </div>
+        <el-button type="primary" @click="handleAdd">
+          <el-icon><Plus /></el-icon>
+          新增班期
+        </el-button>
+      </div>
+    </section>
+
+    <!-- 搜索栏 -->
+    <div class="card p-6">
+      <el-form :inline="true" :model="searchForm" class="flex flex-wrap gap-4 items-end">
         <el-form-item label="课程">
           <el-select v-model="searchForm.courseId" placeholder="全部" clearable filterable>
             <el-option
@@ -27,14 +45,10 @@
           <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-      <el-button type="primary" @click="handleAdd">
-        <el-icon><Plus /></el-icon>
-        新增班期
-      </el-button>
-    </el-card>
+    </div>
 
     <!-- 数据表格 -->
-    <el-card shadow="never" class="table-card">
+    <div class="card overflow-hidden">
       <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="sessionCode" label="班期编码" width="160" />
@@ -74,7 +88,7 @@
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination">
+      <div class="p-4 border-t border-border-color/60 flex justify-end">
         <el-pagination
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.size"
@@ -85,7 +99,7 @@
           @current-change="handleCurrentChange"
         />
       </div>
-    </el-card>
+    </div>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
@@ -155,7 +169,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Calendar, Plus } from '@element-plus/icons-vue'
 import {
   getSessions, createSession, updateSession, deleteSession,
   openEnrollment, closeEnrollment
@@ -408,27 +422,3 @@ onMounted(() => {
   loadInstructorOptions()
 })
 </script>
-
-<style scoped>
-.sessions-page {
-  padding: 0;
-}
-
-.search-card {
-  margin-bottom: 20px;
-}
-
-.search-form {
-  margin-bottom: 16px;
-}
-
-.table-card {
-  min-height: 500px;
-}
-
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-</style>
