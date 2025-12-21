@@ -1,387 +1,292 @@
 <template>
-  <div class="dashboard">
-    <!-- 统计卡片 -->
-    <el-row :gutter="20">
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-info">
-              <div class="stat-value">{{ overview.courseCount || 0 }}</div>
-              <div class="stat-label">课程总数</div>
-            </div>
-            <el-icon class="stat-icon" :style="{ color: '#67C23A' }">
-              <Reading />
-            </el-icon>
-          </div>
-        </el-card>
-      </el-col>
+  <div class="space-y-6">
+    <section class="page-hero glass p-8 md:p-10">
+      <div class="absolute inset-0 pointer-events-none" style="background: var(--gradient-hero)"></div>
+      <div class="relative">
+        <p class="inline-flex items-center gap-2 text-sm text-text-secondary">
+          <BarChart3 class="w-4 h-4 text-primary" />
+          管理后台
+        </p>
+        <h1 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-text-primary">Dashboard</h1>
+        <p class="mt-2 text-sm md:text-base text-text-secondary">系统概览与关键指标。</p>
+      </div>
+    </section>
 
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-info">
-              <div class="stat-value">{{ overview.studentCount || 0 }}</div>
-              <div class="stat-label">学员总数</div>
-            </div>
-            <el-icon class="stat-icon" :style="{ color: '#409EFF' }">
-              <User />
-            </el-icon>
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div v-for="stat in stats" :key="stat.label" class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <component :is="stat.icon" class="w-6 h-6" />
           </div>
-        </el-card>
-      </el-col>
+          <span class="badge badge-secondary">
+            <span :class="stat.trend > 0 ? 'text-success' : 'text-error'">
+              {{ stat.trend > 0 ? '+' : '' }}{{ stat.trend }}%
+            </span>
+          </span>
+        </div>
+        <h3 class="text-text-secondary text-sm font-medium">{{ stat.label }}</h3>
+        <p class="text-2xl font-bold text-text-primary mt-1">{{ stat.value }}</p>
+      </div>
+    </div>
 
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-info">
-              <div class="stat-value">{{ overview.activeSessionCount || 0 }}</div>
-              <div class="stat-label">活跃班期</div>
-            </div>
-            <el-icon class="stat-icon" :style="{ color: '#E6A23C' }">
-              <Calendar />
-            </el-icon>
-          </div>
-        </el-card>
-      </el-col>
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Enrollment Trend -->
+      <div class="card p-6">
+        <h3 class="text-lg font-semibold tracking-tight text-text-primary mb-1">Enrollment Trends</h3>
+        <p class="text-sm text-text-muted mb-6">近 7 天报名趋势。</p>
+        <div ref="enrollmentChartRef" class="h-80 w-full"></div>
+      </div>
 
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-info">
-              <div class="stat-value">{{ overview.enrollmentCount || 0 }}</div>
-              <div class="stat-label">报名总数</div>
-            </div>
-            <el-icon class="stat-icon" :style="{ color: '#F56C6C' }">
-              <Document />
-            </el-icon>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+      <!-- Popular Courses -->
+      <div class="card p-6">
+        <h3 class="text-lg font-semibold tracking-tight text-text-primary mb-1">Popular Courses</h3>
+        <p class="text-sm text-text-muted mb-6">热门课程占比。</p>
+        <div ref="courseChartRef" class="h-80 w-full"></div>
+      </div>
+    </div>
 
-    <!-- 第二行统计卡片 -->
-    <el-row :gutter="20" class="second-row">
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card mini">
-          <div class="stat-content">
-            <div class="stat-info">
-              <div class="stat-value small">{{ overview.instructorCount || 0 }}</div>
-              <div class="stat-label">讲师数量</div>
+    <!-- Recent Activity -->
+    <div class="card p-6">
+      <h3 class="text-lg font-semibold tracking-tight text-text-primary">Recent Activity</h3>
+      <div class="mt-4 inset-group">
+        <div v-for="(activity, index) in recentActivities" :key="index">
+          <div class="inset-item">
+            <div class="min-w-0">
+              <p class="text-sm text-text-primary truncate">{{ activity.message }}</p>
+              <p class="text-xs text-text-muted mt-1">{{ activity.time }}</p>
             </div>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card mini">
-          <div class="stat-content">
-            <div class="stat-info">
-              <div class="stat-value small">{{ overview.sessionCount || 0 }}</div>
-              <div class="stat-label">班期总数</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card mini">
-          <div class="stat-content">
-            <div class="stat-info">
-              <div class="stat-value small">{{ overview.monthlyEnrollmentCount || 0 }}</div>
-              <div class="stat-label">本月报名</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card mini quick-actions-card">
-          <div class="quick-btns">
-            <el-button type="primary" size="small" @click="$router.push('/admin/courses')">
-              <el-icon><Plus /></el-icon> 新增课程
-            </el-button>
-            <el-button type="success" size="small" @click="$router.push('/admin/sessions')">
-              <el-icon><Plus /></el-icon> 新增班期
-            </el-button>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 图表区域 -->
-    <el-row :gutter="20" class="charts-row">
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="chart-header">
-              <span>课程热度排行 TOP 10</span>
-            </div>
-          </template>
-          <div class="chart-container" ref="hotChartRef"></div>
-        </el-card>
-      </el-col>
-
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="chart-header">
-              <span>报名趋势</span>
-              <el-radio-group v-model="trendDays" size="small" @change="loadTrendData">
-                <el-radio-button :value="7">7天</el-radio-button>
-                <el-radio-button :value="30">30天</el-radio-button>
-              </el-radio-group>
-            </div>
-          </template>
-          <div class="chart-container" ref="trendChartRef"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+          <div v-if="index < recentActivities.length - 1" class="inset-divider"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { User, Reading, Calendar, Document, Plus } from '@element-plus/icons-vue'
-import { getStatsOverview, getCourseHotRanking, getEnrollmentTrend } from '@/api/stats'
 import * as echarts from 'echarts'
+import { Users, BookOpen, GraduationCap, BarChart3 } from 'lucide-vue-next'
 
-const overview = ref({})
-const courseHotData = ref([])
-const trendData = ref([])
-const trendDays = ref(7)
+// Stats Data
+const stats = [
+  { 
+    label: 'Total Students', 
+    value: '2,543', 
+    trend: 12.5, 
+    icon: Users
+  },
+  { 
+    label: 'Active Courses', 
+    value: '45', 
+    trend: 4.2, 
+    icon: BookOpen
+  },
+  { 
+    label: 'Course Completions', 
+    value: '1,201', 
+    trend: 8.1, 
+    icon: GraduationCap
+  },
+  { 
+    label: 'Total Revenue', 
+    value: '$45,231', 
+    trend: -2.4, 
+    icon: BarChart3
+  }
+]
 
-const hotChartRef = ref(null)
-const trendChartRef = ref(null)
-let hotChart = null
-let trendChart = null
+// Recent Activity Data
+const recentActivities = [
+  { message: 'New student registered: John Doe', time: '2 minutes ago' },
+  { message: 'Course "Vue.js Fundamentals" updated', time: '1 hour ago' },
+  { message: 'System maintenance scheduled', time: '3 hours ago' },
+  { message: 'New review posted for "Advanced React"', time: '5 hours ago' }
+]
 
-// 加载概览数据
-const loadOverview = async () => {
-  try {
-    const res = await getStatsOverview()
-    overview.value = res.data || {}
-  } catch (error) {
-    console.error('加载概览数据失败:', error)
+// Charts
+const enrollmentChartRef = ref(null)
+const courseChartRef = ref(null)
+let enrollmentChart = null
+let courseChart = null
+let themeObserver = null
+
+const normalizeRgb = (value, fallback) => {
+  const cleaned = (value || '').trim()
+  if (!cleaned) return fallback
+  return cleaned.replace(/\\s+/g, ' ')
+}
+
+const rgba = (rgb, alpha) => `rgba(${rgb.replace(/\\s+/g, ',')}, ${alpha})`
+
+const getThemeColors = () => {
+  const style = getComputedStyle(document.documentElement)
+  const primaryRgb = normalizeRgb(style.getPropertyValue('--primary-color-rgb'), '37 99 235')
+  const primaryLightRgb = normalizeRgb(style.getPropertyValue('--primary-light-rgb'), '59 130 246')
+  const infoRgb = normalizeRgb(style.getPropertyValue('--info-color-rgb'), primaryRgb)
+  const successRgb = normalizeRgb(style.getPropertyValue('--success-color-rgb'), '5 150 105')
+  const warningRgb = normalizeRgb(style.getPropertyValue('--warning-color-rgb'), '217 119 6')
+  const errorRgb = normalizeRgb(style.getPropertyValue('--error-color-rgb'), '220 38 38')
+  const textPrimaryRgb = normalizeRgb(style.getPropertyValue('--text-primary-rgb'), '17 24 39')
+  const textSecondaryRgb = normalizeRgb(style.getPropertyValue('--text-secondary-rgb'), '75 85 99')
+  const borderRgb = normalizeRgb(style.getPropertyValue('--border-color-rgb'), '229 231 235')
+  const bgSecondaryRgb = normalizeRgb(style.getPropertyValue('--bg-secondary-rgb'), '255 255 255')
+
+  return {
+    primaryRgb,
+    primaryLightRgb,
+    infoRgb,
+    successRgb,
+    warningRgb,
+    errorRgb,
+    textPrimaryRgb,
+    textSecondaryRgb,
+    borderRgb,
+    bgSecondaryRgb,
   }
 }
 
-// 加载课程热度数据
-const loadHotData = async () => {
-  try {
-    const res = await getCourseHotRanking(10)
-    courseHotData.value = res.data || []
-    renderHotChart()
-  } catch (error) {
-    console.error('加载课程热度失败:', error)
-  }
-}
+const initCharts = () => {
+  const {
+    primaryRgb,
+    primaryLightRgb,
+    infoRgb,
+    successRgb,
+    warningRgb,
+    errorRgb,
+    textPrimaryRgb,
+    textSecondaryRgb,
+    borderRgb,
+    bgSecondaryRgb,
+  } = getThemeColors()
 
-// 加载趋势数据
-const loadTrendData = async () => {
-  try {
-    const res = await getEnrollmentTrend(trendDays.value)
-    trendData.value = res.data || []
-    renderTrendChart()
-  } catch (error) {
-    console.error('加载报名趋势失败:', error)
-  }
-}
+  const primary = rgba(primaryRgb, 0.95)
+  const primarySoft = rgba(primaryRgb, 0.18)
+  const primaryLight = rgba(primaryLightRgb, 0.9)
+  const textColor = rgba(textPrimaryRgb, 1)
+  const textSecondary = rgba(textSecondaryRgb, 0.9)
+  const borderColor = rgba(borderRgb, 0.75)
+  const surface = rgba(bgSecondaryRgb, 0.92)
 
-// 渲染课程热度图表
-const renderHotChart = () => {
-  if (!hotChartRef.value) return
-
-  if (!hotChart) {
-    hotChart = echarts.init(hotChartRef.value)
-  }
-
-  const names = courseHotData.value.map(item => item.courseName)
-  const values = courseHotData.value.map(item => item.enrollmentCount)
-
-  const option = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' }
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'value'
-    },
-    yAxis: {
-      type: 'category',
-      data: names.reverse(),
-      axisLabel: {
-        width: 100,
-        overflow: 'truncate'
-      }
-    },
-    series: [{
-      name: '报名人数',
-      type: 'bar',
-      data: values.reverse(),
-      itemStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-          { offset: 0, color: '#667eea' },
-          { offset: 1, color: '#764ba2' }
-        ])
-      }
-    }]
-  }
-
-  hotChart.setOption(option)
-}
-
-// 渲染趋势图表
-const renderTrendChart = () => {
-  if (!trendChartRef.value) return
-
-  if (!trendChart) {
-    trendChart = echarts.init(trendChartRef.value)
-  }
-
-  const dates = trendData.value.map(item => item.date.substring(5)) // 只显示 MM-DD
-  const values = trendData.value.map(item => item.count)
-
-  const option = {
-    tooltip: {
-      trigger: 'axis'
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: dates
-    },
-    yAxis: {
-      type: 'value',
-      minInterval: 1
-    },
-    series: [{
-      name: '报名数',
-      type: 'line',
-      smooth: true,
-      data: values,
-      areaStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-          { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
-        ])
+  // Enrollment Chart
+  if (enrollmentChartRef.value) {
+    enrollmentChart = echarts.init(enrollmentChartRef.value)
+    enrollmentChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'line' },
+        backgroundColor: surface,
+        borderColor: borderColor,
+        textStyle: { color: textColor },
       },
-      lineStyle: {
-        color: '#409EFF',
-        width: 2
+      grid: {
+        top: '10%',
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
       },
-      itemStyle: {
-        color: '#409EFF'
-      }
-    }]
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        axisLine: { lineStyle: { color: borderColor } },
+        axisLabel: { color: textSecondary }
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { color: borderColor } },
+        axisLabel: { color: textSecondary }
+      },
+      series: [{
+        name: 'Enrollments',
+        type: 'line',
+        smooth: true,
+        data: [120, 132, 101, 134, 90, 230, 210],
+        itemStyle: { color: primary },
+        lineStyle: { color: primary, width: 2 },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: primarySoft },
+            { offset: 1, color: rgba(primaryRgb, 0.0) },
+          ])
+        }
+      }]
+    })
   }
 
-  trendChart.setOption(option)
+  // Course Chart
+  if (courseChartRef.value) {
+    courseChart = echarts.init(courseChartRef.value)
+    courseChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: surface,
+        borderColor: borderColor,
+        textStyle: { color: textColor }
+      },
+      legend: {
+        bottom: '0%',
+        textStyle: { color: textSecondary }
+      },
+      series: [{
+        name: 'Popular Courses',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: surface,
+          borderWidth: 2
+        },
+        label: { show: false },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: '16',
+            fontWeight: 'bold',
+            color: textColor
+          }
+        },
+        color: [primaryLight, rgba(infoRgb, 0.9), rgba(successRgb, 0.9), rgba(warningRgb, 0.9), rgba(errorRgb, 0.9)],
+        data: [
+          { value: 1048, name: 'Vue.js' },
+          { value: 735, name: 'React' },
+          { value: 580, name: 'TypeScript' },
+          { value: 484, name: 'Node.js' },
+          { value: 300, name: 'Python' }
+        ]
+      }]
+    })
+  }
 }
 
-// 窗口大小变化时重绘图表
 const handleResize = () => {
-  hotChart?.resize()
-  trendChart?.resize()
+  enrollmentChart?.resize()
+  courseChart?.resize()
 }
 
-onMounted(async () => {
-  await loadOverview()
-  await nextTick()
-  loadHotData()
-  loadTrendData()
+onMounted(() => {
+  initCharts()
   window.addEventListener('resize', handleResize)
+  themeObserver = new MutationObserver(() => {
+    nextTick(() => {
+      enrollmentChart?.dispose()
+      courseChart?.dispose()
+      initCharts()
+    })
+  })
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  hotChart?.dispose()
-  trendChart?.dispose()
+  themeObserver?.disconnect()
+  enrollmentChart?.dispose()
+  courseChart?.dispose()
 })
 </script>
-
-<style scoped>
-.dashboard {
-  padding: 0;
-}
-
-.stat-card {
-  margin-bottom: 20px;
-}
-
-.stat-card.mini {
-  height: 80px;
-}
-
-.stat-card.mini :deep(.el-card__body) {
-  padding: 15px;
-}
-
-.stat-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.stat-value.small {
-  font-size: 22px;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 5px;
-}
-
-.stat-icon {
-  font-size: 48px;
-  opacity: 0.8;
-}
-
-.second-row {
-  margin-top: -5px;
-}
-
-.quick-actions-card {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.quick-btns {
-  display: flex;
-  gap: 10px;
-}
-
-.charts-row {
-  margin-top: 5px;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chart-container {
-  height: 350px;
-}
-</style>

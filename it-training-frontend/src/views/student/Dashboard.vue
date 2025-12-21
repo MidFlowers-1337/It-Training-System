@@ -1,637 +1,461 @@
 <template>
-  <div class="student-dashboard">
-    <!-- 欢迎区域 -->
-    <el-card class="welcome-card">
-      <div class="welcome-content">
-        <div class="user-greeting">
-          <h2>👋 欢迎回来，{{ userInfo.realName }}！</h2>
-          <div class="today-stats">
-            <div class="stat-item">
-              <span class="stat-label">今日已学习</span>
-              <span class="stat-value">{{ todayStats.studyMinutes }} 分钟</span>
+  <div class="max-w-7xl mx-auto px-4 md:px-8 py-8">
+    <div v-loading="loading" class="space-y-10">
+      <!-- Hero -->
+      <section
+        class="relative overflow-hidden rounded-3xl border border-border-color/60 bg-bg-secondary/70 backdrop-blur-xl shadow-sm"
+      >
+        <div class="absolute inset-0 pointer-events-none" style="background: var(--gradient-hero)"></div>
+
+        <div class="relative p-6 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div class="lg:col-span-8">
+            <div class="flex items-start gap-4">
+              <div
+                class="w-11 h-11 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0"
+              >
+                <Sparkles class="w-5 h-5" />
+              </div>
+
+              <div class="min-w-0">
+                <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-text-primary">
+                  欢迎回来，{{ userInfo.realName || userInfo.username }}。
+                </h1>
+                <p class="mt-2 text-text-secondary">继续你的学习旅程，保持节奏。</p>
+              </div>
             </div>
-            <div class="stat-item streak">
-              <el-icon><Sunny /></el-icon>
-              <span class="stat-value">连续 {{ todayStats.streakDays }} 天</span>
+
+            <div class="mt-6 flex flex-wrap gap-3">
+              <div class="flex items-center gap-3 rounded-2xl bg-bg-primary/40 border border-border-color/60 px-4 py-3">
+                <Clock class="w-4 h-4 text-primary" />
+                <div class="leading-tight">
+                  <div class="text-xs text-text-muted">今日学习</div>
+                  <div class="text-sm font-semibold text-text-primary tabular-nums">{{ todayStats.studyMinutes }} 分钟</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 rounded-2xl bg-bg-primary/40 border border-border-color/60 px-4 py-3">
+                <Flame class="w-4 h-4 text-primary" />
+                <div class="leading-tight">
+                  <div class="text-xs text-text-muted">连续打卡</div>
+                  <div class="text-sm font-semibold text-text-primary tabular-nums">{{ todayStats.streakDays }} 天</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 rounded-2xl bg-bg-primary/40 border border-border-color/60 px-4 py-3">
+                <BadgeCheck class="w-4 h-4" :class="todayStats.checkedIn ? 'text-success' : 'text-warning'" />
+                <div class="leading-tight">
+                  <div class="text-xs text-text-muted">今日状态</div>
+                  <div class="text-sm font-semibold" :class="todayStats.checkedIn ? 'text-success' : 'text-warning'">
+                    {{ todayStats.checkedIn ? '已打卡' : '未打卡' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 flex flex-wrap gap-3">
+              <button type="button" class="btn btn-primary" :disabled="todayStats.checkedIn" @click="checkin">
+                {{ todayStats.checkedIn ? '今日已打卡' : '学习打卡' }}
+              </button>
+              <button type="button" class="btn btn-secondary" @click="goToLearningPlan">学习计划</button>
+              <button type="button" class="btn btn-ghost" @click="router.push('/courses')">浏览课程</button>
             </div>
           </div>
-          <div class="quick-actions">
-            <el-button type="primary" @click="checkin" :disabled="todayStats.checkedIn">
-              {{ todayStats.checkedIn ? '✓ 今日已打卡' : '学习打卡' }}
-            </el-button>
-            <el-button @click="goToLearningPlan">学习计划</el-button>
+
+          <div class="lg:col-span-4 flex items-center justify-center lg:justify-end">
+            <div class="text-center">
+              <ProgressRing :percentage="expPercentage" :size="140" type="primary">
+                <div class="flex flex-col items-center justify-center">
+                  <span class="text-3xl font-bold text-text-primary tabular-nums">{{ userInfo.level }}</span>
+                  <span class="text-[10px] tracking-widest text-text-muted font-semibold mt-1">LEVEL</span>
+                </div>
+              </ProgressRing>
+
+              <div class="mt-4 text-xs text-text-muted">
+                <div class="font-medium text-text-secondary tabular-nums">
+                  {{ userInfo.experience }} / {{ userInfo.nextLevelExp }} 经验
+                </div>
+                <div class="mt-1">
+                  距离下一级还需
+                  <span class="font-semibold text-text-primary tabular-nums">{{ userInfo.nextLevelExp - userInfo.experience }}</span>
+                  经验
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="user-level">
-          <div class="level-badge">
-            <span class="level-text">Lv.{{ userInfo.level }}</span>
+      </section>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Main -->
+        <section class="lg:col-span-8 space-y-6">
+          <div v-if="continueLearning" class="card-hover p-6">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h2 class="text-lg font-semibold text-text-primary">继续学习</h2>
+                <p class="text-sm text-text-secondary mt-1">从上次的位置继续。</p>
+              </div>
+              <button type="button" class="btn btn-ghost" @click="continueCourse">
+                进入学习 <ArrowRight class="w-4 h-4 ml-1 inline" />
+              </button>
+            </div>
+
+            <div class="mt-5 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+              <div class="md:col-span-5">
+                <div class="relative overflow-hidden rounded-2xl border border-border-color/60 bg-bg-tertiary">
+                  <img
+                    :src="continueLearning.coverImage || getDefaultCover()"
+                    class="w-full aspect-video object-cover"
+                    alt="课程封面"
+                  />
+                </div>
+              </div>
+              <div class="md:col-span-7">
+                <h3 class="text-xl font-semibold text-text-primary">{{ continueLearning.courseName }}</h3>
+                <p class="mt-1 text-sm text-text-secondary">{{ continueLearning.currentChapter }}</p>
+
+                <div class="mt-4 flex items-center gap-3">
+                  <div class="h-2 flex-1 rounded-full bg-bg-tertiary overflow-hidden">
+                    <div
+                      class="h-full bg-gradient-to-r from-primary-light to-secondary rounded-full transition-[width] duration-300"
+                      :style="{ width: `${continueLearning.progressPercent}%` }"
+                    ></div>
+                  </div>
+                  <span class="text-xs font-semibold text-primary tabular-nums">{{ continueLearning.progressPercent }}%</span>
+                </div>
+
+                <div class="mt-5">
+                  <button type="button" class="btn btn-primary" @click="continueCourse">继续学习</button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="exp-progress">
-            <el-progress
-              :percentage="expPercentage"
-              :stroke-width="8"
-              :show-text="false"
+
+          <div class="card p-6">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h2 class="text-lg font-semibold text-text-primary">我的课程</h2>
+                <p class="text-sm text-text-secondary mt-1">快速返回你正在学习的内容。</p>
+              </div>
+              <button type="button" class="btn btn-ghost" @click="goToMyCourses">查看全部</button>
+            </div>
+
+            <div v-if="myCourses.length" class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                v-for="course in myCourses.slice(0, 4)"
+                :key="course.courseId"
+                type="button"
+                class="group text-left rounded-2xl border border-border-color/60 bg-bg-secondary/60 hover:bg-bg-secondary transition shadow-sm hover:shadow-md px-4 py-4 flex gap-4"
+                @click="goToCourse(course.courseId)"
+              >
+                <div class="w-16 h-16 rounded-2xl overflow-hidden border border-border-color/60 bg-bg-tertiary flex-shrink-0">
+                  <img :src="course.coverImage || getDefaultCover()" alt="课程封面" class="w-full h-full object-cover" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="text-sm font-semibold text-text-primary line-clamp-1">{{ course.courseName }}</div>
+                      <div class="mt-1 text-xs text-text-muted">{{ course.status }}</div>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border" :class="statusBadgeClass(course.status)">
+                      {{ course.progressPercent }}%
+                    </span>
+                  </div>
+                  <div class="mt-3 h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                    <div
+                      class="h-full bg-gradient-to-r from-primary-light to-secondary rounded-full"
+                      :style="{ width: `${course.progressPercent}%` }"
+                    ></div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <EmptyState
+              v-else
+              :icon="BookOpen"
+              title="暂无课程"
+              description="去课程中心选择一门你感兴趣的课程开始学习。"
+              action-text="去选课"
+              @action="router.push('/courses')"
             />
-            <span class="exp-text">{{ userInfo.experience }}/{{ userInfo.nextLevelExp }} 经验</span>
           </div>
-        </div>
+        </section>
+
+        <!-- Side -->
+        <aside class="lg:col-span-4 space-y-6">
+          <div class="card p-6">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h2 class="text-lg font-semibold text-text-primary">本周学习</h2>
+                <p class="text-sm text-text-secondary mt-1">学习时长趋势</p>
+              </div>
+              <div class="text-right">
+                <div class="text-2xl font-semibold text-text-primary tabular-nums">{{ weeklyStats.totalMinutes }}</div>
+                <div class="text-xs text-text-muted">分钟</div>
+              </div>
+            </div>
+
+            <div ref="weeklyChart" class="mt-4 h-56 w-full"></div>
+
+            <div class="mt-4 flex items-center justify-between text-xs text-text-muted">
+              <span>日均</span>
+              <span class="font-semibold text-text-primary tabular-nums">{{ Math.round(weeklyStats.totalMinutes / 7) }} 分钟</span>
+            </div>
+          </div>
+
+          <div class="card p-6">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h2 class="text-lg font-semibold text-text-primary">最近成就</h2>
+                <p class="text-sm text-text-secondary mt-1">记录你的进步</p>
+              </div>
+              <button type="button" class="btn btn-ghost" @click="goToAchievements">查看全部</button>
+            </div>
+
+            <div v-if="recentAchievements.length" class="mt-5 space-y-3">
+              <div
+                v-for="achievement in recentAchievements.slice(0, 5)"
+                :key="achievement.achievementId"
+                class="flex items-center gap-3 rounded-2xl bg-bg-tertiary/40 border border-border-color/60 px-4 py-3"
+              >
+                <div class="w-9 h-9 rounded-xl bg-bg-secondary/70 border border-border-color/60 flex items-center justify-center text-primary">
+                  <Award class="w-5 h-5" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm font-semibold text-text-primary line-clamp-1">{{ achievement.name }}</div>
+                  <div class="text-xs text-text-muted mt-0.5">{{ achievement.unlockedAt }}</div>
+                </div>
+              </div>
+            </div>
+
+            <EmptyState v-else :icon="Award" title="暂无成就" description="完成学习任务解锁成就徽章。" />
+          </div>
+        </aside>
       </div>
-    </el-card>
-
-    <el-row :gutter="20">
-      <!-- 左侧主要内容 -->
-      <el-col :xs="24" :lg="16">
-        <!-- 继续学习 -->
-        <el-card class="continue-learning-card" v-if="continueLearning">
-          <template #header>
-            <div class="card-header">
-              <span>📚 继续学习</span>
-            </div>
-          </template>
-          <div class="continue-learning-content" @click="continueCourse">
-            <img :src="continueLearning.coverImage" class="course-cover" />
-            <div class="course-info">
-              <h3>{{ continueLearning.courseName }}</h3>
-              <el-progress :percentage="continueLearning.progressPercent" />
-              <p class="current-chapter">{{ continueLearning.currentChapter }}</p>
-              <el-button type="primary" size="large">继续学习 →</el-button>
-            </div>
-          </div>
-        </el-card>
-
-        <!-- 我的课程 -->
-        <el-card class="my-courses-card">
-          <template #header>
-            <div class="card-header">
-              <span>🎯 我的课程 ({{ myCourses.length }})</span>
-              <el-button link @click="goToMyCourses">查看全部 →</el-button>
-            </div>
-          </template>
-          <div class="courses-grid">
-            <div
-              v-for="course in myCourses"
-              :key="course.courseId"
-              class="course-card"
-              @click="goToCourse(course.courseId)"
-            >
-              <img :src="course.coverImage" class="course-cover" />
-              <div class="course-details">
-                <h4>{{ course.courseName }}</h4>
-                <el-progress :percentage="course.progressPercent" :stroke-width="6" />
-                <el-tag :type="getStatusType(course.status)" size="small">
-                  {{ course.status }}
-                </el-tag>
-              </div>
-            </div>
-          </div>
-        </el-card>
-
-        <!-- 最近成就 -->
-        <el-card class="achievements-card">
-          <template #header>
-            <div class="card-header">
-              <span>🏆 最近成就</span>
-              <el-button link @click="goToAchievements">查看全部 →</el-button>
-            </div>
-          </template>
-          <div class="achievements-list">
-            <div
-              v-for="achievement in recentAchievements"
-              :key="achievement.achievementId"
-              class="achievement-item"
-            >
-              <span class="achievement-icon">{{ achievement.icon }}</span>
-              <div class="achievement-info">
-                <span class="achievement-name">{{ achievement.name }}</span>
-                <span class="achievement-time">{{ achievement.unlockedAt }}</span>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 右侧统计 -->
-      <el-col :xs="24" :lg="8">
-        <!-- 本周学习统计 -->
-        <el-card class="stats-card">
-          <template #header>
-            <span>📊 本周学习统计</span>
-          </template>
-          <div ref="weeklyChart" class="weekly-chart"></div>
-          <div class="stats-summary">
-            <div class="summary-item">
-              <span class="label">本周总计</span>
-              <span class="value">{{ weeklyStats.totalMinutes }} 分钟</span>
-            </div>
-            <div class="summary-item">
-              <span class="label">日均学习</span>
-              <span class="value">{{ Math.round(weeklyStats.totalMinutes / 7) }} 分钟</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Sunny } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { ArrowRight, Award, BadgeCheck, BookOpen, Clock, Flame, Sparkles } from 'lucide-vue-next'
+import { getStudentDashboard } from '@/api/student'
+import { checkin as learningCheckin } from '@/api/learning'
+import ProgressRing from '@/components/ProgressRing.vue'
+import EmptyState from '@/components/EmptyState.vue'
 
 const router = useRouter()
 
-// 模拟数据
+const loading = ref(true)
 const userInfo = ref({
-  username: 'student001',
-  realName: '张三',
-  level: 5,
-  experience: 1250,
-  nextLevelExp: 2000
+  username: '',
+  realName: '',
+  level: 1,
+  experience: 0,
+  nextLevelExp: 100,
 })
 
 const todayStats = ref({
-  studyMinutes: 30,
-  streakDays: 7,
-  checkedIn: false
+  studyMinutes: 0,
+  streakDays: 0,
+  checkedIn: false,
 })
 
-const continueLearning = ref({
-  courseId: 2,
-  courseName: 'Spring Boot 实战开发',
-  coverImage: 'https://via.placeholder.com/300x180?text=Spring+Boot',
-  progressPercent: 65,
-  currentChapter: '第3章：RESTful API 开发',
-  currentChapterId: 8
-})
+const continueLearning = ref(null)
 
 const weeklyStats = ref({
-  dailyMinutes: [30, 45, 60, 40, 55, 70, 50],
-  totalMinutes: 350
+  dailyMinutes: [0, 0, 0, 0, 0, 0, 0],
+  totalMinutes: 0,
 })
 
-const myCourses = ref([
-  {
-    courseId: 1,
-    courseName: 'Java 基础入门',
-    coverImage: 'https://via.placeholder.com/200x120?text=Java',
-    progressPercent: 45,
-    status: '进行中'
-  },
-  {
-    courseId: 2,
-    courseName: 'Spring Boot 实战',
-    coverImage: 'https://via.placeholder.com/200x120?text=Spring',
-    progressPercent: 65,
-    status: '进行中'
-  },
-  {
-    courseId: 3,
-    courseName: 'Vue 3 从入门到精通',
-    coverImage: 'https://via.placeholder.com/200x120?text=Vue3',
-    progressPercent: 80,
-    status: '进行中'
-  },
-  {
-    courseId: 4,
-    courseName: 'MySQL 数据库进阶',
-    coverImage: 'https://via.placeholder.com/200x120?text=MySQL',
-    progressPercent: 30,
-    status: '进行中'
-  }
-])
-
-const recentAchievements = ref([
-  {
-    achievementId: 1,
-    name: '连续7天学习',
-    icon: '🔥🔥',
-    unlockedAt: '2小时前'
-  },
-  {
-    achievementId: 2,
-    name: '完成首个课程',
-    icon: '🎓',
-    unlockedAt: '1天前'
-  },
-  {
-    achievementId: 3,
-    name: '学习10小时',
-    icon: '⏱️',
-    unlockedAt: '3天前'
-  },
-  {
-    achievementId: 4,
-    name: '优秀学员',
-    icon: '⭐',
-    unlockedAt: '5天前'
-  }
-])
-
+const myCourses = ref([])
+const recentAchievements = ref([])
 const weeklyChart = ref(null)
 let chartInstance = null
+let themeObserver = null
 
 const expPercentage = computed(() => {
   return Math.round((userInfo.value.experience / userInfo.value.nextLevelExp) * 100)
 })
 
-const getStatusType = (status) => {
-  const typeMap = {
-    '进行中': 'primary',
-    '已完成': 'success',
-    '未开始': 'info'
+const getDefaultCover = () => 'https://via.placeholder.com/400x240?text=Course'
+
+const statusBadgeClass = (status) => {
+  if (status === '已完成') return 'bg-success/10 text-success border-success/30'
+  if (status === '进行中') return 'bg-primary/10 text-primary border-primary/30'
+  if (status === '未开始') return 'bg-info/10 text-info border-info/30'
+  return 'bg-bg-secondary text-text-secondary border-border-color/60'
+}
+
+const loadDashboardData = async () => {
+  try {
+    loading.value = true
+    const res = await getStudentDashboard()
+
+    if (res.code === 200 && res.data) {
+      const data = res.data
+
+      if (data.userInfo) userInfo.value = data.userInfo
+      if (data.todayStats) todayStats.value = data.todayStats
+
+      continueLearning.value = data.continueLearning || null
+      if (data.weeklyStats) weeklyStats.value = data.weeklyStats
+
+      myCourses.value = data.myCourses || []
+      recentAchievements.value = data.recentAchievements || []
+
+      await nextTick()
+      initWeeklyChart()
+    }
+  } catch (error) {
+    console.error('加载 Dashboard 数据失败:', error)
+    ElMessage.error('加载数据失败，请刷新重试')
+  } finally {
+    loading.value = false
   }
-  return typeMap[status] || 'info'
 }
 
 const checkin = async () => {
   try {
-    // TODO: 调用打卡API
-    todayStats.value.checkedIn = true
-    todayStats.value.streakDays++
-    ElMessage.success(`打卡成功！连续学习 ${todayStats.value.streakDays} 天 🔥`)
+    const res = await learningCheckin({
+      studyMinutes: todayStats.value.studyMinutes || 0,
+      studyContent: '今日学习打卡',
+    })
+
+    if (res.code === 200 && res.data) {
+      let message = `打卡成功！连续学习 ${res.data.currentStreak || 0} 天`
+      if (res.data.newAchievementEarned && res.data.newAchievement) {
+        message += `\n解锁新成就：${res.data.newAchievement.name}`
+      }
+
+      ElMessage.success(message)
+      await loadDashboardData()
+    }
   } catch (error) {
-    ElMessage.error('打卡失败')
+    console.error('打卡失败:', error)
+    if (error.response?.data?.message) {
+      ElMessage.warning(error.response.data.message)
+      return
+    }
+    ElMessage.error(error.message || '打卡失败')
   }
 }
 
 const continueCourse = () => {
-  router.push(`/student/course/${continueLearning.value.courseId}/study`)
+  if (!continueLearning.value) return
+  router.push(`/course/${continueLearning.value.courseId}/study`)
 }
 
 const goToCourse = (courseId) => {
-  router.push(`/student/course/${courseId}/study`)
+  router.push(`/course/${courseId}/study`)
 }
 
 const goToMyCourses = () => {
-  router.push('/student/my-courses')
+  router.push('/my-courses')
 }
 
 const goToLearningPlan = () => {
-  router.push('/student/learning-plan')
+  router.push('/learning-plan')
 }
 
 const goToAchievements = () => {
-  router.push('/student/achievements')
+  router.push('/achievements')
 }
 
 const initWeeklyChart = () => {
   if (!weeklyChart.value) return
 
+  const style = getComputedStyle(document.documentElement)
+
+  const readRgb = (name, fallback = '0 0 0') => style.getPropertyValue(name).trim() || fallback
+  const toRgb = (rgb) => {
+    const [r, g, b] = rgb.split(/\s+/).map((value) => Number(value))
+    if (![r, g, b].every(Number.isFinite)) return 'rgb(0, 0, 0)'
+    return `rgb(${r}, ${g}, ${b})`
+  }
+
+  const primaryRgb = readRgb('--primary-color-rgb', '79 70 229')
+  const textPrimary = toRgb(readRgb('--text-primary-rgb', '17 24 39'))
+  const textMuted = toRgb(readRgb('--text-muted-rgb', '107 114 128'))
+  const border = toRgb(readRgb('--border-color-rgb', '229 231 235'))
+  const grid = toRgb(readRgb('--border-light-rgb', '243 244 246'))
+  const surface = toRgb(readRgb('--bg-secondary-rgb', '255 255 255'))
+  const primary = toRgb(primaryRgb)
+
+  const [r, g, b] = primaryRgb.split(/\s+/).map(Number)
+  const areaTop = `rgba(${r}, ${g}, ${b}, 0.22)`
+  const areaBottom = `rgba(${r}, ${g}, ${b}, 0.02)`
+
+  if (chartInstance) chartInstance.dispose()
   chartInstance = echarts.init(weeklyChart.value)
 
-  const option = {
+  chartInstance.setOption({
     tooltip: {
       trigger: 'axis',
-      formatter: '{b}: {c} 分钟'
+      formatter: '{b}: {c} 分钟',
+      backgroundColor: surface,
+      borderColor: border,
+      borderWidth: 1,
+      textStyle: { color: textPrimary },
     },
     xAxis: {
       type: 'category',
       data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-      axisLine: {
-        lineStyle: {
-          color: '#ddd'
-        }
-      }
+      axisLine: { lineStyle: { color: border } },
+      axisLabel: { color: textMuted, fontSize: 12 },
     },
     yAxis: {
       type: 'value',
       name: '分钟',
-      axisLine: {
-        lineStyle: {
-          color: '#ddd'
-        }
-      }
+      nameTextStyle: { color: textMuted, fontSize: 12 },
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: textMuted, fontSize: 12 },
+      splitLine: { lineStyle: { color: grid, type: 'dashed' } },
     },
     series: [
       {
         data: weeklyStats.value.dailyMinutes,
         type: 'line',
         smooth: true,
+        showSymbol: false,
         areaStyle: {
-          color: 'rgba(64, 158, 255, 0.2)'
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: areaTop },
+            { offset: 1, color: areaBottom },
+          ]),
         },
-        itemStyle: {
-          color: '#409eff'
-        },
-        lineStyle: {
-          width: 3
-        }
-      }
+        itemStyle: { color: primary },
+        lineStyle: { width: 2, color: primary },
+      },
     ],
-    grid: {
-      left: '10%',
-      right: '5%',
-      bottom: '10%',
-      top: '15%'
-    }
-  }
-
-  chartInstance.setOption(option)
+    grid: { left: '10%', right: '6%', bottom: '12%', top: '14%' },
+  })
 }
+
+const handleResize = () => chartInstance?.resize()
 
 onMounted(async () => {
-  await nextTick()
-  initWeeklyChart()
+  await loadDashboardData()
+  window.addEventListener('resize', handleResize)
 
-  // 响应式处理
-  window.addEventListener('resize', () => {
-    if (chartInstance) {
-      chartInstance.resize()
-    }
+  themeObserver = new MutationObserver(() => {
+    initWeeklyChart()
+  })
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme'],
   })
 })
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  themeObserver?.disconnect()
+  themeObserver = null
+  chartInstance?.dispose()
+  chartInstance = null
+})
 </script>
-
-<style scoped>
-.student-dashboard {
-  padding: 20px;
-  background: #f5f7fa;
-  min-height: 100vh;
-}
-
-/* 欢迎卡片 */
-.welcome-card {
-  margin-bottom: 20px;
-}
-
-.welcome-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-
-.user-greeting h2 {
-  margin: 0 0 16px 0;
-  font-size: 24px;
-  color: #303133;
-}
-
-.today-stats {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 16px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.stat-item.streak {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  color: #f56c6c;
-  font-weight: 600;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-}
-
-.stat-value {
-  font-size: 20px;
-  font-weight: 600;
-  color: #409eff;
-}
-
-.quick-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.user-level {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.level-badge {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.level-text {
-  font-size: 24px;
-  font-weight: 700;
-  color: white;
-}
-
-.exp-progress {
-  width: 150px;
-  text-align: center;
-}
-
-.exp-text {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
-  display: block;
-}
-
-/* 继续学习卡片 */
-.continue-learning-card {
-  margin-bottom: 20px;
-}
-
-.continue-learning-content {
-  display: flex;
-  gap: 20px;
-  cursor: pointer;
-  transition: transform 0.3s;
-}
-
-.continue-learning-content:hover {
-  transform: translateY(-4px);
-}
-
-.continue-learning-content .course-cover {
-  width: 200px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.course-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.course-info h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.current-chapter {
-  color: #606266;
-  font-size: 14px;
-  margin: 0;
-}
-
-/* 我的课程 */
-.my-courses-card {
-  margin-bottom: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.courses-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.course-card {
-  cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #f5f7fa;
-}
-
-.course-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.course-card .course-cover {
-  width: 100%;
-  height: 120px;
-  object-fit: cover;
-}
-
-.course-details {
-  padding: 12px;
-}
-
-.course-details h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* 成就列表 */
-.achievements-card {
-  margin-bottom: 20px;
-}
-
-.achievements-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.achievement-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
-}
-
-.achievement-icon {
-  font-size: 32px;
-}
-
-.achievement-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.achievement-name {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.achievement-time {
-  font-size: 12px;
-  color: #909399;
-}
-
-/* 统计卡片 */
-.stats-card {
-  margin-bottom: 20px;
-}
-
-.weekly-chart {
-  width: 100%;
-  height: 200px;
-}
-
-.stats-summary {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #ebeef5;
-}
-
-.summary-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.summary-item .label {
-  font-size: 12px;
-  color: #909399;
-}
-
-.summary-item .value {
-  font-size: 18px;
-  font-weight: 600;
-  color: #409eff;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .welcome-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .user-level {
-    align-self: center;
-  }
-
-  .continue-learning-content {
-    flex-direction: column;
-  }
-
-  .continue-learning-content .course-cover {
-    width: 100%;
-  }
-
-  .courses-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .achievements-list {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

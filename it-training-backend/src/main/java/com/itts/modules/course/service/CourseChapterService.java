@@ -33,4 +33,14 @@ public interface CourseChapterService {
      * @param userId 用户ID
      */
     void markChapterCompleted(Long chapterId, Long userId);
+
+    /**
+     * 更新章节观看进度
+     *
+     * @param chapterId 章节ID
+     * @param userId 用户ID
+     * @param watchDuration 观看时长（秒）
+     * @param lastPosition 最后观看位置（秒）
+     */
+    void updateChapterProgress(Long chapterId, Long userId, Integer watchDuration, Integer lastPosition);
 }

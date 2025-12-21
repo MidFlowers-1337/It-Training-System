@@ -1,413 +1,293 @@
 <template>
-  <div class="achievements-page">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h1>🏆 我的成就</h1>
-      <p class="subtitle">记录你的学习里程碑</p>
+  <div class="page">
+    <!-- Hero -->
+    <section class="page-hero glass p-8 md:p-10">
+      <div class="absolute inset-0 pointer-events-none" style="background: var(--gradient-hero)"></div>
+      <div class="relative flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+        <div class="max-w-2xl">
+          <p class="inline-flex items-center gap-2 text-sm text-text-secondary">
+            <Award class="w-4 h-4 text-primary" />
+            我的成就
+          </p>
+          <h1 class="mt-3 text-3xl md:text-5xl font-semibold tracking-tight text-text-primary">记录里程碑，见证成长</h1>
+          <p class="mt-2 text-sm md:text-base text-text-secondary">
+            用积分与徽章把学习过程可视化，保持节奏，持续进步。
+          </p>
+
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <span class="badge badge-secondary">等级 {{ currentLevel }} · {{ levelTitle }}</span>
+            <span class="badge badge-secondary">总积分 {{ totalPoints }}</span>
+            <span v-if="pointsToNextLevel > 0" class="badge badge-secondary">距下一级 {{ pointsToNextLevel }} 分</span>
+          </div>
+
+          <div class="mt-5">
+            <div class="flex items-center justify-between text-xs text-text-muted mb-2">
+              <span>等级进度</span>
+              <span class="font-medium text-text-primary">{{ levelProgress }}%</span>
+            </div>
+            <div class="h-2 rounded-full bg-bg-tertiary/70 overflow-hidden">
+              <div class="h-full bg-primary/80 rounded-full transition-all duration-500" :style="{ width: levelProgress + '%' }"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 w-full lg:w-auto">
+          <div class="card p-5 text-center">
+            <p class="text-xs text-text-muted">已获得</p>
+            <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ earnedCount }}</p>
+          </div>
+          <div class="card p-5 text-center">
+            <p class="text-xs text-text-muted">总成就</p>
+            <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ totalCount }}</p>
+          </div>
+          <div class="card p-5 text-center">
+            <p class="text-xs text-text-muted">完成率</p>
+            <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ completionRate }}%</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <div class="flex items-center justify-between gap-6">
+      <div class="segmented">
+        <button
+          v-for="cat in categories"
+          :key="cat.value"
+          type="button"
+          class="segmented-item"
+          :class="{ 'is-active': activeCategory === cat.value }"
+          @click="activeCategory = cat.value"
+        >
+          <component :is="cat.icon" class="w-4 h-4 mr-2 inline-block" />
+          {{ cat.label }}
+        </button>
+      </div>
     </div>
 
-    <!-- 成就统计 -->
-    <div class="stats-bar">
-      <div class="stat-item">
-        <span class="stat-value">{{ earnedCount }}</span>
-        <span class="stat-label">已获得</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-value">{{ totalCount }}</span>
-        <span class="stat-label">总成就</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-value">{{ totalPoints }}</span>
-        <span class="stat-label">总积分</span>
-      </div>
-    </div>
-
-    <!-- 成就分类标签 -->
-    <div class="category-tabs">
-      <button 
-        v-for="cat in categories" 
-        :key="cat.value"
-        class="tab-btn"
-        :class="{ active: activeCategory === cat.value }"
-        @click="activeCategory = cat.value"
+    <!-- Grid -->
+    <div v-if="filteredAchievements.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <button
+        v-for="achievement in filteredAchievements"
+        :key="achievement.id"
+        type="button"
+        class="card-hover p-6 text-left"
+        :class="achievement.earned ? 'border-success/30' : 'opacity-90'"
+        @click="openDetail(achievement)"
       >
-        {{ cat.icon }} {{ cat.label }}
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex items-start gap-4 min-w-0">
+            <div
+              class="w-12 h-12 rounded-2xl flex items-center justify-center border"
+              :class="achievement.earned ? 'bg-success/10 border-success/20 text-success' : 'bg-bg-tertiary/60 border-border-color/60 text-text-muted'"
+            >
+              <component :is="getCategoryIcon(achievement.category)" class="w-6 h-6" />
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-base font-semibold text-text-primary truncate">{{ achievement.name }}</h3>
+              <p class="mt-1 text-sm text-text-secondary line-clamp-2">{{ achievement.description }}</p>
+            </div>
+          </div>
+
+          <div v-if="achievement.earned" class="flex-shrink-0 w-8 h-8 rounded-full bg-success/10 border border-success/20 flex items-center justify-center">
+            <CheckCircle2 class="w-5 h-5 text-success" />
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between gap-4 text-sm">
+          <span class="badge badge-secondary">+{{ achievement.points || 0 }} 分</span>
+          <span v-if="achievement.earnedAt" class="text-text-muted">{{ formatDate(achievement.earnedAt) }}</span>
+        </div>
+
+        <div v-if="!achievement.earned" class="mt-4">
+          <div class="flex items-center justify-between text-xs text-text-muted mb-2">
+            <span>进度</span>
+            <span class="font-medium text-text-primary">
+              {{ achievement.currentProgress || 0 }} / {{ achievement.conditionValue || 0 }}
+            </span>
+          </div>
+          <div class="h-2 rounded-full bg-bg-tertiary/70 overflow-hidden">
+            <div
+              class="h-full bg-primary/80 rounded-full transition-all duration-500"
+              :style="{ width: getProgressPercent(achievement) + '%' }"
+            ></div>
+          </div>
+        </div>
       </button>
     </div>
 
-    <!-- 成就列表 -->
-    <div class="achievements-grid">
-      <div 
-        v-for="achievement in filteredAchievements" 
-        :key="achievement.id"
-        class="achievement-card"
-        :class="{ earned: achievement.earned, locked: !achievement.earned }"
-      >
-        <div class="achievement-icon">
-          {{ achievement.icon || getDefaultIcon(achievement.category) }}
+    <EmptyState v-else :icon="Award" title="暂无成就数据" description="稍后再来看看，学习过程中会不断解锁新成就。" />
+
+    <!-- Detail -->
+    <el-dialog v-model="detailVisible" width="520px" :show-close="true">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-2xl flex items-center justify-center border"
+            :class="
+              selectedAchievement?.earned
+                ? 'bg-success/10 border-success/20 text-success'
+                : 'bg-bg-tertiary/60 border-border-color/60 text-text-muted'
+            "
+          >
+            <component :is="getCategoryIcon(selectedAchievement?.category)" class="w-5 h-5" />
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-text-primary truncate">{{ selectedAchievement?.name || '成就详情' }}</p>
+            <p class="text-xs text-text-muted truncate">{{ selectedAchievement?.category || '—' }}</p>
+          </div>
         </div>
-        <div class="achievement-content">
-          <h3>{{ achievement.name }}</h3>
-          <p class="description">{{ achievement.description }}</p>
-          <div class="achievement-meta">
-            <span class="points">+{{ achievement.points }} 积分</span>
-            <span v-if="achievement.earned" class="earned-date">
-              {{ formatDate(achievement.earnedAt) }} 获得
+      </template>
+
+      <div class="space-y-4">
+        <p class="text-sm text-text-secondary leading-relaxed">{{ selectedAchievement?.description || '—' }}</p>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="badge badge-secondary">+{{ selectedAchievement?.points || 0 }} 分</span>
+          <span v-if="selectedAchievement?.earned" class="badge badge-secondary">已获得</span>
+          <span v-else class="badge badge-secondary">未获得</span>
+        </div>
+
+        <div v-if="selectedAchievement && !selectedAchievement.earned">
+          <div class="flex items-center justify-between text-xs text-text-muted mb-2">
+            <span>进度</span>
+            <span class="font-medium text-text-primary">
+              {{ selectedAchievement.currentProgress || 0 }} / {{ selectedAchievement.conditionValue || 0 }}
             </span>
           </div>
-          <!-- 进度条（未获得时显示） -->
-          <div v-if="!achievement.earned" class="progress-section">
-            <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: achievement.progressPercent + '%' }"></div>
-            </div>
-            <span class="progress-text">{{ achievement.currentProgress }}/{{ achievement.conditionValue }}</span>
+          <div class="h-2 rounded-full bg-bg-tertiary/70 overflow-hidden">
+            <div
+              class="h-full bg-primary/80 rounded-full transition-all duration-500"
+              :style="{ width: getProgressPercent(selectedAchievement) + '%' }"
+            ></div>
           </div>
         </div>
-        <div v-if="achievement.earned" class="earned-badge">
-          ✓
+
+        <div v-else-if="selectedAchievement?.earnedAt" class="text-sm text-text-muted">
+          获得时间：{{ formatDate(selectedAchievement.earnedAt) }}
         </div>
       </div>
-    </div>
 
-    <!-- 空状态 -->
-    <div v-if="filteredAchievements.length === 0" class="empty-state">
-      <div class="empty-icon">🎯</div>
-      <p>该分类暂无成就</p>
-    </div>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
-<script>
-import { ref, computed, onMounted } from 'vue'
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+import { Award, BookOpenCheck, CheckCircle2, Clock, Flame, Grid3X3 } from 'lucide-vue-next'
 import { getAllAchievements, getAchievementPoints } from '@/api/learning'
+import EmptyState from '@/components/EmptyState.vue'
 
-export default {
-  name: 'Achievements',
-  setup() {
-    const achievements = ref([])
-    const totalPoints = ref(0)
-    const activeCategory = ref('all')
-    
-    const categories = [
-      { value: 'all', label: '全部', icon: '📋' },
-      { value: 'streak', label: '连续学习', icon: '🔥' },
-      { value: 'course', label: '课程完成', icon: '📚' },
-      { value: 'general', label: '学习时长', icon: '⏱️' }
-    ]
-    
-    const earnedCount = computed(() => {
-      return achievements.value.filter(a => a.earned).length
-    })
-    
-    const totalCount = computed(() => {
-      return achievements.value.length
-    })
-    
-    const filteredAchievements = computed(() => {
-      if (activeCategory.value === 'all') {
-        return achievements.value
-      }
-      return achievements.value.filter(a => a.category === activeCategory.value)
-    })
-    
-    const getDefaultIcon = (category) => {
-      const icons = {
-        streak: '🔥',
-        course: '📚',
-        general: '⭐',
-        skill: '💡'
-      }
-      return icons[category] || '🎖️'
-    }
-    
-    const formatDate = (dateStr) => {
-      if (!dateStr) return ''
-      const date = new Date(dateStr)
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-    }
-    
-    const loadAchievements = async () => {
-      try {
-        const res = await getAllAchievements()
-        if (res.code === 200) {
-          achievements.value = res.data || []
-        }
-      } catch (error) {
-        console.error('加载成就失败:', error)
-      }
-    }
-    
-    const loadPoints = async () => {
-      try {
-        const res = await getAchievementPoints()
-        if (res.code === 200) {
-          totalPoints.value = res.data || 0
-        }
-      } catch (error) {
-        console.error('加载积分失败:', error)
-      }
-    }
-    
-    onMounted(() => {
-      loadAchievements()
-      loadPoints()
-    })
-    
-    return {
-      achievements,
-      totalPoints,
-      activeCategory,
-      categories,
-      earnedCount,
-      totalCount,
-      filteredAchievements,
-      getDefaultIcon,
-      formatDate
-    }
+const achievements = ref([])
+const totalPoints = ref(0)
+const activeCategory = ref('all')
+const selectedAchievement = ref(null)
+const detailVisible = ref(false)
+
+const categories = [
+  { value: 'all', label: '全部', icon: Grid3X3 },
+  { value: 'streak', label: '连续学习', icon: Flame },
+  { value: 'course', label: '课程完成', icon: BookOpenCheck },
+  { value: 'general', label: '学习时长', icon: Clock },
+]
+
+const levelThresholds = [
+  { level: 1, points: 0, title: '初学者' },
+  { level: 2, points: 100, title: '学徒' },
+  { level: 3, points: 300, title: '熟练者' },
+  { level: 4, points: 600, title: '专家' },
+  { level: 5, points: 1000, title: '大师' },
+  { level: 6, points: 1500, title: '宗师' },
+  { level: 7, points: 2500, title: '传奇' },
+]
+
+const earnedCount = computed(() => achievements.value.filter((a) => a.earned).length)
+const totalCount = computed(() => achievements.value.length)
+const completionRate = computed(() => (totalCount.value ? Math.round((earnedCount.value / totalCount.value) * 100) : 0))
+
+const filteredAchievements = computed(() => {
+  if (activeCategory.value === 'all') return achievements.value
+  return achievements.value.filter((a) => a.category === activeCategory.value)
+})
+
+const currentLevel = computed(() => {
+  for (let i = levelThresholds.length - 1; i >= 0; i--) {
+    if (totalPoints.value >= levelThresholds[i].points) return levelThresholds[i].level
+  }
+  return 1
+})
+
+const levelTitle = computed(() => levelThresholds.find((l) => l.level === currentLevel.value)?.title || '初学者')
+
+const pointsToNextLevel = computed(() => {
+  const nextLevel = levelThresholds.find((l) => l.level === currentLevel.value + 1)
+  if (!nextLevel) return 0
+  return Math.max(0, nextLevel.points - totalPoints.value)
+})
+
+const levelProgress = computed(() => {
+  const currentLevelData = levelThresholds.find((l) => l.level === currentLevel.value)
+  const nextLevelData = levelThresholds.find((l) => l.level === currentLevel.value + 1)
+  if (!nextLevelData) return 100
+  const currentLevelPoints = currentLevelData.points
+  const nextLevelPoints = nextLevelData.points
+  const progress = totalPoints.value - currentLevelPoints
+  const total = nextLevelPoints - currentLevelPoints
+  return Math.max(0, Math.min(100, Math.round((progress / total) * 100)))
+})
+
+const getCategoryIcon = (category) => {
+  const map = {
+    streak: Flame,
+    course: BookOpenCheck,
+    general: Clock,
+  }
+  return map[category] || Award
+}
+
+const getProgressPercent = (achievement) => {
+  if (!achievement) return 0
+  if (achievement.progressPercent != null) return achievement.progressPercent
+  const total = Number(achievement.conditionValue || 0)
+  const current = Number(achievement.currentProgress || 0)
+  if (!total) return 0
+  return Math.max(0, Math.min(100, Math.round((current / total) * 100)))
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+const openDetail = (achievement) => {
+  selectedAchievement.value = achievement
+  detailVisible.value = true
+}
+
+const loadAchievements = async () => {
+  try {
+    const res = await getAllAchievements()
+    if (res.code === 200) achievements.value = res.data || []
+  } catch (error) {
+    console.error('加载成就失败:', error)
   }
 }
+
+const loadPoints = async () => {
+  try {
+    const res = await getAchievementPoints()
+    if (res.code === 200) totalPoints.value = res.data || 0
+  } catch (error) {
+    console.error('加载积分失败:', error)
+  }
+}
+
+onMounted(() => {
+  loadAchievements()
+  loadPoints()
+})
 </script>
-
-<style scoped>
-.achievements-page {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.page-header h1 {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
-}
-
-.page-header .subtitle {
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-/* 统计栏 */
-.stats-bar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 40px;
-  padding: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  margin-bottom: 32px;
-}
-
-.stat-item {
-  text-align: center;
-  color: white;
-}
-
-.stat-value {
-  display: block;
-  font-size: 36px;
-  font-weight: 700;
-}
-
-.stat-label {
-  font-size: 14px;
-  opacity: 0.9;
-}
-
-.stat-divider {
-  width: 1px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* 分类标签 */
-.category-tabs {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.tab-btn {
-  padding: 10px 20px;
-  border: none;
-  background: var(--bg-card);
-  border-radius: 20px;
-  font-size: 14px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: var(--shadow-sm);
-}
-
-.tab-btn:hover {
-  background: var(--bg-secondary);
-}
-
-.tab-btn.active {
-  background: linear-gradient(135deg, var(--primary-color), #667eea);
-  color: white;
-}
-
-/* 成就网格 */
-.achievements-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-}
-
-.achievement-card {
-  background: var(--bg-card);
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  gap: 16px;
-  position: relative;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.achievement-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.achievement-card.locked {
-  opacity: 0.7;
-}
-
-.achievement-card.earned {
-  border: 2px solid #38ef7d;
-}
-
-.achievement-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  background: var(--bg-secondary);
-  flex-shrink: 0;
-}
-
-.achievement-card.earned .achievement-icon {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-}
-
-.achievement-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.achievement-content h3 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.achievement-content .description {
-  margin: 0 0 12px 0;
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-.achievement-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 12px;
-}
-
-.points {
-  color: #f5a623;
-  font-weight: 600;
-}
-
-.earned-date {
-  color: var(--text-muted);
-}
-
-.progress-section {
-  margin-top: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.progress-bar {
-  flex: 1;
-  height: 6px;
-  background: var(--bg-secondary);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary-color), #667eea);
-  border-radius: 3px;
-  transition: width 0.3s;
-}
-
-.progress-text {
-  font-size: 12px;
-  color: var(--text-secondary);
-  min-width: 50px;
-}
-
-.earned-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-/* 空状态 */
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text-secondary);
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .stats-bar {
-    gap: 24px;
-    padding: 20px;
-  }
-  
-  .stat-value {
-    font-size: 28px;
-  }
-  
-  .achievements-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

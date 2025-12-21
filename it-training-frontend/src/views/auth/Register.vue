@@ -1,90 +1,93 @@
 <template>
-  <div class="register-container">
-    <el-card class="register-card">
-      <template #header>
-        <div class="card-header">
-          <h2>IT技能培训智能选课系统</h2>
-          <p>用户注册</p>
+  <div class="min-h-screen bg-bg-primary flex items-center justify-center px-4 py-10 transition-colors duration-300">
+    <div class="relative w-full max-w-md">
+      <div class="absolute inset-0 -z-10 blur-3xl opacity-60" style="background: var(--gradient-hero)"></div>
+
+      <div class="glass rounded-3xl border border-border-color/60 shadow-lg p-8 md:p-10">
+        <div class="flex flex-col items-center text-center">
+          <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <img src="@/assets/logo.svg" alt="Logo" class="w-8 h-8" />
+          </div>
+          <h1 class="mt-6 text-2xl font-semibold tracking-tight text-text-primary">Create Account</h1>
+          <p class="mt-2 text-sm text-text-secondary">Join our community and start learning today</p>
         </div>
-      </template>
 
-      <el-form :model="registerForm" :rules="rules" ref="registerFormRef">
-        <el-form-item prop="username">
-          <el-input
-            v-model="registerForm.username"
-            placeholder="请输入用户名（4-20位字母数字）"
-            prefix-icon="User"
-            size="large"
-          />
-        </el-form-item>
+        <el-form
+          ref="registerFormRef"
+          :model="registerForm"
+          :rules="rules"
+          label-position="top"
+          class="mt-8 space-y-5"
+          @submit.prevent
+        >
+          <el-form-item label="Username" prop="username">
+            <el-input v-model="registerForm.username" placeholder="4-20 characters" size="large">
+              <template #prefix>
+                <el-icon class="text-text-muted"><User /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item prop="realName">
-          <el-input
-            v-model="registerForm.realName"
-            placeholder="请输入真实姓名"
-            prefix-icon="UserFilled"
-            size="large"
-          />
-        </el-form-item>
+          <el-form-item label="Full Name" prop="realName">
+            <el-input v-model="registerForm.realName" placeholder="Your real name" size="large">
+              <template #prefix>
+                <el-icon class="text-text-muted"><UserFilled /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item prop="phone">
-          <el-input
-            v-model="registerForm.phone"
-            placeholder="请输入手机号"
-            prefix-icon="Phone"
-            size="large"
-          />
-        </el-form-item>
+          <el-form-item label="Phone Number" prop="phone">
+            <el-input v-model="registerForm.phone" placeholder="Mobile number" size="large">
+              <template #prefix>
+                <el-icon class="text-text-muted"><Phone /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item prop="email">
-          <el-input
-            v-model="registerForm.email"
-            placeholder="请输入邮箱（选填）"
-            prefix-icon="Message"
-            size="large"
-          />
-        </el-form-item>
+          <el-form-item label="Email (Optional)" prop="email">
+            <el-input v-model="registerForm.email" placeholder="email@example.com" size="large">
+              <template #prefix>
+                <el-icon class="text-text-muted"><Message /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item prop="password">
-          <el-input
-            v-model="registerForm.password"
-            type="password"
-            placeholder="请输入密码（6-20位）"
-            prefix-icon="Lock"
-            size="large"
-            show-password
-          />
-        </el-form-item>
+          <el-form-item label="Password" prop="password">
+            <el-input v-model="registerForm.password" type="password" placeholder="6-20 characters" size="large" show-password>
+              <template #prefix>
+                <el-icon class="text-text-muted"><Lock /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item prop="confirmPassword">
-          <el-input
-            v-model="registerForm.confirmPassword"
-            type="password"
-            placeholder="请确认密码"
-            prefix-icon="Lock"
-            size="large"
-            show-password
-            @keyup.enter="handleRegister"
-          />
-        </el-form-item>
+          <el-form-item label="Confirm Password" prop="confirmPassword">
+            <el-input
+              v-model="registerForm.confirmPassword"
+              type="password"
+              placeholder="Repeat password"
+              size="large"
+              show-password
+              @keyup.enter="handleRegister"
+            >
+              <template #prefix>
+                <el-icon class="text-text-muted"><Lock /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            style="width: 100%"
-            :loading="loading"
-            @click="handleRegister"
-          >
-            注册
+          <el-button type="primary" size="large" class="w-full !h-12 !text-base !font-bold mt-2" :loading="loading" @click="handleRegister">
+            Create Account
           </el-button>
-        </el-form-item>
+        </el-form>
 
-        <div class="links">
-          <router-link to="/login">已有账号？立即登录</router-link>
+        <div class="mt-6 text-center text-sm text-text-secondary">
+          Already have an account?
+          <router-link to="/login" class="text-primary hover:text-primary-light font-medium ml-1 transition-colors">
+            Sign in
+          </router-link>
         </div>
-      </el-form>
-    </el-card>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -92,6 +95,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { User, UserFilled, Phone, Message, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()
@@ -105,13 +109,12 @@ const registerForm = reactive({
   phone: '',
   email: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
-// 确认密码验证器
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== registerForm.password) {
-    callback(new Error('两次输入的密码不一致'))
+    callback(new Error('Passwords do not match'))
   } else {
     callback()
   }
@@ -119,85 +122,39 @@ const validateConfirmPassword = (rule, value, callback) => {
 
 const rules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 4, max: 20, message: '用户名长度为4-20位', trigger: 'blur' },
-    { pattern: /^[a-zA-Z0-9_]+$/, message: '用户名只能包含字母、数字和下划线', trigger: 'blur' }
+    { required: true, message: 'Please enter username', trigger: 'blur' },
+    { min: 4, max: 20, message: 'Length should be 4 to 20', trigger: 'blur' },
+    { pattern: /^[a-zA-Z0-9_]+$/, message: 'Letters, numbers and underscore only', trigger: 'blur' },
   ],
-  realName: [
-    { required: true, message: '请输入真实姓名', trigger: 'blur' }
-  ],
-  phone: [
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
-  ],
-  email: [
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
-  ],
+  realName: [{ required: true, message: 'Please enter your real name', trigger: 'blur' }],
+  phone: [{ pattern: /^1[3-9]\\d{9}$/, message: 'Invalid phone number', trigger: 'blur' }],
+  email: [{ type: 'email', message: 'Invalid email address', trigger: 'blur' }],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
+    { required: true, message: 'Please enter password', trigger: 'blur' },
+    { min: 6, max: 20, message: 'Length should be 6 to 20', trigger: 'blur' },
   ],
   confirmPassword: [
-    { required: true, message: '请确认密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: 'blur' }
-  ]
+    { required: true, message: 'Please confirm password', trigger: 'blur' },
+    { validator: validateConfirmPassword, trigger: 'blur' },
+  ],
 }
 
 const handleRegister = async () => {
-  const valid = await registerFormRef.value.validate()
-  if (!valid) return
+  if (!registerFormRef.value) return
 
-  loading.value = true
-  try {
-    await userStore.register(registerForm)
-    ElMessage.success('注册成功')
-    router.push('/home')
-  } catch (error) {
-    console.error('注册失败:', error)
-  } finally {
-    loading.value = false
-  }
+  await registerFormRef.value.validate(async (valid) => {
+    if (valid) {
+      loading.value = true
+      try {
+        await userStore.register(registerForm)
+        ElMessage.success('Registration successful')
+        router.push('/home')
+      } catch (error) {
+        console.error('Registration failed:', error)
+      } finally {
+        loading.value = false
+      }
+    }
+  })
 }
 </script>
-
-<style scoped>
-.register-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px 0;
-}
-
-.register-card {
-  width: 420px;
-}
-
-.card-header {
-  text-align: center;
-}
-
-.card-header h2 {
-  margin: 0 0 10px 0;
-  color: #303133;
-}
-
-.card-header p {
-  margin: 0;
-  color: #909399;
-}
-
-.links {
-  text-align: center;
-  margin-top: 10px;
-}
-
-.links a {
-  color: #409eff;
-  text-decoration: none;
-}
-
-.links a:hover {
-  text-decoration: underline;
-}
-</style>

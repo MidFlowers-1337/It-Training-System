@@ -1,256 +1,319 @@
 <template>
-  <div class="learning-report-page">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1>
-          <el-icon><DataAnalysis /></el-icon>
-          学习报告
-        </h1>
-        <p>查看您的学习数据分析和进度报告</p>
+  <div class="page" v-loading="loading">
+    <!-- Hero -->
+    <section class="page-hero glass p-8 md:p-10">
+      <div class="absolute inset-0 pointer-events-none" style="background: var(--gradient-hero)"></div>
+      <div class="relative flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div>
+          <p class="inline-flex items-center gap-2 text-sm text-text-secondary">
+            <BarChart3 class="w-4 h-4 text-primary" />
+            学习报告
+          </p>
+          <h1 class="mt-3 text-3xl md:text-5xl font-semibold tracking-tight text-text-primary">数据驱动成长</h1>
+          <p class="mt-2 text-sm md:text-base text-text-secondary">可视化你的学习轨迹与关键指标。</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="segmented w-full sm:w-auto">
+            <button
+              type="button"
+              class="segmented-item"
+              :class="{ 'is-active': reportType === 'weekly' }"
+              @click="reportType = 'weekly'"
+            >
+              周报
+            </button>
+            <button
+              type="button"
+              class="segmented-item"
+              :class="{ 'is-active': reportType === 'monthly' }"
+              @click="reportType = 'monthly'"
+            >
+              月报
+            </button>
+            <button
+              type="button"
+              class="segmented-item"
+              :class="{ 'is-active': reportType === 'yearly' }"
+              @click="reportType = 'yearly'"
+            >
+              年报
+            </button>
+          </div>
+
+          <el-date-picker
+            v-if="reportType === 'weekly'"
+            v-model="selectedWeek"
+            type="week"
+            format="YYYY 第 ww 周"
+            placeholder="选择周"
+            @change="loadReport"
+            class="w-full sm:w-44"
+          />
+          <el-date-picker
+            v-else-if="reportType === 'monthly'"
+            v-model="selectedMonth"
+            type="month"
+            format="YYYY年MM月"
+            placeholder="选择月份"
+            @change="loadReport"
+            class="w-full sm:w-40"
+          />
+          <el-date-picker
+            v-else
+            v-model="selectedYear"
+            type="year"
+            format="YYYY年"
+            placeholder="选择年份"
+            @change="loadReport"
+            class="w-full sm:w-32"
+          />
+        </div>
       </div>
-      
-      <!-- 报告类型选择 -->
-      <div class="report-selector">
-        <el-radio-group v-model="reportType" @change="loadReport">
-          <el-radio-button value="weekly">周报</el-radio-button>
-          <el-radio-button value="monthly">月报</el-radio-button>
-          <el-radio-button value="yearly">年报</el-radio-button>
-        </el-radio-group>
-        
-        <!-- 日期选择器 -->
-        <el-date-picker
-          v-if="reportType === 'weekly'"
-          v-model="selectedWeek"
-          type="week"
-          format="YYYY 第 ww 周"
-          placeholder="选择周"
-          @change="loadReport"
-        />
-        <el-date-picker
-          v-else-if="reportType === 'monthly'"
-          v-model="selectedMonth"
-          type="month"
-          format="YYYY年MM月"
-          placeholder="选择月份"
-          @change="loadReport"
-        />
-        <el-date-picker
-          v-else
-          v-model="selectedYear"
-          type="year"
-          format="YYYY年"
-          placeholder="选择年份"
-          @change="loadReport"
-        />
-      </div>
-    </div>
+    </section>
 
-    <div v-loading="loading" class="report-content">
-      <template v-if="report">
-        <!-- 概览卡片 -->
-        <div class="overview-section">
-          <div class="overview-card total-time">
-            <div class="card-icon">
-              <el-icon><Clock /></el-icon>
+    <template v-if="report">
+      <!-- KPI -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
+        <div class="card p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <Clock class="w-5 h-5" />
             </div>
-            <div class="card-content">
-              <span class="card-value">{{ formatMinutes(report.totalStudyMinutes) }}</span>
-              <span class="card-label">学习时长</span>
-              <span v-if="report.studyTimeChangePercent !== null" class="card-change" 
-                    :class="report.studyTimeChangePercent >= 0 ? 'positive' : 'negative'">
-                {{ report.studyTimeChangePercent >= 0 ? '+' : '' }}{{ report.studyTimeChangePercent }}%
-              </span>
+            <span v-if="report.studyTimeChangePercent !== null" class="badge badge-secondary">
+              <ArrowUp v-if="report.studyTimeChangePercent >= 0" class="w-4 h-4 mr-1 text-success" />
+              <ArrowDown v-else class="w-4 h-4 mr-1 text-error" />
+              {{ Math.abs(report.studyTimeChangePercent) }}%
+            </span>
+          </div>
+          <p class="mt-4 text-xs text-text-muted">学习时长</p>
+          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">
+            {{ formatMinutes(report.totalStudyMinutes) }}
+          </p>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <CalendarDays class="w-5 h-5" />
+            </div>
+            <span v-if="report.studyDaysChange !== null" class="badge badge-secondary">
+              <ArrowUp v-if="report.studyDaysChange >= 0" class="w-4 h-4 mr-1 text-success" />
+              <ArrowDown v-else class="w-4 h-4 mr-1 text-error" />
+              {{ Math.abs(report.studyDaysChange) }}
+            </span>
+          </div>
+          <p class="mt-4 text-xs text-text-muted">学习天数</p>
+          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.studyDays || 0 }}</p>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <CheckCircle2 class="w-5 h-5" />
+            </div>
+            <span v-if="report.completedCoursesChange !== null" class="badge badge-secondary">
+              <ArrowUp v-if="report.completedCoursesChange >= 0" class="w-4 h-4 mr-1 text-success" />
+              <ArrowDown v-else class="w-4 h-4 mr-1 text-error" />
+              {{ Math.abs(report.completedCoursesChange) }}
+            </span>
+          </div>
+          <p class="mt-4 text-xs text-text-muted">完成课程</p>
+          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.completedCourses || 0 }}</p>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <Award class="w-5 h-5" />
             </div>
           </div>
-          
-          <div class="overview-card study-days">
-            <div class="card-icon">
-              <el-icon><Calendar /></el-icon>
-            </div>
-            <div class="card-content">
-              <span class="card-value">{{ report.studyDays }}</span>
-              <span class="card-label">学习天数</span>
-              <span v-if="report.studyDaysChange !== null" class="card-change"
-                    :class="report.studyDaysChange >= 0 ? 'positive' : 'negative'">
-                {{ report.studyDaysChange >= 0 ? '+' : '' }}{{ report.studyDaysChange }}天
-              </span>
+          <p class="mt-4 text-xs text-text-muted">获得成就</p>
+          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.earnedAchievements || 0 }}</p>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <Flame class="w-5 h-5" />
             </div>
           </div>
-          
-          <div class="overview-card completed">
-            <div class="card-icon">
-              <el-icon><CircleCheck /></el-icon>
-            </div>
-            <div class="card-content">
-              <span class="card-value">{{ report.completedCourses }}</span>
-              <span class="card-label">完成课程</span>
-              <span v-if="report.completedCoursesChange !== null" class="card-change"
-                    :class="report.completedCoursesChange >= 0 ? 'positive' : 'negative'">
-                {{ report.completedCoursesChange >= 0 ? '+' : '' }}{{ report.completedCoursesChange }}门
-              </span>
+          <p class="mt-4 text-xs text-text-muted">连续打卡</p>
+          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.streakDays || 0 }}</p>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <Gauge class="w-5 h-5" />
             </div>
           </div>
-          
-          <div class="overview-card achievements">
-            <div class="card-icon">
-              <el-icon><Trophy /></el-icon>
-            </div>
-            <div class="card-content">
-              <span class="card-value">{{ report.earnedAchievements }}</span>
-              <span class="card-label">获得成就</span>
-            </div>
-          </div>
-          
-          <div class="overview-card streak">
-            <div class="card-icon">
-              <el-icon><Flame /></el-icon>
-            </div>
-            <div class="card-content">
-              <span class="card-value">{{ report.streakDays }}</span>
-              <span class="card-label">连续打卡</span>
+          <p class="mt-4 text-xs text-text-muted">日均分钟</p>
+          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.avgDailyMinutes || 0 }}</p>
+        </div>
+      </section>
+
+      <!-- Charts -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card p-6">
+          <div class="flex items-end justify-between gap-6">
+            <div>
+              <h2 class="text-lg font-semibold tracking-tight text-text-primary">学习趋势</h2>
+              <p class="mt-1 text-sm text-text-muted">每日学习分钟与打卡状态</p>
             </div>
           </div>
-          
-          <div class="overview-card avg-daily">
-            <div class="card-icon">
-              <el-icon><TrendCharts /></el-icon>
+          <div ref="trendChartRef" class="h-80 w-full mt-4"></div>
+        </div>
+
+        <div class="card p-6">
+          <div class="flex items-end justify-between gap-6">
+            <div>
+              <h2 class="text-lg font-semibold tracking-tight text-text-primary">类别分布</h2>
+              <p class="mt-1 text-sm text-text-muted">你把时间花在了哪些方向</p>
             </div>
-            <div class="card-content">
-              <span class="card-value">{{ report.avgDailyMinutes }}分钟</span>
-              <span class="card-label">日均学习</span>
+          </div>
+          <div ref="categoryChartRef" class="h-80 w-full mt-4"></div>
+
+          <div v-if="report.categoryDistribution?.length" class="mt-4 space-y-2">
+            <div
+              v-for="(item, index) in report.categoryDistribution"
+              :key="item.categoryName"
+              class="flex items-center gap-3"
+            >
+              <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: categorySwatches[index % categorySwatches.length] }"></span>
+              <span class="flex-1 font-medium text-sm text-text-primary">{{ item.categoryName }}</span>
+              <span class="text-sm text-text-secondary">{{ formatMinutes(item.minutes) }}</span>
+              <span class="text-sm font-semibold text-text-primary w-12 text-right">{{ item.percent }}%</span>
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- 学习趋势图表 -->
-        <div class="chart-section">
-          <div class="section-title">
-            <el-icon><TrendCharts /></el-icon>
-            <span>学习趋势</span>
+      <!-- Courses -->
+      <section class="card p-6">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-5">
+          <div>
+            <h2 class="text-lg font-semibold tracking-tight text-text-primary">课程进度</h2>
+            <p class="mt-1 text-sm text-text-muted">进行中与已完成课程概览</p>
           </div>
-          <div class="chart-container" ref="trendChartRef"></div>
+          <div class="segmented">
+            <button type="button" class="segmented-item" :class="{ 'is-active': activeTab === 'inProgress' }" @click="activeTab = 'inProgress'">
+              进行中
+            </button>
+            <button type="button" class="segmented-item" :class="{ 'is-active': activeTab === 'completed' }" @click="activeTab = 'completed'">
+              已完成
+            </button>
+          </div>
         </div>
 
-        <!-- 类别分布 -->
-        <div class="distribution-section">
-          <div class="section-title">
-            <el-icon><PieChart /></el-icon>
-            <span>学习分布</span>
-          </div>
-          <div class="distribution-content">
-            <div class="chart-container" ref="categoryChartRef"></div>
-            <div class="category-list">
-              <div 
-                v-for="(item, index) in report.categoryDistribution" 
-                :key="item.category"
-                class="category-item"
-              >
-                <div class="category-color" :style="{ background: categoryColors[index % categoryColors.length] }"></div>
-                <span class="category-name">{{ item.categoryName }}</span>
-                <span class="category-time">{{ formatMinutes(item.minutes) }}</span>
-                <span class="category-percent">{{ item.percent }}%</span>
+        <div v-if="activeTab === 'inProgress'">
+          <div v-if="report.inProgressCourses?.length" class="space-y-3">
+            <div v-for="course in report.inProgressCourses" :key="course.courseId" class="card p-4">
+              <div class="flex items-start justify-between gap-6">
+                <div class="min-w-0">
+                  <p class="font-semibold text-text-primary truncate">{{ course.courseName }}</p>
+                  <p class="mt-1 text-sm text-text-muted truncate">{{ course.category }}</p>
+                </div>
+                <span class="badge badge-secondary">{{ course.progressPercent }}%</span>
+              </div>
+              <div class="mt-3">
+                <div class="h-2 rounded-full bg-bg-tertiary/70 overflow-hidden">
+                  <div class="h-full bg-primary/80 rounded-full transition-all" :style="{ width: course.progressPercent + '%' }"></div>
+                </div>
+                <p class="mt-2 text-xs text-text-muted">已学习 {{ formatMinutes(course.studyMinutes) }}</p>
               </div>
             </div>
           </div>
+          <EmptyState v-else :icon="BookOpen" title="暂无进行中的课程" description="从课程中心选择一门课程开始学习。" />
         </div>
 
-        <!-- 课程进度 -->
-        <div class="courses-section">
-          <el-tabs v-model="activeTab">
-            <el-tab-pane label="进行中" name="inProgress">
-              <div v-if="report.inProgressCourses && report.inProgressCourses.length > 0" class="course-list">
-                <div v-for="course in report.inProgressCourses" :key="course.courseId" class="course-card">
-                  <div class="course-info">
-                    <h4>{{ course.courseName }}</h4>
-                    <el-tag size="small" type="info">{{ course.category }}</el-tag>
+        <div v-else>
+          <div v-if="report.completedCourseList?.length" class="space-y-3">
+            <div v-for="course in report.completedCourseList" :key="course.courseId" class="card p-4">
+              <div class="flex items-start justify-between gap-6">
+                <div class="min-w-0">
+                  <p class="font-semibold text-text-primary truncate">{{ course.courseName }}</p>
+                  <p class="mt-1 text-xs text-text-muted">完成时间：{{ course.lastStudyDate || '—' }}</p>
+                </div>
+                <span class="badge bg-success/10 text-success border border-success/20">已完成</span>
+              </div>
+              <p class="mt-2 text-sm text-text-secondary">学习时长：{{ formatMinutes(course.studyMinutes) }}</p>
+            </div>
+          </div>
+          <EmptyState v-else :icon="CheckCircle2" title="本期暂无完成的课程" description="持续学习，很快就会看到成果。" />
+        </div>
+      </section>
+
+      <!-- Achievements & Suggestions -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card p-6">
+          <div class="flex items-center justify-between gap-6">
+            <h2 class="text-lg font-semibold tracking-tight text-text-primary">新获得成就</h2>
+          </div>
+          <div v-if="report.newAchievements?.length" class="mt-4 space-y-3">
+            <div v-for="achievement in report.newAchievements" :key="achievement.id" class="card p-4">
+              <div class="flex items-start justify-between gap-6">
+                <div class="min-w-0">
+                  <p class="font-semibold text-text-primary truncate">{{ achievement.name }}</p>
+                  <p class="mt-1 text-sm text-text-secondary">{{ achievement.description }}</p>
+                </div>
+                <span class="badge badge-secondary">+{{ achievement.points || 0 }}</span>
+              </div>
+            </div>
+          </div>
+          <EmptyState v-else :icon="Award" title="本期暂无新成就" description="继续保持，成就会不断解锁。" />
+        </div>
+
+        <div class="card p-6">
+          <div class="flex items-center justify-between gap-6">
+            <h2 class="text-lg font-semibold tracking-tight text-text-primary">学习建议</h2>
+          </div>
+          <div v-if="report.suggestions?.length" class="mt-4 space-y-3">
+            <div v-for="(suggestion, index) in report.suggestions" :key="index" class="inset-group">
+              <div class="inset-item">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+                    <Lightbulb class="w-5 h-5" />
                   </div>
-                  <div class="course-progress">
-                    <el-progress :percentage="course.progressPercent" :stroke-width="8" />
-                    <span class="study-time">已学习 {{ formatMinutes(course.studyMinutes) }}</span>
-                  </div>
+                  <p class="text-sm text-text-secondary leading-relaxed">{{ suggestion }}</p>
                 </div>
               </div>
-              <el-empty v-else description="暂无进行中的课程" />
-            </el-tab-pane>
-            
-            <el-tab-pane label="已完成" name="completed">
-              <div v-if="report.completedCourseList && report.completedCourseList.length > 0" class="course-list">
-                <div v-for="course in report.completedCourseList" :key="course.courseId" class="course-card completed">
-                  <div class="course-info">
-                    <h4>
-                      <el-icon class="check-icon"><CircleCheck /></el-icon>
-                      {{ course.courseName }}
-                    </h4>
-                    <el-tag size="small" type="success">已完成</el-tag>
-                  </div>
-                  <div class="course-meta">
-                    <span>学习时长: {{ formatMinutes(course.studyMinutes) }}</span>
-                    <span>完成日期: {{ course.lastStudyDate }}</span>
-                  </div>
-                </div>
-              </div>
-              <el-empty v-else description="本期暂无完成的课程" />
-            </el-tab-pane>
-          </el-tabs>
-        </div>
-
-        <!-- 成就与建议 -->
-        <div class="bottom-section">
-          <!-- 新获得的成就 -->
-          <div class="achievements-section">
-            <div class="section-title">
-              <el-icon><Trophy /></el-icon>
-              <span>新获得成就</span>
-            </div>
-            <div v-if="report.newAchievements && report.newAchievements.length > 0" class="achievement-list">
-              <div v-for="achievement in report.newAchievements" :key="achievement.id" class="achievement-item">
-                <div class="achievement-icon">
-                  <img v-if="achievement.iconUrl" :src="achievement.iconUrl" :alt="achievement.name" />
-                  <el-icon v-else><Medal /></el-icon>
-                </div>
-                <div class="achievement-info">
-                  <span class="achievement-name">{{ achievement.name }}</span>
-                  <span class="achievement-date">{{ achievement.earnedDate }}</span>
-                </div>
-                <span class="achievement-points">+{{ achievement.points }}分</span>
-              </div>
-            </div>
-            <el-empty v-else description="本期暂无新成就" :image-size="80" />
-          </div>
-
-          <!-- 学习建议 -->
-          <div class="suggestions-section">
-            <div class="section-title">
-              <el-icon><Lightbulb /></el-icon>
-              <span>学习建议</span>
-            </div>
-            <div class="suggestion-list">
-              <div v-for="(suggestion, index) in report.suggestions" :key="index" class="suggestion-item">
-                <el-icon><InfoFilled /></el-icon>
-                <span>{{ suggestion }}</span>
-              </div>
             </div>
           </div>
+          <EmptyState v-else :icon="Lightbulb" title="暂无建议" description="当前学习节奏良好，继续保持。" />
         </div>
-      </template>
-      
-      <el-empty v-else-if="!loading" description="暂无报告数据" />
-    </div>
+      </section>
+    </template>
+
+    <EmptyState
+      v-else
+      :icon="BarChart3"
+      title="暂无报告数据"
+      description="选择时间范围后会生成学习报告。"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { 
-  DataAnalysis, Clock, Calendar, CircleCheck, Trophy, TrendCharts,
-  PieChart, Medal, InfoFilled
-} from '@element-plus/icons-vue'
-import { getWeeklyReport, getMonthlyReport, getYearlyReport } from '@/api/learning'
 import * as echarts from 'echarts'
+import {
+  ArrowDown,
+  ArrowUp,
+  Award,
+  BarChart3,
+  BookOpen,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Flame,
+  Gauge,
+  Lightbulb,
+} from 'lucide-vue-next'
+import { getWeeklyReport, getMonthlyReport, getYearlyReport } from '@/api/learning'
+import EmptyState from '@/components/EmptyState.vue'
 
-// 状态
 const loading = ref(false)
 const reportType = ref('weekly')
 const selectedWeek = ref(new Date())
@@ -259,28 +322,52 @@ const selectedYear = ref(new Date())
 const report = ref(null)
 const activeTab = ref('inProgress')
 
-// 图表引用
 const trendChartRef = ref(null)
 const categoryChartRef = ref(null)
 let trendChart = null
 let categoryChart = null
+let themeObserver = null
 
-// 类别颜色
-const categoryColors = [
-  '#667eea', '#764ba2', '#f093fb', '#f5576c', 
-  '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
-]
-
-// 自定义图标组件
-const Flame = {
-  template: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-3.866 0-7-3.134-7-7 0-2.5 1.5-4.5 3-6 .5-.5 1-1 1.5-1.5.5.5 1 1 1.5 1.5 1.5 1.5 3 3.5 3 6 0 3.866-3.134 7-7 7zm0-12c-1 1-2 2-2.5 3-.5 1-.5 2-.5 3 0 2.761 2.239 5 5 5s5-2.239 5-5c0-1-.5-2-.5-3-.5-1-1.5-2-2.5-3-1.5-1.5-3-3-4-4.5-1 1.5-2.5 3-4 4.5z"/></svg>`
+const normalizeRgb = (value, fallback) => {
+  const cleaned = (value || '').trim()
+  if (!cleaned) return fallback
+  return cleaned.replace(/\s+/g, ' ')
 }
 
-const Lightbulb = {
-  template: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2 15H10v-1h4v1zm0-2H10v-1h4v1zm1.31-3.26L14 12.67V15h-4v-2.33l-1.31-.93C7.63 10.97 7 9.54 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 .54-.63 1.97-1.69 2.74z"/></svg>`
+const rgba = (rgb, alpha) => `rgba(${rgb.replace(/\s+/g, ',')}, ${alpha})`
+
+const getThemeColors = () => {
+  const style = getComputedStyle(document.documentElement)
+  const primaryRgb = normalizeRgb(style.getPropertyValue('--primary-color-rgb'), '37 99 235')
+  const primaryLightRgb = normalizeRgb(style.getPropertyValue('--primary-light-rgb'), '59 130 246')
+  const infoRgb = normalizeRgb(style.getPropertyValue('--info-color-rgb'), primaryRgb)
+  const successRgb = normalizeRgb(style.getPropertyValue('--success-color-rgb'), '5 150 105')
+  const warningRgb = normalizeRgb(style.getPropertyValue('--warning-color-rgb'), '217 119 6')
+  const errorRgb = normalizeRgb(style.getPropertyValue('--error-color-rgb'), '220 38 38')
+  const textSecondaryRgb = normalizeRgb(style.getPropertyValue('--text-secondary-rgb'), '75 85 99')
+  const borderRgb = normalizeRgb(style.getPropertyValue('--border-color-rgb'), '229 231 235')
+  const bgSecondaryRgb = normalizeRgb(style.getPropertyValue('--bg-secondary-rgb'), '255 255 255')
+  return {
+    primaryRgb,
+    primaryLightRgb,
+    infoRgb,
+    successRgb,
+    warningRgb,
+    errorRgb,
+    textSecondaryRgb,
+    borderRgb,
+    bgSecondaryRgb,
+  }
 }
 
-// 格式化分钟
+const categorySwatches = ref([])
+
+const updateSwatches = () => {
+  const { primaryRgb, primaryLightRgb, infoRgb, successRgb, warningRgb, errorRgb } = getThemeColors()
+  const palette = [primaryRgb, primaryLightRgb, infoRgb, successRgb, warningRgb, errorRgb]
+  categorySwatches.value = palette.map((rgb) => rgba(rgb, 0.9))
+}
+
 const formatMinutes = (minutes) => {
   if (!minutes) return '0分钟'
   if (minutes < 60) return `${minutes}分钟`
@@ -289,7 +376,6 @@ const formatMinutes = (minutes) => {
   return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`
 }
 
-// 获取周一日期
 const getMonday = (date) => {
   const d = new Date(date)
   const day = d.getDay()
@@ -298,7 +384,6 @@ const getMonday = (date) => {
   return d.toISOString().split('T')[0]
 }
 
-// 加载报告
 const loadReport = async () => {
   loading.value = true
   try {
@@ -314,10 +399,10 @@ const loadReport = async () => {
       const year = selectedYear.value.getFullYear()
       res = await getYearlyReport(year)
     }
-    
+
     report.value = res.data
-    
-    // 渲染图表
+    updateSwatches()
+
     await nextTick()
     renderTrendChart()
     renderCategoryChart()
@@ -329,90 +414,83 @@ const loadReport = async () => {
   }
 }
 
-// 渲染趋势图表
 const renderTrendChart = () => {
   if (!trendChartRef.value || !report.value?.dailyStudyTrend) return
-  
-  if (trendChart) {
-    trendChart.dispose()
-  }
-  
+
+  trendChart?.dispose()
   trendChart = echarts.init(trendChartRef.value)
-  
-  const dates = report.value.dailyStudyTrend.map(item => item.date)
-  const minutes = report.value.dailyStudyTrend.map(item => item.minutes)
-  const checkedIn = report.value.dailyStudyTrend.map(item => item.checkedIn)
-  
-  const option = {
+
+  const { primaryRgb, primaryLightRgb, textSecondaryRgb, borderRgb } = getThemeColors()
+  const dates = report.value.dailyStudyTrend.map((item) => item.date)
+  const minutes = report.value.dailyStudyTrend.map((item) => item.minutes)
+  const checkedIn = report.value.dailyStudyTrend.map((item) => item.checkedIn)
+
+  trendChart.setOption({
+    backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
       formatter: (params) => {
         const data = params[0]
         const isCheckedIn = checkedIn[data.dataIndex]
-        return `${data.name}<br/>学习时长: ${data.value}分钟<br/>打卡: ${isCheckedIn ? '✓' : '✗'}`
-      }
+        return `${data.name}<br/>学习时长：${data.value} 分钟<br/>打卡：${isCheckedIn ? '已打卡' : '未打卡'}`
+      },
     },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
+    grid: { left: 24, right: 12, top: 18, bottom: 24, containLabel: true },
     xAxis: {
       type: 'category',
       data: dates,
       axisLabel: {
+        color: rgba(textSecondaryRgb, 0.9),
         formatter: (value) => {
           const date = new Date(value)
           return `${date.getMonth() + 1}/${date.getDate()}`
-        }
-      }
+        },
+      },
+      axisLine: { lineStyle: { color: rgba(borderRgb, 0.8) } },
+      axisTick: { show: false },
     },
     yAxis: {
       type: 'value',
       name: '分钟',
-      minInterval: 1
+      minInterval: 1,
+      axisLabel: { color: rgba(textSecondaryRgb, 0.85) },
+      nameTextStyle: { color: rgba(textSecondaryRgb, 0.7) },
+      splitLine: { lineStyle: { color: rgba(borderRgb, 0.6) } },
     },
     series: [
       {
         name: '学习时长',
         type: 'bar',
         data: minutes,
+        barWidth: 16,
         itemStyle: {
+          borderRadius: [10, 10, 6, 6],
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#667eea' },
-            { offset: 1, color: '#764ba2' }
+            { offset: 0, color: rgba(primaryLightRgb, 0.9) },
+            { offset: 1, color: rgba(primaryRgb, 0.18) },
           ]),
-          borderRadius: [4, 4, 0, 0]
-        }
-      }
-    ]
-  }
-  
-  trendChart.setOption(option)
+        },
+      },
+    ],
+  })
 }
 
-// 渲染类别分布图表
 const renderCategoryChart = () => {
   if (!categoryChartRef.value || !report.value?.categoryDistribution) return
-  
-  if (categoryChart) {
-    categoryChart.dispose()
-  }
-  
+
+  categoryChart?.dispose()
   categoryChart = echarts.init(categoryChartRef.value)
-  
+
+  const { bgSecondaryRgb } = getThemeColors()
   const data = report.value.categoryDistribution.map((item, index) => ({
     name: item.categoryName,
     value: item.minutes,
-    itemStyle: { color: categoryColors[index % categoryColors.length] }
+    itemStyle: { color: categorySwatches.value[index % categorySwatches.value.length] },
   }))
-  
-  const option = {
-    tooltip: {
-      trigger: 'item',
-      formatter: '{b}: {c}分钟 ({d}%)'
-    },
+
+  categoryChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'item', formatter: '{b}: {c}分钟 ({d}%)' },
     series: [
       {
         type: 'pie',
@@ -420,384 +498,43 @@ const renderCategoryChart = () => {
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
+          borderColor: rgba(bgSecondaryRgb, 0.9),
+          borderWidth: 2,
         },
-        label: {
-          show: false
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 14,
-            fontWeight: 'bold'
-          }
-        },
-        data: data
-      }
-    ]
-  }
-  
-  categoryChart.setOption(option)
+        label: { show: false },
+        emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+        data,
+      },
+    ],
+  })
 }
 
-// 监听窗口大小变化
 const handleResize = () => {
   trendChart?.resize()
   categoryChart?.resize()
 }
 
+watch(reportType, () => {
+  loadReport()
+})
+
 onMounted(() => {
   loadReport()
   window.addEventListener('resize', handleResize)
+  themeObserver = new MutationObserver(() => {
+    nextTick(() => {
+      updateSwatches()
+      renderTrendChart()
+      renderCategoryChart()
+    })
+  })
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
 })
 
-// 清理
-import { onUnmounted } from 'vue'
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  themeObserver?.disconnect()
   trendChart?.dispose()
   categoryChart?.dispose()
 })
 </script>
-
-<style scoped>
-.learning-report-page {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.header-content h1 {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin: 0 0 8px 0;
-}
-
-.header-content p {
-  color: var(--el-text-color-secondary);
-  margin: 0;
-}
-
-.report-selector {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-/* 概览卡片 */
-.overview-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
-  margin-bottom: 32px;
-}
-
-.overview-card {
-  background: var(--el-bg-color);
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: var(--el-box-shadow-light);
-}
-
-.card-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.total-time .card-icon { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
-.study-days .card-icon { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
-.completed .card-icon { background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; }
-.achievements .card-icon { background: linear-gradient(135deg, #fa709a, #fee140); color: white; }
-.streak .card-icon { background: linear-gradient(135deg, #f5576c, #f093fb); color: white; }
-.avg-daily .card-icon { background: linear-gradient(135deg, #43e97b, #38f9d7); color: white; }
-
-.card-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.card-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-}
-
-.card-label {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-.card-change {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.card-change.positive { color: var(--el-color-success); }
-.card-change.negative { color: var(--el-color-danger); }
-
-/* 图表区域 */
-.chart-section,
-.distribution-section {
-  background: var(--el-bg-color);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: var(--el-box-shadow-light);
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin-bottom: 20px;
-}
-
-.chart-container {
-  height: 300px;
-}
-
-/* 分布区域 */
-.distribution-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.category-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  justify-content: center;
-}
-
-.category-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.category-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-}
-
-.category-name {
-  flex: 1;
-  font-size: 14px;
-}
-
-.category-time {
-  font-size: 14px;
-  color: var(--el-text-color-secondary);
-}
-
-.category-percent {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  min-width: 40px;
-  text-align: right;
-}
-
-/* 课程区域 */
-.courses-section {
-  background: var(--el-bg-color);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: var(--el-box-shadow-light);
-}
-
-.course-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.course-card {
-  background: var(--el-fill-color-light);
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.course-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.course-info h4 {
-  flex: 1;
-  margin: 0;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.check-icon {
-  color: var(--el-color-success);
-}
-
-.course-progress {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.course-progress .el-progress {
-  flex: 1;
-}
-
-.study-time {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-  white-space: nowrap;
-}
-
-.course-meta {
-  display: flex;
-  gap: 24px;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-/* 底部区域 */
-.bottom-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.achievements-section,
-.suggestions-section {
-  background: var(--el-bg-color);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--el-box-shadow-light);
-}
-
-.achievement-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.achievement-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: var(--el-fill-color-light);
-  border-radius: 8px;
-}
-
-.achievement-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #fa709a, #fee140);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 20px;
-}
-
-.achievement-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.achievement-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.achievement-name {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.achievement-date {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.achievement-points {
-  font-weight: 600;
-  color: var(--el-color-warning);
-}
-
-.suggestion-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.suggestion-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
-  background: var(--el-fill-color-light);
-  border-radius: 8px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.suggestion-item .el-icon {
-  color: var(--el-color-primary);
-  margin-top: 2px;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-  }
-  
-  .report-selector {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .distribution-content {
-    grid-template-columns: 1fr;
-  }
-  
-  .bottom-section {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

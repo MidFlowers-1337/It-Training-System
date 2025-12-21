@@ -2,8 +2,10 @@ package com.itts.modules.student.controller;
 
 import com.itts.common.response.R;
 import com.itts.common.util.SecurityUtils;
-import com.itts.modules.student.dto.CheckinResponse;
+import com.itts.modules.learning.service.AchievementService;
+import com.itts.modules.learning.dto.AchievementResponse;
 import com.itts.modules.student.dto.StudentDashboardResponse;
+import com.itts.modules.student.dto.StudentStatsResponse;
 import com.itts.modules.student.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 学生端控制器
@@ -23,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class StudentController {
 
     private final StudentService studentService;
+    private final AchievementService achievementService;
 
     @Operation(summary = "获取学生Dashboard数据")
     @GetMapping("/dashboard")
@@ -32,27 +37,19 @@ public class StudentController {
         return R.ok(dashboard);
     }
 
-    @Operation(summary = "学习打卡")
-    @PostMapping("/checkin")
-    public R<CheckinResponse> checkin() {
-        Long userId = SecurityUtils.getCurrentUserId();
-        CheckinResponse response = studentService.checkin(userId);
-        return R.ok(response);
-    }
-
     @Operation(summary = "获取学习统计")
     @GetMapping("/stats")
-    public R<Object> getStats() {
+    public R<StudentStatsResponse> getStats() {
         Long userId = SecurityUtils.getCurrentUserId();
-        // TODO: 实现学习统计
-        return R.ok();
+        StudentStatsResponse stats = studentService.getStats(userId);
+        return R.ok(stats);
     }
 
     @Operation(summary = "获取我的成就列表")
     @GetMapping("/achievements")
-    public R<Object> getAchievements() {
+    public R<List<AchievementResponse>> getAchievements() {
         Long userId = SecurityUtils.getCurrentUserId();
-        // TODO: 实现成就列表
-        return R.ok();
+        List<AchievementResponse> achievements = achievementService.getAllAchievements(userId);
+        return R.ok(achievements);
     }
 }

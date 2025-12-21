@@ -1,0 +1,209 @@
+/* ============================================
+   IT技能培训智能选课系统 - CSS 变量系统
+   Design System v5 - Human-Centric Themes
+   ============================================ */
+
+:root {
+  /* ========================================
+     默认主题 (Professional Blue) - 清新、专业
+     ======================================== */
+  
+  /* 背景色 */
+  --bg-primary: #f3f4f6;      /* 浅灰背景 */
+  --bg-secondary: #ffffff;    /* 白色卡片 */
+  --bg-tertiary: #e5e7eb;     /* 边框/输入框背景 */
+  --bg-hover: #f9fafb;        /* 悬停高亮 */
+  --bg-card: #ffffff;
+  --bg-inverse: #111827;
+  
+  /* 文本色 */
+  --text-primary: #111827;    /* 深灰黑 */
+  --text-secondary: #4b5563;  /* 中灰 */
+  --text-muted: #9ca3af;      /* 浅灰 */
+  --text-disabled: #d1d5db;   /* 禁用 */
+  --text-inverse: #ffffff;
+  
+  /* 品牌色 - 皇家蓝 */
+  --primary-color: #2563eb;
+  --primary-light: #3b82f6;
+  --primary-dark: #1d4ed8;
+  --primary-color-alpha: rgba(37, 99, 235, 0.3);
+  
+  /* 边框色 */
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+  --border-dark: #d1d5db;
+  
+  /* 状态色 */
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --error-color: #dc2626;
+  --info-color: #2563eb;
+  
+  /* ========================================
+     字体系统
+     ======================================== */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+  
+  /* ========================================
+     间距与圆角
+     ======================================== */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
+  
+  /* ========================================
+     阴影
+     ======================================== */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  
+  /* ========================================
+     其他
+     ======================================== */
+  --transition-fast: 150ms;
+  --transition-normal: 200ms;
+  --transition-slow: 300ms;
+  
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  
+  --nav-height: 64px;
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 64px;
+  
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+}
+
+/* ========================================
+   主题 2: 舒适暖色 (Comfort Warm)
+   适合长时间阅读，护眼
+   ======================================== */
+[data-theme="warm"] {
+  /* 背景色 */
+  --bg-primary: #fffbeb;      /* 暖米色 */
+  --bg-secondary: #ffffff;    /* 纯白 */
+  --bg-tertiary: #fef3c7;     /* 浅黄装饰 */
+  --bg-hover: #fef3c7;        /* 悬停 */
+  --bg-card: #ffffff;
+  --bg-inverse: #451a03;
+  
+  /* 文本色 */
+  --text-primary: #451a03;    /* 深棕 */
+  --text-secondary: #78350f;  /* 浅棕 */
+  --text-muted: #92400e;      /* 柔和棕 */
+  --text-disabled: #d6d3d1;
+  --text-inverse: #ffffff;
+  
+  /* 品牌色 - 琥珀色 */
+  --primary-color: #d97706;
+  --primary-light: #f59e0b;
+  --primary-dark: #b45309;
+  --primary-color-alpha: rgba(217, 119, 6, 0.3);
+  
+  /* 边框色 */
+  --border-color: #fcd34d;
+  --border-light: #fde68a;
+  --border-dark: #fbbf24;
+  
+  /* 状态色 - 调整为暖色调 */
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --error-color: #dc2626;
+  --info-color: #d97706;
+}
+
+/* ========================================
+   主题 3: 现代深色 (Modern Dark)
+   高对比度，专注，不刺眼
+   ======================================== */
+[data-theme="dark"] {
+  /* 背景色 */
+  --bg-primary: #0f172a;      /* 深蓝灰 */
+  --bg-secondary: #1e293b;    /* 蓝灰卡片 */
+  --bg-tertiary: #334155;     /* 浅蓝灰 */
+  --bg-hover: #475569;        /* 悬停 */
+  --bg-card: #1e293b;
+  --bg-inverse: #f8fafc;
+  
+  /* 文本色 */
+  --text-primary: #f8fafc;    /* 亮白 */
+  --text-secondary: #cbd5e1;  /* 灰白 */
+  --text-muted: #94a3b8;      /* 蓝灰 */
+  --text-disabled: #475569;
+  --text-inverse: #0f172a;
+  
+  /* 品牌色 - 靛蓝 */
+  --primary-color: #6366f1;
+  --primary-light: #818cf8;
+  --primary-dark: #4f46e5;
+  --primary-color-alpha: rgba(99, 102, 241, 0.3);
+  
+  /* 边框色 */
+  --border-color: #334155;
+  --border-light: #475569;
+  --border-dark: #1e293b;
+  
+  /* 状态色 */
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --info-color: #6366f1;
+  
+  /* 阴影 - 加深 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}

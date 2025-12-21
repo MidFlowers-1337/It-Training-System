@@ -90,3 +90,15 @@ export function markChapterCompleted(chapterId) {
     method: 'post'
   })
 }
+
+// 更新章节观看进度
+export function updateChapterProgress(chapterId, watchDuration, lastPosition) {
+  return request({
+    url: `/v1/courses/chapters/${chapterId}/progress`,
+    method: 'post',
+    params: {
+      watchDuration,
+      lastPosition
+    }
+  })
+}

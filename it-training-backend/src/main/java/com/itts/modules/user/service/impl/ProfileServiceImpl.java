@@ -38,6 +38,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final SysUserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final VerificationCodeUtil verificationCodeUtil;
+    private final com.itts.modules.notification.service.NotificationService notificationService;
 
     // 学习数据相关的Mapper
     private final LearningProgressMapper learningProgressMapper;
@@ -221,11 +222,14 @@ public class ProfileServiceImpl implements ProfileService {
         // 保存到Redis
         verificationCodeUtil.saveEmailCode(email, code);
 
-        // 模拟发送邮件(实际项目中应调用邮件服务)
-        log.info("【模拟发送】邮箱验证码: {} -> {}", maskEmail(email), code);
+        // 发送邮件
+        boolean sent = notificationService.sendVerificationEmail(email, code);
+        if (!sent) {
+            log.error("发送邮件验证码失败: {}", maskEmail(email));
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "发送验证码失败，请稍后重试");
+        }
 
-        // TODO: 集成真实邮件服务
-        // mailService.sendVerificationCode(email, code);
+        log.info("发送邮箱验证码成功:  -> {}", maskEmail(email), code);
     }
 
     @Override
@@ -241,11 +245,14 @@ public class ProfileServiceImpl implements ProfileService {
         // 保存到Redis
         verificationCodeUtil.savePhoneCode(phone, code);
 
-        // 模拟发送短信(实际项目中应调用短信服务)
-        log.info("【模拟发送】手机验证码: {} -> {}", maskPhone(phone), code);
+        // 发送短信
+        boolean sent = notificationService.sendVerificationSms(phone, code);
+        if (!sent) {
+            log.error("发送短信验证码失败: {}", maskPhone(phone));
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "发送验证码失败，请稍后重试");
+        }
 
-        // TODO: 集成真实短信服务
-        // smsService.sendVerificationCode(phone, code);
+        log.info("发送手机验证码成功: {} -> {}", maskPhone(phone), code);
     }
 
     @Override

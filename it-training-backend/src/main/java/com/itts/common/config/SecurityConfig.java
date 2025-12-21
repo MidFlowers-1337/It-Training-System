@@ -49,6 +49,11 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
 
+                        // 学生可访问的课程相关接口（必须在管理员规则之前）
+                        .requestMatchers(HttpMethod.POST, "/api/v1/courses/chapters/*/progress").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/courses/chapters/*/complete").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").authenticated()
+
                         // 管理员专属接口
                         .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/courses/**").hasRole("ADMIN")

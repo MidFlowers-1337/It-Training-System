@@ -11,6 +11,8 @@ import com.itts.modules.learning.mapper.UserAchievementMapper;
 import com.itts.modules.learning.service.AchievementService;
 import com.itts.modules.learning.service.UserLearningStatsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,12 +26,15 @@ import java.util.stream.Collectors;
  * 成就服务实现
  */
 @Service
-@RequiredArgsConstructor
 public class AchievementServiceImpl extends ServiceImpl<AchievementMapper, Achievement>
         implements AchievementService {
 
-    private final UserAchievementMapper userAchievementMapper;
-    private final UserLearningStatsService userLearningStatsService;
+    @Autowired
+    private UserAchievementMapper userAchievementMapper;
+
+    @Lazy
+    @Autowired
+    private UserLearningStatsService userLearningStatsService;
 
     @Override
     public List<AchievementResponse> getAllAchievements(Long userId) {

@@ -52,4 +52,14 @@ public class CourseChapterResponse {
      * 是否已完成（学员视角）
      */
     private Boolean completed;
+
+    /**
+     * 观看时长（秒）
+     */
+    private Integer watchDuration;
+
+    /**
+     * 上次播放位置（秒）
+     */
+    private Integer lastPosition;
 }
