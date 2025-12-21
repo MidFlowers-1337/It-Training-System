@@ -1,43 +1,55 @@
 <template>
-  <div class="my-sessions">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>我的班期</span>
-        </div>
-      </template>
+  <div class="space-y-6">
+    <section class="page-hero glass p-8 md:p-10">
+      <div class="absolute inset-0 pointer-events-none" style="background: var(--gradient-hero)"></div>
+      <div class="relative">
+        <p class="inline-flex items-center gap-2 text-sm text-text-secondary">
+          <CalendarDays class="w-4 h-4 text-primary" />
+          讲师
+        </p>
+        <h1 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-text-primary">我的班期</h1>
+        <p class="mt-2 text-sm md:text-base text-text-secondary">查看你负责的班期与报名情况。</p>
+      </div>
+    </section>
 
-      <el-table :data="sessions" v-loading="loading" stripe>
-        <el-table-column prop="sessionCode" label="班期编码" width="140" />
-        <el-table-column prop="courseName" label="课程名称" min-width="180" />
-        <el-table-column prop="startDate" label="开始日期" width="120" />
-        <el-table-column prop="endDate" label="结束日期" width="120" />
-        <el-table-column prop="schedule" label="上课时间" width="150" />
-        <el-table-column prop="location" label="上课地点" width="120" />
-        <el-table-column label="报名情况" width="120">
-          <template #default="{ row }">
-            <el-tag :type="row.currentEnrollment >= row.maxCapacity ? 'danger' : 'success'">
-              {{ row.currentEnrollment }} / {{ row.maxCapacity }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">{{ row.statusName }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="viewStudents(row)">
-              <el-icon><User /></el-icon>
-              学员名单
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <div class="card overflow-hidden">
+      <div class="p-6 border-b border-border-color/60">
+        <h2 class="text-lg font-semibold tracking-tight text-text-primary">班期列表</h2>
+      </div>
 
-      <el-empty v-if="!loading && sessions.length === 0" description="暂无班期数据" />
-    </el-card>
+      <div class="p-6">
+        <el-table :data="sessions" v-loading="loading" stripe>
+          <el-table-column prop="sessionCode" label="班期编码" width="140" />
+          <el-table-column prop="courseName" label="课程名称" min-width="180" />
+          <el-table-column prop="startDate" label="开始日期" width="120" />
+          <el-table-column prop="endDate" label="结束日期" width="120" />
+          <el-table-column prop="schedule" label="上课时间" width="150" />
+          <el-table-column prop="location" label="上课地点" width="120" />
+          <el-table-column label="报名情况" width="120">
+            <template #default="{ row }">
+              <el-tag :type="row.currentEnrollment >= row.maxCapacity ? 'danger' : 'success'">
+                {{ row.currentEnrollment }} / {{ row.maxCapacity }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getStatusType(row.status)">{{ row.statusName }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="120" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" link @click="viewStudents(row)">
+                <el-icon><User /></el-icon>
+                学员名单
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-empty v-if="!loading && sessions.length === 0" description="暂无班期数据" :image-size="100" />
+      </div>
+    </div>
 
     <!-- 学员名单对话框 -->
     <el-dialog
@@ -63,7 +75,7 @@
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="!studentLoading && students.length === 0" description="暂无学员报名" />
+      <el-empty v-if="!studentLoading && students.length === 0" description="暂无学员报名" :image-size="100" />
 
       <template #footer>
         <el-button @click="studentDialogVisible = false">关闭</el-button>
@@ -80,6 +92,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { User, Download } from '@element-plus/icons-vue'
+import { CalendarDays } from 'lucide-vue-next'
 import { getMySessionsAsInstructor } from '@/api/session'
 import { listEnrollments } from '@/api/enrollment'
 
@@ -91,7 +104,6 @@ const studentLoading = ref(false)
 const students = ref([])
 const currentSession = ref(null)
 
-// 加载我的班期
 const loadSessions = async () => {
   loading.value = true
   try {
@@ -105,7 +117,6 @@ const loadSessions = async () => {
   }
 }
 
-// 查看学员名单
 const viewStudents = async (session) => {
   currentSession.value = session
   studentDialogVisible.value = true
@@ -122,28 +133,23 @@ const viewStudents = async (session) => {
   }
 }
 
-// 导出学员名单
 const exportStudents = () => {
   if (students.value.length === 0) {
     ElMessage.warning('暂无学员数据可导出')
     return
   }
 
-  // 简单的CSV导出
   const headers = ['学员姓名', '用户名', '邮箱', '手机号', '报名时间', '状态']
-  const rows = students.value.map(s => [
+  const rows = students.value.map((s) => [
     s.studentName || '',
     s.studentUsername || '',
     s.studentEmail || '',
     s.studentPhone || '',
     formatDateTime(s.enrollTime),
-    s.statusName || ''
+    s.statusName || '',
   ])
 
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-  ].join('\n')
+  const csvContent = [headers.join(','), ...rows.map((row) => row.map((cell) => `"${cell}"`).join(','))].join('\n')
 
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
@@ -155,7 +161,6 @@ const exportStudents = () => {
   ElMessage.success('导出成功')
 }
 
-// 格式化日期时间
 const formatDateTime = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -164,27 +169,25 @@ const formatDateTime = (dateStr) => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
-// 获取状态类型
 const getStatusType = (status) => {
   const typeMap = {
-    0: 'info',      // 未开放
-    1: 'success',   // 报名中
-    2: 'warning',   // 进行中
-    3: ''           // 已结束
+    0: 'info',
+    1: 'success',
+    2: 'warning',
+    3: '',
   }
   return typeMap[status] || 'info'
 }
 
-// 获取报名状态类型
 const getEnrollStatusType = (status) => {
   const typeMap = {
-    0: 'warning',   // 待确认
-    1: 'success',   // 已确认
-    2: 'danger'     // 已取消
+    0: 'warning',
+    1: 'success',
+    2: 'danger',
   }
   return typeMap[status] || 'info'
 }
@@ -193,19 +196,3 @@ onMounted(() => {
   loadSessions()
 })
 </script>
-
-<style scoped>
-.my-sessions {
-  padding: 0;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.el-table {
-  margin-top: 0;
-}
-</style>
