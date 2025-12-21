@@ -122,4 +122,15 @@ public class CourseController {
         courseChapterService.markChapterCompleted(chapterId, userId);
         return R.ok();
     }
+
+    @Operation(summary = "更新章节观看进度")
+    @PostMapping("/chapters/{chapterId}/progress")
+    public R<Void> updateChapterProgress(
+            @PathVariable Long chapterId,
+            @RequestParam Integer watchDuration,
+            @RequestParam Integer lastPosition) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        courseChapterService.updateChapterProgress(chapterId, userId, watchDuration, lastPosition);
+        return R.ok();
+    }
 }
