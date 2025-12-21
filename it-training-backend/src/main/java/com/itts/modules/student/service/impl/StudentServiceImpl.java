@@ -7,11 +7,13 @@ import com.itts.modules.course.mapper.CourseMapper;
 import com.itts.modules.enrollment.entity.Enrollment;
 import com.itts.modules.enrollment.mapper.EnrollmentMapper;
 import com.itts.modules.learning.entity.LearningProgress;
+import com.itts.modules.learning.entity.StudyCheckin;
 import com.itts.modules.learning.mapper.LearningProgressMapper;
+import com.itts.modules.learning.mapper.StudyCheckinMapper;
 import com.itts.modules.session.entity.ClassSession;
 import com.itts.modules.session.mapper.ClassSessionMapper;
-import com.itts.modules.student.dto.CheckinResponse;
 import com.itts.modules.student.dto.StudentDashboardResponse;
+import com.itts.modules.student.dto.StudentStatsResponse;
 import com.itts.modules.student.entity.UserChapterProgress;
 import com.itts.modules.student.entity.UserLearningStreak;
 import com.itts.modules.student.entity.UserLevel;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -49,7 +52,13 @@ public class StudentServiceImpl implements StudentService {
     private final EnrollmentMapper enrollmentMapper;
     private final ClassSessionMapper classSessionMapper;
     private final CourseMapper courseMapper;
+    private final com.itts.modules.course.mapper.CourseChapterMapper courseChapterMapper;
     private final LearningProgressMapper learningProgressMapper;
+    private final StudyCheckinMapper studyCheckinMapper;
+    private final com.itts.modules.learning.service.AchievementService achievementService;
+    private final com.itts.modules.learning.service.UserLearningStatsService userLearningStatsService;
+
+    private static final ZoneId CHINA_ZONE = ZoneId.of("Asia/Shanghai");
 
     // 等级经验值配置
     private static final int[] LEVEL_EXP_REQUIREMENTS = {
@@ -85,78 +94,68 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public CheckinResponse checkin(Long userId) {
-        log.info("用户打卡, userId: {}", userId);
+    public StudentStatsResponse getStats(Long userId) {
+        log.info("获取学生学习统计, userId: {}", userId);
 
-        CheckinResponse response = new CheckinResponse();
+        StudentStatsResponse stats = new StudentStatsResponse();
 
-        // 获取或创建打卡记录
+        // 1. 获取学习时长统计
+        com.itts.modules.learning.entity.UserLearningStats learningStats =
+            userLearningStatsService.getOrCreateStats(userId);
+        stats.setTotalStudyMinutes(learningStats.getTotalStudyMinutes());
+
+        // 2. 获取打卡统计
         UserLearningStreak streak = getOrCreateStreak(userId);
+        stats.setStreakDays(streak.getStreakDays());
+        stats.setMaxStreakDays(streak.getMaxStreakDays());
+        stats.setTotalCheckinDays(streak.getTotalCheckinDays());
 
-        LocalDate today = LocalDate.now();
-        LocalDate lastCheckin = streak.getLastCheckinDate();
+        // 3. 获取课程统计
+        LambdaQueryWrapper<Enrollment> enrollmentWrapper = new LambdaQueryWrapper<>();
+        enrollmentWrapper.eq(Enrollment::getUserId, userId)
+                .eq(Enrollment::getStatus, 0); // 0-已报名
 
-        // 检查是否已打卡
-        if (lastCheckin != null && lastCheckin.equals(today)) {
-            response.setSuccess(false);
-            response.setStreakDays(streak.getStreakDays());
-            response.setMaxStreakDays(streak.getMaxStreakDays());
-            response.setTotalDays(streak.getTotalCheckinDays());
-            response.setNewAchievement(false);
-            throw new BusinessException("今日已打卡，请勿重复打卡");
-        }
+        List<Enrollment> enrollments = enrollmentMapper.selectList(enrollmentWrapper);
 
-        // 计算连续天数
-        int newStreakDays;
-        if (lastCheckin == null) {
-            // 首次打卡
-            newStreakDays = 1;
-        } else {
-            long daysBetween = ChronoUnit.DAYS.between(lastCheckin, today);
-            if (daysBetween == 1) {
-                // 连续打卡
-                newStreakDays = streak.getStreakDays() + 1;
-            } else {
-                // 中断了，重新开始
-                newStreakDays = 1;
+        int completedCourses = 0;
+        int inProgressCourses = 0;
+
+        for (Enrollment enrollment : enrollments) {
+            ClassSession session = classSessionMapper.selectById(enrollment.getSessionId());
+            if (session == null) {
+                continue;
+            }
+
+            LambdaQueryWrapper<LearningProgress> progressWrapper = new LambdaQueryWrapper<>();
+            progressWrapper.eq(LearningProgress::getUserId, userId)
+                    .eq(LearningProgress::getCourseId, session.getCourseId());
+
+            LearningProgress progress = learningProgressMapper.selectOne(progressWrapper);
+
+            if (progress != null) {
+                if (progress.getProgressPercent() >= 100) {
+                    completedCourses++;
+                } else if (progress.getProgressPercent() > 0) {
+                    inProgressCourses++;
+                }
             }
         }
 
-        // 更新打卡记录
-        streak.setStreakDays(newStreakDays);
-        streak.setLastCheckinDate(today);
-        streak.setTotalCheckinDays(streak.getTotalCheckinDays() + 1);
+        stats.setCompletedCourses(completedCourses);
+        stats.setInProgressCourses(inProgressCourses);
 
-        // 更新最大连续天数
-        if (newStreakDays > streak.getMaxStreakDays()) {
-            streak.setMaxStreakDays(newStreakDays);
-        }
+        // 4. 获取成就统计
+        List<com.itts.modules.learning.dto.AchievementResponse> achievements =
+            achievementService.getUserAchievements(userId);
+        stats.setAchievementsEarned(achievements.size());
 
-        userLearningStreakMapper.updateById(streak);
+        // 5. 获取等级信息
+        UserLevel userLevel = getOrCreateUserLevel(userId);
+        stats.setLevel(userLevel.getLevel());
+        stats.setExperience(userLevel.getExperience());
+        stats.setNextLevelExp(getNextLevelExp(userLevel.getLevel()));
 
-        // 奖励经验值
-        int rewardExp = 20; // 每次打卡奖励20经验
-        addExperience(userId, rewardExp);
-
-        // 检查成就解锁
-        boolean newAchievement = checkStreakAchievements(userId, newStreakDays);
-
-        // 构建响应
-        response.setSuccess(true);
-        response.setStreakDays(newStreakDays);
-        response.setMaxStreakDays(streak.getMaxStreakDays());
-        response.setTotalDays(streak.getTotalCheckinDays());
-        response.setRewardExp(rewardExp);
-        response.setNewAchievement(newAchievement);
-
-        if (newAchievement) {
-            response.setAchievementName(getStreakAchievementName(newStreakDays));
-        }
-
-        log.info("打卡成功, userId: {}, streakDays: {}", userId, newStreakDays);
-
-        return response;
+        return stats;
     }
 
     @Override
@@ -195,20 +194,8 @@ public class StudentServiceImpl implements StudentService {
     public void checkAndUnlockAchievements(Long userId) {
         log.info("检查并解锁成就, userId: {}", userId);
 
-        // 获取用户数据
-        UserLearningStreak streak = getOrCreateStreak(userId);
-        UserLevel userLevel = getOrCreateUserLevel(userId);
-
-        // 检查连续学习成就
-        checkStreakAchievements(userId, streak.getStreakDays());
-
-        // 检查学习时长成就
-        int totalHours = userLevel.getTotalExperience() / 60; // 假设1分钟=1经验
-        checkDurationAchievements(userId, totalHours);
-
-        // 检查课程完成成就
-        int completedCourses = getCompletedCoursesCount(userId);
-        checkCourseAchievements(userId, completedCourses);
+        // 调用 AchievementService 统一处理成就检查和授予
+        achievementService.checkAndGrantAchievements(userId);
     }
 
     // ==================== 私有辅助方法 ====================
@@ -240,16 +227,16 @@ public class StudentServiceImpl implements StudentService {
     private StudentDashboardResponse.TodayStats getTodayStats(Long userId) {
         StudentDashboardResponse.TodayStats stats = new StudentDashboardResponse.TodayStats();
 
-        // 获取今日学习时长（从learning_progress表）
-        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-        LambdaQueryWrapper<LearningProgress> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(LearningProgress::getUserId, userId)
-                .ge(LearningProgress::getUpdatedAt, todayStart);
+        // 从 study_checkin 表获取今日学习时长
+        LocalDate today = LocalDate.now(CHINA_ZONE);
+        LambdaQueryWrapper<StudyCheckin> checkinWrapper = new LambdaQueryWrapper<>();
+        checkinWrapper.eq(StudyCheckin::getUserId, userId)
+                .eq(StudyCheckin::getCheckinDate, today);
 
-        List<LearningProgress> todayProgress = learningProgressMapper.selectList(wrapper);
-        int todayMinutes = todayProgress.stream()
-                .mapToInt(p -> p.getStudyDurationMinutes() != null ? p.getStudyDurationMinutes() : 0)
-                .sum();
+        StudyCheckin todayCheckin = studyCheckinMapper.selectOne(checkinWrapper);
+        int todayMinutes = todayCheckin != null && todayCheckin.getStudyMinutes() != null
+                ? todayCheckin.getStudyMinutes()
+                : 0;
 
         stats.setStudyMinutes(todayMinutes);
 
@@ -258,7 +245,6 @@ public class StudentServiceImpl implements StudentService {
         stats.setStreakDays(streak.getStreakDays());
 
         // 检查今日是否已打卡
-        LocalDate today = LocalDate.now();
         boolean checkedIn = streak.getLastCheckinDate() != null &&
                            streak.getLastCheckinDate().equals(today);
         stats.setCheckedIn(checkedIn);
@@ -294,8 +280,32 @@ public class StudentServiceImpl implements StudentService {
         continueLearning.setCourseName(course.getName());
         continueLearning.setCoverImage(course.getCoverImage());
         continueLearning.setProgressPercent(progress.getProgressPercent());
-        continueLearning.setCurrentChapter("继续学习"); // TODO: 从章节进度获取
-        continueLearning.setCurrentChapterId(null);
+
+        // 获取当前正在学习的章节
+        LambdaQueryWrapper<UserChapterProgress> chapterWrapper = new LambdaQueryWrapper<>();
+        chapterWrapper.eq(UserChapterProgress::getUserId, userId)
+                .eq(UserChapterProgress::getCourseId, course.getId())
+                .eq(UserChapterProgress::getCompleted, false)
+                .orderByDesc(UserChapterProgress::getUpdatedAt)
+                .last("LIMIT 1");
+
+        UserChapterProgress chapterProgress = userChapterProgressMapper.selectOne(chapterWrapper);
+
+        if (chapterProgress != null) {
+            // 获取章节信息
+            com.itts.modules.course.entity.CourseChapter chapter =
+                courseChapterMapper.selectById(chapterProgress.getChapterId());
+            if (chapter != null) {
+                continueLearning.setCurrentChapter(chapter.getTitle());
+                continueLearning.setCurrentChapterId(chapter.getId());
+            } else {
+                continueLearning.setCurrentChapter("继续学习");
+                continueLearning.setCurrentChapterId(null);
+            }
+        } else {
+            continueLearning.setCurrentChapter("开始学习");
+            continueLearning.setCurrentChapterId(null);
+        }
 
         return continueLearning;
     }
@@ -396,18 +406,42 @@ public class StudentServiceImpl implements StudentService {
      * 获取最近解锁的成就
      */
     private List<StudentDashboardResponse.AchievementItem> getRecentAchievements(Long userId, int limit) {
-        // TODO: 从user_achievement表查询
-        // 这里返回模拟数据
-        List<StudentDashboardResponse.AchievementItem> achievements = new ArrayList<>();
+        // 调用 AchievementService 获取真实数据
+        List<com.itts.modules.learning.dto.AchievementResponse> achievements =
+            achievementService.getRecentAchievements(userId, limit);
 
-        StudentDashboardResponse.AchievementItem item1 = new StudentDashboardResponse.AchievementItem();
-        item1.setAchievementId(1L);
-        item1.setName("连续7天学习");
-        item1.setIcon("🔥🔥");
-        item1.setUnlockedAt("2小时前");
-        achievements.add(item1);
+        return achievements.stream().map(achievement -> {
+            StudentDashboardResponse.AchievementItem item = new StudentDashboardResponse.AchievementItem();
+            item.setAchievementId(achievement.getId());
+            item.setName(achievement.getName());
+            item.setIcon(achievement.getIcon() != null ? achievement.getIcon() : "🏆");
+            item.setUnlockedAt(formatEarnedTime(achievement.getEarnedAt()));
+            return item;
+        }).collect(Collectors.toList());
+    }
 
-        return achievements;
+    /**
+     * 格式化获得时间为相对时间
+     */
+    private String formatEarnedTime(LocalDateTime earnedAt) {
+        if (earnedAt == null) {
+            return "刚刚";
+        }
+
+        long hours = ChronoUnit.HOURS.between(earnedAt, LocalDateTime.now());
+        long days = ChronoUnit.DAYS.between(earnedAt, LocalDateTime.now());
+
+        if (hours < 1) {
+            long minutes = ChronoUnit.MINUTES.between(earnedAt, LocalDateTime.now());
+            return minutes <= 0 ? "刚刚" : minutes + "分钟前";
+        } else if (hours < 24) {
+            return hours + "小时前";
+        } else if (days < 30) {
+            return days + "天前";
+        } else {
+            long months = ChronoUnit.MONTHS.between(earnedAt, LocalDateTime.now());
+            return months + "个月前";
+        }
     }
 
     /**
@@ -476,75 +510,5 @@ public class StudentServiceImpl implements StudentService {
             return LEVEL_EXP_REQUIREMENTS[LEVEL_EXP_REQUIREMENTS.length - 1];
         }
         return LEVEL_EXP_REQUIREMENTS[currentLevel];
-    }
-
-    /**
-     * 检查连续学习成就
-     */
-    private boolean checkStreakAchievements(Long userId, int streakDays) {
-        // 成就里程碑：3天、7天、30天、100天
-        int[] milestones = {3, 7, 30, 100};
-
-        for (int milestone : milestones) {
-            if (streakDays == milestone) {
-                log.info("解锁连续学习成就, userId: {}, days: {}", userId, milestone);
-                // TODO: 记录到user_achievement表
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 检查学习时长成就
-     */
-    private void checkDurationAchievements(Long userId, int totalHours) {
-        // 成就里程碑：10h、50h、100h、500h
-        int[] milestones = {10, 50, 100, 500};
-
-        for (int milestone : milestones) {
-            if (totalHours >= milestone) {
-                log.info("解锁学习时长成就, userId: {}, hours: {}", userId, milestone);
-                // TODO: 记录到user_achievement表
-            }
-        }
-    }
-
-    /**
-     * 检查课程完成成就
-     */
-    private void checkCourseAchievements(Long userId, int completedCount) {
-        // 成就里程碑：1门、5门、10门、50门
-        int[] milestones = {1, 5, 10, 50};
-
-        for (int milestone : milestones) {
-            if (completedCount >= milestone) {
-                log.info("解锁课程完成成就, userId: {}, count: {}", userId, milestone);
-                // TODO: 记录到user_achievement表
-            }
-        }
-    }
-
-    /**
-     * 获取已完成课程数量
-     */
-    private int getCompletedCoursesCount(Long userId) {
-        LambdaQueryWrapper<LearningProgress> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(LearningProgress::getUserId, userId)
-                .ge(LearningProgress::getProgressPercent, 100);
-
-        return learningProgressMapper.selectCount(wrapper).intValue();
-    }
-
-    /**
-     * 获取连续学习成就名称
-     */
-    private String getStreakAchievementName(int days) {
-        if (days >= 100) return "学习狂魔";
-        if (days >= 30) return "学习达人";
-        if (days >= 7) return "坚持不懈";
-        if (days >= 3) return "初露锋芒";
-        return "学习新手";
     }
 }

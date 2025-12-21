@@ -1,7 +1,7 @@
 package com.itts.modules.student.service;
 
-import com.itts.modules.student.dto.CheckinResponse;
 import com.itts.modules.student.dto.StudentDashboardResponse;
+import com.itts.modules.student.dto.StudentStatsResponse;
 
 /**
  * 学生服务接口
@@ -17,12 +17,12 @@ public interface StudentService {
     StudentDashboardResponse getDashboard(Long userId);
 
     /**
-     * 学习打卡
+     * 获取学生学习统计
      *
      * @param userId 用户ID
-     * @return 打卡结果
+     * @return 学习统计数据
      */
-    CheckinResponse checkin(Long userId);
+    StudentStatsResponse getStats(Long userId);
 
     /**
      * 添加经验值
