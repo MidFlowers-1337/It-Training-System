@@ -14,3 +14,8 @@ export { default as Divider } from './Divider.vue';
 export { default as Modal } from './Modal.vue';
 export { default as EmptyState } from './EmptyState.vue';
 export { default as ProgressRing } from './ProgressRing.vue';
+export { default as Avatar } from './Avatar.vue';
+export { default as Alert } from './Alert.vue';
+export { default as Tag } from './Tag.vue';
+export { default as Timeline } from './Timeline.vue';
+export { default as TimelineItem } from './TimelineItem.vue';

@@ -28,6 +28,11 @@ export {
   Modal,
   EmptyState,
   ProgressRing,
+  Avatar,
+  Alert,
+  Tag,
+  Timeline,
+  TimelineItem,
 } from './primitives';
 
 // Patterns (模式组件)
