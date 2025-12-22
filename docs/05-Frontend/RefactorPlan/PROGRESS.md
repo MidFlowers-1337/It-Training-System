@@ -1,7 +1,7 @@
 # 前端重构进度文档
 
-> 最后更新：2025-12-21
-> 当前阶段：**Phase 3 进行中**
+> 最后更新：2025-12-22
+> 当前阶段：**Phase 3 完成 ✅**
 
 ---
 
@@ -11,7 +11,7 @@
 |------|------|------|
 | **Phase 1: Foundation** | ✅ 完成 | 搭建 design-system 目录，配置 Tailwind 和 PrimeVue Unstyled |
 | **Phase 2: Patterns** | ✅ 完成 | 实现核心 UI 模式组件 |
-| **Phase 3: Migration** | 🔄 进行中 | 逐模块迁移至新架构 |
+| **Phase 3: Migration** | ✅ 完成 | 逐模块迁移至新架构 |
 
 ---
 
@@ -462,9 +462,15 @@ app.mount('#app');
 | Settings.vue | ✅ 完成 | 设置页面 |
 | Home.vue | ✅ 完成 | 首页 |
 | Dashboard.vue | ✅ 完成 | 仪表盘 |
-| PersonalCenter.vue | ⏳ 待开始 | 个人中心 |
-| UserProfile.vue | ⏳ 待开始 | 用户画像 |
-| 其他页面 | ⏳ 待开始 | CourseList, CourseDetail 等 |
+| PersonalCenter.vue | ✅ 完成 | 个人中心 |
+| UserProfile.vue | ✅ 完成 | 用户画像 |
+| CourseList.vue | ✅ 完成 | 课程列表页 |
+| CourseDetail.vue | ✅ 完成 | 课程详情页 |
+| CourseStudy.vue | ✅ 完成 | 课程学习页 |
+| LearningCenter.vue | ✅ 完成 | 学习中心页 |
+| LearningPlan.vue | ✅ 完成 | 学习计划页 |
+| LearningReport.vue | ✅ 完成 | 学习报告页 |
+| SmartRecommend.vue | ✅ 完成 | 智能推荐页 |
 
 #### 迁移变更
 
@@ -501,14 +507,167 @@ app.mount('#app');
 - 使用内联 SVG 图标
 - 使用 TypeScript 重写
 - 保留 ECharts 图表功能
+n**PersonalCenter.vue 变更：**
+- 移除 Element Plus 依赖（el-avatar, el-icon, el-form, el-input, el-dialog, el-button, el-alert）
+- 使用 Design System 组件（PageLayout, Button, Input, Modal, FormLayout, FormItem, InsetGroup, InsetItem, Avatar, Alert）
+- 新增 Avatar 组件到 Design System（支持图片、文字回退、多种尺寸）
+- 新增 Alert 组件到 Design System（支持 info/success/warning/error 类型）
+- 使用内联 SVG 图标替代 @element-plus/icons-vue
+- 使用 TypeScript 重写
+- 自定义 Tab 切换器替代 segmented 样式
+n**UserProfile.vue 变更：**
+- 移除 Element Plus 依赖（v-loading, el-avatar, el-tag, el-icon, el-rate, el-empty, el-descriptions, el-timeline, el-dialog, el-form, el-select, el-checkbox-group, el-slider, el-button）
+- 使用 Design System 组件（PageLayout, Button, Input, Select, Checkbox, Modal, FormLayout, FormItem, InsetGroup, InsetItem, Avatar, Tag, Timeline, TimelineItem, EmptyState）
+- 新增 Tag 组件到 Design System（支持多种类型和尺寸）
+- 新增 Timeline/TimelineItem 组件到 Design System
+- 使用内联 SVG 图标替代 @element-plus/icons-vue
+- 使用 TypeScript 重写
+- 保留 ECharts 图表功能（雷达图、柱状图）
+n**CourseList.vue 变更：**
+- 移除 Element Plus 依赖（el-pagination）
+- 移除 lucide-vue-next 依赖（BookOpen, Check, Search, SearchX, SlidersHorizontal）
+- 使用 Design System 组件（PageLayout, Button, Input, Select, InsetGroup, InsetItem, EmptyState）
+- 使用内联 SVG 图标
+- 使用 TypeScript 重写
+- 自定义分页组件替代 el-pagination
 
-### 3.4 待迁移模块
+**CourseDetail.vue 变更：**
+- 移除 Element Plus 依赖（v-loading, ElMessage, ElMessageBox）
+- 移除 lucide-vue-next 依赖（Calendar, CalendarX2, ChevronLeft, Clock, FileText, TriangleAlert, UserCircle, Users, Timer, Brain, Cloud, Code2, Database, Layout, Server）
+- 使用 Design System 组件（PageLayout, Section, Button, Tag, Modal, EmptyState）
+- 使用内联 SVG 图标（课程分类图标、时间图标、日历图标等）
+- 使用 TypeScript 重写，添加 Course 和 Session 接口定义
+- 使用自定义 Toast 替代 ElMessage
+- 使用 Modal 组件替代 ElMessageBox.confirm
+
+**CourseStudy.vue 变更：**
+- 移除 Element Plus 依赖（el-button, el-card, el-tag, el-icon, el-dialog, el-form, el-form-item, el-input, el-empty, el-progress, ElMessage）
+- 移除 @element-plus/icons-vue 依赖（ArrowLeft, Clock, VideoPlay, CircleCheck）
+- 使用 Design System 组件（Button, Input, Modal, Tag, EmptyState, Section, FormLayout, FormItem）
+- 使用内联 SVG 图标
+- 使用 TypeScript 重写，添加 Course, Chapter, Progress, Note 接口定义
+- 使用自定义 Toast 替代 ElMessage
+- 保留 video.js 视频播放器和 ECharts 图表功能
+
+**LearningCenter.vue 变更：**
+- 移除 ElMessage 依赖
+- 移除 lucide-vue-next 依赖（CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Flame, GraduationCap, Sparkles, Trophy, BookOpen）
+- 使用 Design System 组件（Button, EmptyState）
+- 使用内联 SVG 图标
+- 使用 TypeScript 重写，添加 Dashboard, TodayCheckin 接口定义
+- 使用自定义 Toast 替代 ElMessage
+
+**LearningPlan.vue 变更：**
+- 移除 Element Plus 依赖（v-loading, el-dropdown, el-dropdown-menu, el-dropdown-item, el-icon, el-dialog, el-form, el-form-item, el-input, el-date-picker, el-input-number, el-select, el-option, ElMessage, ElMessageBox）
+- 移除 @element-plus/icons-vue 依赖（Plus, MoreFilled, Calendar, Check）和 lucide-vue-next 依赖（Clock, Target）
+- 使用 Design System 组件（Button, Input, Select, Modal, Tag, EmptyState, FormLayout, FormItem）
+- 使用内联 SVG 图标
+- 使用自定义下拉菜单替代 el-dropdown
+- 使用原生 input[type="date"] 替代 el-date-picker
+- 使用 TypeScript 重写，添加 Plan, Course 接口定义
+- 使用自定义 Toast 和 Confirm Dialog 替代 ElMessage 和 ElMessageBox
+
+**LearningReport.vue 变更：**
+- 移除 Element Plus 依赖（v-loading, el-date-picker, ElMessage）
+- 移除 lucide-vue-next 依赖（ArrowDown, ArrowUp, Award, BarChart3, BookOpen, CalendarDays, CheckCircle2, Clock, Flame, Gauge, Lightbulb）
+- 使用 Design System 组件（Select, EmptyState）
+- 使用 Select 组件生成周/月/年选择器替代 el-date-picker
+- 使用内联 SVG 图标
+- 使用 TypeScript 重写，添加 Report, SelectOption 接口定义
+- 使用自定义 Toast 替代 ElMessage
+- 使用自定义 Loading Overlay 替代 v-loading
+- 保留 ECharts 图表功能（趋势图、饼图）
+
+**SmartRecommend.vue 变更：**
+- 移除 Element Plus 依赖（el-form, el-form-item, el-input, ElMessage）
+- 移除 lucide-vue-next 依赖（ArrowRight, Brain, Info, Loader2, Sparkles）
+- 使用 Design System 组件（Button, EmptyState）
+- 使用原生 textarea 替代 el-input
+- 使用内联 SVG 图标
+- 使用 TypeScript 重写，添加 Course, Recommendation 接口定义
+- 使用自定义 Toast 替代 ElMessage
+
+### 3.4 管理端页面迁移 ✅
+
+| 页面 | 状态 | 说明 |
+|------|------|------|
+| Dashboard.vue | ✅ 完成 | 管理后台仪表盘 |
+| Courses.vue | ✅ 完成 | 课程管理页 |
+| Enrollments.vue | ✅ 完成 | 报名管理页 |
+| Sessions.vue | ✅ 完成 | 班期管理页 |
+| Users.vue | ✅ 完成 | 用户管理页 |
+
+#### 迁移变更
+
+**Dashboard.vue 变更：**
+- 使用 Design System 组件（PageLayout, PageHeader, Section, ListRow）
+- 使用内联 SVG 图标
+- 使用 TypeScript 重写
+- 保留 ECharts 图表功能
+
+**Courses.vue 变更：**
+- 移除 Element Plus 依赖（el-form, el-button, el-input, el-select, el-dialog）
+- 保留 el-table, el-pagination, el-input-number（表格和分页功能）
+- 使用 Design System 组件（PageLayout, PageHeader, Section, Button, Input, Select, Modal, FormLayout, FormItem, Tag）
+- 实现自定义 Toast 函数替代 ElMessage
+- 实现 confirmDialog 函数替代 ElMessageBox.confirm
+- 使用内联 SVG 图标替代 @element-plus/icons-vue
+- 使用 TypeScript 重写，添加 Course, SearchForm, CourseForm 接口定义
+
+**Enrollments.vue 变更：**
+- 移除 Element Plus 依赖（el-select）和 lucide-vue-next 依赖
+- 保留 el-table, el-pagination（表格和分页功能）
+- 使用 Design System 组件（PageLayout, PageHeader, Section, Button, Select, Tag）
+- 实现自定义 Toast 函数替代 ElMessage
+- 使用内联 SVG 图标
+- 使用 TypeScript 重写，添加 Enrollment, Session, Pagination 接口定义
+- CSV 导出功能保留
+
+**Sessions.vue 变更：**
+- 移除 Element Plus 依赖（el-form, el-button, el-input, el-select, el-dialog, el-tag）
+- 保留 el-table, el-pagination, el-date-picker, el-input-number（表格、分页、日期选择功能）
+- 使用 Design System 组件（PageLayout, PageHeader, Section, Button, Input, Select, Modal, FormLayout, FormItem, Tag）
+- 实现自定义 Toast 函数替代 ElMessage
+- 实现 showConfirmDialog 函数替代 ElMessageBox.confirm
+- 使用内联 SVG 图标替代 @element-plus/icons-vue
+- 使用 TypeScript 重写，添加 SessionRow, SessionForm, CourseOption, InstructorOption 接口定义
+
+**Users.vue 变更：**
+- 移除 Element Plus 依赖（el-form, el-dialog, el-switch）和 lucide-vue-next 依赖
+- 保留 el-table, el-pagination（表格和分页功能）
+- 使用 Design System 组件（PageLayout, PageHeader, Section, Button, Input, Select, Modal, FormLayout, FormItem, Tag, Switch）
+- 实现自定义 Toast 函数替代 ElMessage
+- 实现 confirmDialog 函数替代 ElMessageBox.confirm
+- 实现 promptDialog 函数替代 ElMessageBox.prompt（重置密码功能）
+- 使用内联 SVG 图标
+- 使用 TypeScript 重写，添加 User, UserForm, SearchForm, FormErrors 接口定义
+
+### 3.5 讲师端页面迁移 ✅
+
+| 页面 | 状态 | 说明 |
+|------|------|------|
+| MySessions.vue | ✅ 完成 | 讲师班期管理页 |
+
+#### 迁移变更
+
+**MySessions.vue 变更：**
+- 移除 Element Plus 依赖（el-dialog, el-button, el-tag, el-empty, el-icon）
+- 移除 @element-plus/icons-vue 依赖（User, Download）
+- 移除 lucide-vue-next 依赖（CalendarDays）
+- 保留 el-table（表格功能）
+- 使用 Design System 组件（PageLayout, PageHeader, Section, Button, Modal, Tag, EmptyState）
+- 实现自定义 Toast 函数替代 ElMessage
+- 使用内联 SVG 图标
+- 使用 TypeScript 重写，添加 Session, StudentEnrollment, ToastState 接口定义
+- CSV 导出功能保留
+
+### 3.6 待迁移模块
 
 | 模块 | 状态 | 优先级 |
 |------|------|--------|
-| student 模块（剩余页面） | 🔄 进行中 | 高 |
-| admin 模块 | ⏳ 待开始 | 中 |
-| instructor 模块 | ⏳ 待开始 | 低 |
+| student 模块 | ✅ 完成 | 高 |
+| admin 模块 | ✅ 完成 | 中 |
+| instructor 模块 | ✅ 完成 | 低 |
 
 ---
 
@@ -539,6 +698,11 @@ src/design-system/
 │   ├── Modal.vue
 │   ├── EmptyState.vue           # 新增：空状态组件
 │   ├── ProgressRing.vue         # 新增：环形进度条
+│   ├── Avatar.vue               # 新增：头像组件
+│   ├── Alert.vue                # 新增：警告提示组件
+│   ├── Tag.vue                  # 新增：标签组件
+│   ├── Timeline.vue             # 新增：时间线组件
+│   ├── TimelineItem.vue         # 新增：时间线项组件
 │   └── index.ts
 ├── patterns/
 │   ├── PageLayout.vue
@@ -572,4 +736,39 @@ src/design-system/
 1. [x] 创建示例页面验证设计系统
 2. [x] 开始 auth 模块迁移（Login.vue, Register.vue）
 3. [x] 迁移通用组件（EmptyState, ProgressRing）
-4. [ ] 迁移学生端页面
+4. [x] 迁移学生端页面（14个页面）
+5. [x] 迁移管理端页面（5个页面）
+6. [x] 迁移讲师端页面（1个页面）
+
+---
+
+## 🎉 重构完成总结
+
+### 迁移统计
+
+| 模块 | 页面数 | 状态 |
+|------|--------|------|
+| Auth | 2 | ✅ 完成 |
+| Student | 14 | ✅ 完成 |
+| Admin | 5 | ✅ 完成 |
+| Instructor | 1 | ✅ 完成 |
+| **总计** | **22** | **✅ 全部完成** |
+
+### 新增 Design System 组件
+
+**Primitives（原子组件）：**
+- Button, Input, Select, Checkbox, Switch, Divider, Modal
+- EmptyState, ProgressRing, Avatar, Alert, Tag, Timeline, TimelineItem
+
+**Patterns（模式组件）：**
+- PageLayout, PageHeader, Section, ListRow, DescriptionList
+- FormLayout, FormItem, InsetGroup, InsetItem, AuthLayout
+
+### 保留的 Element Plus 组件
+
+由于 Design System 暂无替代方案，以下组件暂时保留：
+- `el-table` / `el-table-column` - 表格组件
+- `el-pagination` - 分页组件
+- `el-date-picker` - 日期选择器
+- `el-input-number` - 数字输入框
+- `v-loading` - 加载指令
