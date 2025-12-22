@@ -12,7 +12,10 @@
           </div>
 
           <div class="inline-flex items-center gap-2 rounded-full bg-bg-primary/40 border border-border-color/60 px-4 py-2 text-sm text-text-secondary">
-            <CalendarDays class="w-4 h-4 text-primary" />
+            <!-- Calendar Icon -->
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
             {{ monthLabel }}
           </div>
         </div>
@@ -22,7 +25,10 @@
           <div class="card p-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                <Clock class="w-5 h-5" />
+                <!-- Clock Icon -->
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
               <div class="min-w-0">
                 <div class="text-xs text-text-muted">累计学习时长</div>
@@ -34,7 +40,12 @@
           <div class="card p-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-2xl bg-info/10 border border-info/20 flex items-center justify-center text-info">
-                <GraduationCap class="w-5 h-5" />
+                <!-- GraduationCap Icon -->
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                </svg>
               </div>
               <div class="min-w-0">
                 <div class="text-xs text-text-muted">完成 / 报名</div>
@@ -48,7 +59,11 @@
           <div class="card p-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-2xl bg-warning/10 border border-warning/20 flex items-center justify-center text-warning">
-                <Flame class="w-5 h-5" />
+                <!-- Flame Icon -->
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+                </svg>
               </div>
               <div class="min-w-0">
                 <div class="text-xs text-text-muted">连续学习</div>
@@ -60,7 +75,10 @@
           <div class="card p-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-2xl bg-success/10 border border-success/20 flex items-center justify-center text-success">
-                <Trophy class="w-5 h-5" />
+                <!-- Trophy Icon -->
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
               </div>
               <div class="min-w-0">
                 <div class="text-xs text-text-muted">成就积分</div>
@@ -107,16 +125,19 @@
             </div>
 
             <div class="flex items-center gap-3">
-              <button type="button" class="btn btn-primary" :disabled="checkinLoading || todayStudyMinutes === 0" @click="handleCheckin">
+              <Button variant="primary" :disabled="checkinLoading || todayStudyMinutes === 0" @click="handleCheckin">
                 {{ checkinLoading ? '打卡中...' : '立即打卡' }}
-              </button>
+              </Button>
               <span v-if="todayStudyMinutes === 0" class="text-xs text-warning">请先学习课程后再打卡</span>
             </div>
           </div>
 
           <div v-else class="mt-6 flex items-start gap-4">
             <div class="w-10 h-10 rounded-2xl bg-success/10 border border-success/20 flex items-center justify-center text-success">
-              <CheckCircle2 class="w-5 h-5" />
+              <!-- CheckCircle Icon -->
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
             <div class="min-w-0">
               <p class="text-sm text-text-secondary">
@@ -167,7 +188,7 @@
 
           <div v-else class="mt-6">
             <EmptyState
-              :icon="BookOpen"
+              emoji="📚"
               title="暂无进行中的课程"
               description="去课程中心选择一门课程开始学习。"
               action-text="去选课"
@@ -200,7 +221,7 @@
           </div>
 
           <div v-else class="mt-6">
-            <EmptyState :icon="Sparkles" title="暂无统计" description="开始学习后，这里会展示你的本周趋势。" />
+            <EmptyState emoji="✨" title="暂无统计" description="开始学习后，这里会展示你的本周趋势。" size="sm" />
           </div>
         </div>
 
@@ -214,7 +235,10 @@
                 class="w-9 h-9 rounded-full border border-border-color/60 bg-bg-secondary/70 hover:bg-bg-tertiary/60 transition flex items-center justify-center"
                 @click="prevMonth"
               >
-                <ChevronLeft class="w-4 h-4 text-text-secondary" />
+                <!-- ChevronLeft Icon -->
+                <svg class="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
               </button>
               <div class="text-sm font-semibold text-text-primary tabular-nums">{{ monthLabel }}</div>
               <button
@@ -222,7 +246,10 @@
                 class="w-9 h-9 rounded-full border border-border-color/60 bg-bg-secondary/70 hover:bg-bg-tertiary/60 transition flex items-center justify-center"
                 @click="nextMonth"
               >
-                <ChevronRight class="w-4 h-4 text-text-secondary" />
+                <!-- ChevronRight Icon -->
+                <svg class="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
           </div>
@@ -253,164 +280,236 @@
         </div>
       </aside>
     </div>
+
+    <!-- Toast -->
+    <Teleport to="body">
+      <Transition name="toast">
+        <div
+          v-if="toast.visible"
+          class="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-sm font-medium shadow-lg"
+          :class="toastClass"
+        >
+          {{ toast.message }}
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Flame, GraduationCap, Sparkles, Trophy, BookOpen } from 'lucide-vue-next'
-import { getDashboard, checkin, getTodayCheckin, getMonthlyCheckinDates } from '@/api/learning'
-import EmptyState from '@/components/EmptyState.vue'
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { Button, EmptyState } from '@/design-system';
+import { getDashboard, checkin, getTodayCheckin, getMonthlyCheckinDates } from '@/api/learning';
 
-const router = useRouter()
+// Types
+interface Dashboard {
+  totalStudyFormatted?: string;
+  totalCoursesCompleted?: number;
+  totalCoursesEnrolled?: number;
+  currentStreakDays?: number;
+  totalAchievementPoints?: number;
+  todayCheckedIn?: boolean;
+  inProgressCourses?: Array<{
+    id: number;
+    courseId?: number;
+    courseName: string;
+    courseCategory: string;
+    studyDurationFormatted: string;
+    progressPercent: number;
+  }>;
+  weeklyStudyData?: Array<{
+    date: string;
+    studyMinutes: number;
+  }>;
+}
 
-const dashboard = ref({})
-const todayCheckin = ref(null)
-const checkinDates = ref([])
-const checkinLoading = ref(false)
-const todayStudyMinutes = ref(0)
+interface TodayCheckin {
+  studyMinutes: number;
+  studyContent?: string;
+}
 
-const currentYear = ref(new Date().getFullYear())
-const currentMonth = ref(new Date().getMonth() + 1)
+const router = useRouter();
+
+// State
+const dashboard = ref<Dashboard>({});
+const todayCheckin = ref<TodayCheckin | null>(null);
+const checkinDates = ref<string[]>([]);
+const checkinLoading = ref(false);
+const todayStudyMinutes = ref(0);
+
+const currentYear = ref(new Date().getFullYear());
+const currentMonth = ref(new Date().getMonth() + 1);
 
 const checkinForm = reactive({
   studyContent: '',
-})
+});
 
-const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+// Toast
+const toast = ref({ visible: false, message: '', type: 'success' as 'success' | 'warning' | 'error' | 'info' });
+const toastClass = computed(() => {
+  const classes: Record<string, string> = {
+    success: 'bg-success text-white',
+    warning: 'bg-warning text-white',
+    error: 'bg-error text-white',
+    info: 'bg-info text-white',
+  };
+  return classes[toast.value.type] || classes.success;
+});
 
-const monthLabel = computed(() => `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}`)
+const showToast = (message: string, type: 'success' | 'warning' | 'error' | 'info' = 'success') => {
+  toast.value = { visible: true, message, type };
+  setTimeout(() => {
+    toast.value.visible = false;
+  }, 3000);
+};
+
+const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+
+const monthLabel = computed(() => `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}`);
 
 const calendarDays = computed(() => {
-  const year = currentYear.value
-  const month = currentMonth.value
-  const firstDay = new Date(year, month - 1, 1)
-  const lastDay = new Date(year, month, 0)
-  const daysInMonth = lastDay.getDate()
-  const startWeekDay = firstDay.getDay()
+  const year = currentYear.value;
+  const month = currentMonth.value;
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
+  const daysInMonth = lastDay.getDate();
+  const startWeekDay = firstDay.getDay();
 
-  const days = []
-  const today = new Date()
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const days: Array<{ date: number; currentMonth: boolean; checkedIn: boolean; isToday: boolean }> = [];
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  const prevMonthLastDay = new Date(year, month - 1, 0).getDate()
+  const prevMonthLastDay = new Date(year, month - 1, 0).getDate();
   for (let i = startWeekDay - 1; i >= 0; i--) {
-    days.push({ date: prevMonthLastDay - i, currentMonth: false, checkedIn: false, isToday: false })
+    days.push({ date: prevMonthLastDay - i, currentMonth: false, checkedIn: false, isToday: false });
   }
 
   for (let i = 1; i <= daysInMonth; i++) {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
     days.push({
       date: i,
       currentMonth: true,
       checkedIn: checkinDates.value.includes(dateStr),
       isToday: dateStr === todayStr,
-    })
+    });
   }
 
-  const remaining = 42 - days.length
+  const remaining = 42 - days.length;
   for (let i = 1; i <= remaining; i++) {
-    days.push({ date: i, currentMonth: false, checkedIn: false, isToday: false })
+    days.push({ date: i, currentMonth: false, checkedIn: false, isToday: false });
   }
 
-  return days
-})
+  return days;
+});
 
-const getBarHeight = (minutes) => {
-  const maxMinutes = Math.max(...(dashboard.value.weeklyStudyData?.map((d) => d.studyMinutes) || [60]))
-  return maxMinutes > 0 ? (minutes / maxMinutes) * 100 : 0
-}
+const getBarHeight = (minutes: number): number => {
+  const maxMinutes = Math.max(...(dashboard.value.weeklyStudyData?.map((d) => d.studyMinutes) || [60]));
+  return maxMinutes > 0 ? (minutes / maxMinutes) * 100 : 0;
+};
 
 const calculateTodayStudyMinutes = () => {
   const today = dashboard.value.weeklyStudyData?.find((d) => {
-    const date = new Date(d.date)
-    const now = new Date()
-    return date.toDateString() === now.toDateString()
-  })
-  todayStudyMinutes.value = today?.studyMinutes || 0
-}
+    const date = new Date(d.date);
+    const now = new Date();
+    return date.toDateString() === now.toDateString();
+  });
+  todayStudyMinutes.value = today?.studyMinutes || 0;
+};
 
 const loadDashboard = async () => {
   try {
-    const res = await getDashboard()
+    const res = await getDashboard();
     if (res.code === 200) {
-      dashboard.value = res.data
-      calculateTodayStudyMinutes()
+      dashboard.value = res.data;
+      calculateTodayStudyMinutes();
     }
   } catch (error) {
-    console.error('加载仪表盘失败:', error)
+    console.error('加载仪表盘失败:', error);
   }
-}
+};
 
 const loadTodayCheckin = async () => {
   try {
-    const res = await getTodayCheckin()
-    if (res.code === 200) todayCheckin.value = res.data
+    const res = await getTodayCheckin();
+    if (res.code === 200) todayCheckin.value = res.data;
   } catch (error) {
-    console.error('加载今日打卡失败:', error)
+    console.error('加载今日打卡失败:', error);
   }
-}
+};
 
 const loadMonthlyCheckins = async () => {
   try {
-    const res = await getMonthlyCheckinDates(currentYear.value, currentMonth.value)
-    if (res.code === 200) checkinDates.value = res.data || []
+    const res = await getMonthlyCheckinDates(currentYear.value, currentMonth.value);
+    if (res.code === 200) checkinDates.value = res.data || [];
   } catch (error) {
-    console.error('加载打卡日历失败:', error)
+    console.error('加载打卡日历失败:', error);
   }
-}
+};
 
 const handleCheckin = async () => {
   if (todayStudyMinutes.value === 0) {
-    ElMessage.warning('请先学习课程后再打卡')
-    return
+    showToast('请先学习课程后再打卡', 'warning');
+    return;
   }
 
-  checkinLoading.value = true
+  checkinLoading.value = true;
   try {
-    const res = await checkin({ studyMinutes: todayStudyMinutes.value, studyContent: checkinForm.studyContent })
+    const res = await checkin({ studyMinutes: todayStudyMinutes.value, studyContent: checkinForm.studyContent });
     if (res.code === 200) {
-      ElMessage.success('打卡成功！')
+      showToast('打卡成功！', 'success');
       if (res.data?.newAchievementEarned && res.data?.newAchievement?.name) {
-        ElMessage.success(`恭喜获得成就：${res.data.newAchievement.name}`)
+        setTimeout(() => {
+          showToast(`恭喜获得成就：${res.data.newAchievement.name}`, 'success');
+        }, 1500);
       }
-      await loadDashboard()
-      await loadTodayCheckin()
-      await loadMonthlyCheckins()
+      await loadDashboard();
+      await loadTodayCheckin();
+      await loadMonthlyCheckins();
     }
   } catch (error) {
-    ElMessage.error('打卡失败，请重试')
+    showToast('打卡失败，请重试', 'error');
   } finally {
-    checkinLoading.value = false
+    checkinLoading.value = false;
   }
-}
+};
 
 const prevMonth = () => {
   if (currentMonth.value === 1) {
-    currentMonth.value = 12
-    currentYear.value--
+    currentMonth.value = 12;
+    currentYear.value--;
   } else {
-    currentMonth.value--
+    currentMonth.value--;
   }
-  loadMonthlyCheckins()
-}
+  loadMonthlyCheckins();
+};
 
 const nextMonth = () => {
   if (currentMonth.value === 12) {
-    currentMonth.value = 1
-    currentYear.value++
+    currentMonth.value = 1;
+    currentYear.value++;
   } else {
-    currentMonth.value++
+    currentMonth.value++;
   }
-  loadMonthlyCheckins()
-}
+  loadMonthlyCheckins();
+};
 
 onMounted(() => {
-  loadDashboard()
-  loadTodayCheckin()
-  loadMonthlyCheckins()
-})
+  loadDashboard();
+  loadTodayCheckin();
+  loadMonthlyCheckins();
+});
 </script>
 
+<style scoped>
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -20px);
+}
+</style>

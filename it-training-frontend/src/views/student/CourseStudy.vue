@@ -1,210 +1,300 @@
 <template>
-  <div class="course-study">
-    <div class="study-header">
-      <el-button @click="goBack" :icon="ArrowLeft">返回</el-button>
-      <h2>{{ course.name }}</h2>
-      <div class="timer-display">
-        <el-icon><Clock /></el-icon>
-        <span>本次学习: {{ formatTime(studySeconds) }}</span>
-      </div>
-    </div>
+  <div class="min-h-screen bg-bg-primary">
+    <!-- Header -->
+    <header class="sticky top-0 z-20 bg-glass border-b border-border-color/60 backdrop-blur-xl px-6 py-4">
+      <div class="flex items-center gap-5">
+        <Button variant="ghost" @click="goBack">
+          <template #icon>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </template>
+          返回
+        </Button>
 
-    <div class="study-content">
-      <div class="main-area">
-        <!-- 视频播放器 -->
-        <div class="video-area">
-          <video ref="videoPlayer" class="video-js vjs-big-play-centered"></video>
+        <h2 class="flex-1 text-lg font-semibold text-text-primary truncate">{{ course.name }}</h2>
+
+        <div class="flex items-center gap-2 text-primary font-semibold">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>本次学习: {{ formatTime(studySeconds) }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6 p-6 max-w-[1600px] mx-auto">
+      <!-- Main Area -->
+      <div class="space-y-6">
+        <!-- Video Player -->
+        <div class="bg-black rounded-2xl overflow-hidden">
+          <video ref="videoPlayer" class="video-js vjs-big-play-centered w-full"></video>
         </div>
 
-        <!-- 课程章节列表 -->
-        <el-card class="chapters-card">
-          <template #header>
-            <div class="chapters-header">
-              <span>课程章节</span>
-              <el-tag>{{ chapters.length }} 章节</el-tag>
-            </div>
+        <!-- Chapters -->
+        <Section title="课程章节">
+          <template #action>
+            <Tag>{{ chapters.length }} 章节</Tag>
           </template>
-          <div class="chapters-list">
+
+          <div class="max-h-[300px] overflow-y-auto">
             <div
               v-for="chapter in chapters"
               :key="chapter.id"
-              :class="['chapter-item', { active: currentChapter?.id === chapter.id }]"
+              class="flex items-center justify-between px-4 py-3 border-b border-border-color/60 last:border-b-0 cursor-pointer transition-colors"
+              :class="currentChapter?.id === chapter.id ? 'bg-primary/10 border-l-3 border-l-primary' : 'hover:bg-bg-secondary'"
               @click="selectChapter(chapter)"
             >
-              <div class="chapter-info">
-                <el-icon v-if="chapter.completed" color="var(--success-color)"><CircleCheck /></el-icon>
-                <el-icon v-else><VideoPlay /></el-icon>
-                <span class="chapter-title">{{ chapter.title }}</span>
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <svg v-if="chapter.completed" class="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <svg v-else class="w-5 h-5 text-text-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-sm text-text-primary truncate">{{ chapter.title }}</span>
               </div>
-              <span class="chapter-duration">{{ formatDuration(chapter.duration) }}</span>
+              <span class="text-xs text-text-muted flex-shrink-0">{{ formatDuration(chapter.duration) }}</span>
             </div>
           </div>
-        </el-card>
+        </Section>
 
-        <!-- 学习笔记 -->
-        <el-card class="notes-card">
-          <template #header>
-            <div class="notes-header">
-              <span>学习笔记</span>
-              <el-button size="small" type="primary" @click="addNote">添加笔记</el-button>
-            </div>
+        <!-- Notes -->
+        <Section title="学习笔记">
+          <template #action>
+            <Button variant="primary" size="sm" @click="addNote">添加笔记</Button>
           </template>
-          <div class="notes-list">
-            <div v-for="note in notes" :key="note.id" class="note-item">
-              <div class="note-header">
-                <span class="note-time">{{ formatTime(note.videoTime) }}</span>
-                <el-button link type="danger" size="small" @click="deleteNote(note.id)">删除</el-button>
+
+          <div class="max-h-[400px] overflow-y-auto">
+            <template v-if="notes.length > 0">
+              <div
+                v-for="note in notes"
+                :key="note.id"
+                class="px-4 py-3 border-b border-border-color/60 last:border-b-0"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-semibold text-primary">{{ formatTime(note.videoTime) }}</span>
+                  <Button variant="ghost" size="sm" class="text-error" @click="deleteNote(note.id)">删除</Button>
+                </div>
+                <p class="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{{ note.content }}</p>
               </div>
-              <div class="note-content">{{ note.content }}</div>
-            </div>
-            <el-empty v-if="notes.length === 0" description="暂无笔记" :image-size="80" />
+            </template>
+            <EmptyState v-else emoji="📝" title="暂无笔记" description="点击添加笔记记录学习心得" size="sm" />
           </div>
-        </el-card>
+        </Section>
       </div>
 
-      <div class="side-area">
-        <el-card>
-          <template #header>
-            <span>学习进度</span>
-          </template>
-          <div class="progress-info">
-            <el-progress :percentage="progress.progressPercent || 0" />
-            <p>已学习: {{ progress.studyDurationFormatted || '0分钟' }}</p>
-            <p class="auto-save-hint">
-              <el-icon><Clock /></el-icon>
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Progress -->
+        <Section title="学习进度">
+          <div class="space-y-4">
+            <div>
+              <div class="flex items-center justify-between text-sm mb-2">
+                <span class="text-text-secondary">完成度</span>
+                <span class="font-semibold text-text-primary">{{ progress.progressPercent || 0 }}%</span>
+              </div>
+              <div class="h-2 bg-bg-tertiary rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-primary rounded-full transition-all duration-500"
+                  :style="{ width: `${progress.progressPercent || 0}%` }"
+                ></div>
+              </div>
+            </div>
+            <p class="text-sm text-text-secondary">已学习: {{ progress.studyDurationFormatted || '0分钟' }}</p>
+            <p class="flex items-center gap-2 text-xs text-text-muted">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               自动保存进度（每1分钟）
             </p>
           </div>
-        </el-card>
+        </Section>
 
-        <el-card style="margin-top: 20px;">
-          <template #header>
-            <span>课程信息</span>
-          </template>
-          <div class="info-item">
-            <span class="label">分类:</span>
-            <span>{{ course.categoryName }}</span>
+        <!-- Course Info -->
+        <Section title="课程信息">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between py-2 border-b border-border-color/60">
+              <span class="text-sm text-text-muted">分类</span>
+              <span class="text-sm text-text-primary">{{ course.categoryName }}</span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-border-color/60">
+              <span class="text-sm text-text-muted">难度</span>
+              <span class="text-sm text-text-primary">{{ course.difficultyName }}</span>
+            </div>
+            <div class="flex items-center justify-between py-2">
+              <span class="text-sm text-text-muted">课时</span>
+              <span class="text-sm text-text-primary">{{ course.durationHours }}小时</span>
+            </div>
           </div>
-          <div class="info-item">
-            <span class="label">难度:</span>
-            <span>{{ course.difficultyName }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">课时:</span>
-            <span>{{ course.durationHours }}小时</span>
-          </div>
-        </el-card>
+        </Section>
 
-        <!-- 学习统计 -->
-        <el-card style="margin-top: 20px;">
-          <template #header>
-            <span>学习统计</span>
-          </template>
-          <div ref="statsChart" class="stats-chart"></div>
-        </el-card>
+        <!-- Stats Chart -->
+        <Section title="学习统计">
+          <div ref="statsChart" class="w-full h-[200px]"></div>
+        </Section>
       </div>
     </div>
 
-    <!-- 添加笔记对话框 -->
-    <el-dialog v-model="noteDialogVisible" title="添加学习笔记" width="500px">
-      <el-form :model="noteForm">
-        <el-form-item label="当前时间">
-          <el-tag>{{ formatTime(currentVideoTime) }}</el-tag>
-        </el-form-item>
-        <el-form-item label="笔记内容">
-          <el-input
+    <!-- Add Note Modal -->
+    <Modal v-model="noteDialogVisible" title="添加学习笔记" @confirm="saveNote">
+      <FormLayout>
+        <FormItem label="当前时间">
+          <Tag type="info">{{ formatTime(currentVideoTime) }}</Tag>
+        </FormItem>
+        <FormItem label="笔记内容">
+          <Input
             v-model="noteForm.content"
             type="textarea"
             :rows="4"
             placeholder="请输入学习笔记..."
           />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="noteDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveNote">保存</el-button>
-      </template>
-    </el-dialog>
+        </FormItem>
+      </FormLayout>
+    </Modal>
+
+    <!-- Toast -->
+    <Teleport to="body">
+      <Transition name="toast">
+        <div
+          v-if="toast.visible"
+          class="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-sm font-medium shadow-lg"
+          :class="toastClass"
+        >
+          {{ toast.message }}
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { ArrowLeft, Clock, VideoPlay, CircleCheck } from '@element-plus/icons-vue'
-import { getCourseById, getCourseChapters, markChapterCompleted, updateChapterProgress } from '@/api/course'
-import { getCourseProgress, updateProgress, checkin, getDashboard } from '@/api/learning'
-import videojs from 'video.js'
-import 'video.js/dist/video-js.css'
-import * as echarts from 'echarts'
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { Button, Input, Modal, Tag, EmptyState, Section, FormLayout, FormItem } from '@/design-system';
+import { getCourseById, getCourseChapters, markChapterCompleted, updateChapterProgress } from '@/api/course';
+import { getCourseProgress, updateProgress, checkin, getDashboard } from '@/api/learning';
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
+import * as echarts from 'echarts';
 
-const route = useRoute()
-const router = useRouter()
+// Types
+interface Course {
+  name: string;
+  categoryName: string;
+  difficultyName: string;
+  durationHours: number;
+}
 
-const course = ref({})
-const progress = ref({})
-const studySeconds = ref(0) // 本次学习累计秒数
-const totalStudySeconds = ref(0) // 历史累计学习秒数
-const sessionStartTime = ref(null) // 本次会话开始时间
-const lastSaveTime = ref(null) // 上次保存时间
-const videoPlayer = ref(null)
-const statsChart = ref(null)
-let player = null
-let autoSaveTimer = null
-let studyTimer = null // 学习时长计时器
-let chartInstance = null
+interface Chapter {
+  id: number;
+  title: string;
+  videoUrl: string;
+  duration: number;
+  completed: boolean;
+  watchDuration?: number;
+  lastPosition?: number;
+}
 
-// 章节数据
-const chapters = ref([])
-const currentChapter = ref(null)
-const chapterProgressMap = ref({}) // 存储章节进度信息
+interface Progress {
+  progressPercent?: number;
+  studyDurationFormatted?: string;
+  studyDurationMinutes?: number;
+}
 
-// 学习笔记
-const notes = ref([])
-const noteDialogVisible = ref(false)
-const currentVideoTime = ref(0)
-const noteForm = ref({
-  content: ''
-})
+interface Note {
+  id: number;
+  videoTime: number;
+  content: string;
+  chapterId?: number;
+  chapterTitle?: string;
+  createdAt: string;
+}
 
+const route = useRoute();
+const router = useRouter();
+
+// State
+const course = ref<Course>({} as Course);
+const progress = ref<Progress>({});
+const studySeconds = ref(0);
+const totalStudySeconds = ref(0);
+const sessionStartTime = ref<number | null>(null);
+const lastSaveTime = ref<number | null>(null);
+const videoPlayer = ref<HTMLVideoElement | null>(null);
+const statsChart = ref<HTMLElement | null>(null);
+
+let player: ReturnType<typeof videojs> | null = null;
+let autoSaveTimer: ReturnType<typeof setInterval> | null = null;
+let studyTimer: ReturnType<typeof setInterval> | null = null;
+let chartInstance: echarts.ECharts | null = null;
+
+// Chapters
+const chapters = ref<Chapter[]>([]);
+const currentChapter = ref<Chapter | null>(null);
+const chapterProgressMap = ref<Record<number, { watchDuration: number; lastPosition: number }>>({});
+
+// Notes
+const notes = ref<Note[]>([]);
+const noteDialogVisible = ref(false);
+const currentVideoTime = ref(0);
+const noteForm = ref({ content: '' });
+
+// Toast
+const toast = ref({ visible: false, message: '', type: 'success' as 'success' | 'warning' | 'error' | 'info' });
+const toastClass = computed(() => {
+  const classes: Record<string, string> = {
+    success: 'bg-success text-white',
+    warning: 'bg-warning text-white',
+    error: 'bg-error text-white',
+    info: 'bg-info text-white',
+  };
+  return classes[toast.value.type] || classes.success;
+});
+
+const showToast = (message: string, type: 'success' | 'warning' | 'error' | 'info' = 'success') => {
+  toast.value = { visible: true, message, type };
+  setTimeout(() => {
+    toast.value.visible = false;
+  }, 3000);
+};
+
+// Methods
 const goBack = () => {
   if (player && !player.paused()) {
-    ElMessage.warning('请先暂停视频')
-    return
+    showToast('请先暂停视频', 'warning');
+    return;
   }
-  router.back()
-}
+  router.back();
+};
 
-const formatTime = (seconds) => {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0) {
-    return `${h}小时${m}分${s}秒`
-  }
-  if (m > 0) {
-    return `${m}分${s}秒`
-  }
-  return `${s}秒`
-}
+const formatTime = (seconds: number): string => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}小时${m}分${s}秒`;
+  if (m > 0) return `${m}分${s}秒`;
+  return `${s}秒`;
+};
 
-const formatDuration = (seconds) => {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
+const formatDuration = (seconds: number): string => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+};
 
-// 初始化 Video.js 播放器
+// Video Player
 const initPlayer = () => {
-  if (!videoPlayer.value) return
+  if (!videoPlayer.value) return;
 
   player = videojs(videoPlayer.value, {
     controls: true,
     autoplay: false,
     preload: 'auto',
     fluid: true,
-    playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2], // 倍速播放选项
+    playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
     controlBar: {
       children: [
         'playToggle',
@@ -213,247 +303,210 @@ const initPlayer = () => {
         'timeDivider',
         'durationDisplay',
         'progressControl',
-        'playbackRateMenuButton', // 倍速播放按钮
-        'fullscreenToggle'
-      ]
-    }
-  })
+        'playbackRateMenuButton',
+        'fullscreenToggle',
+      ],
+    },
+  });
 
-  // 监听播放开始 - 启动学习计时器
   player.on('play', () => {
     if (!sessionStartTime.value) {
-      sessionStartTime.value = Date.now()
+      sessionStartTime.value = Date.now();
     }
-    startStudyTimer()
-  })
+    startStudyTimer();
+  });
 
-  // 监听暂停 - 停止学习计时器
   player.on('pause', () => {
-    stopStudyTimer()
-  })
+    stopStudyTimer();
+  });
 
-  // 监听播放时间更新
   player.on('timeupdate', () => {
-    currentVideoTime.value = Math.floor(player.currentTime())
-
-    // 每10秒保存一次播放进度
+    currentVideoTime.value = Math.floor(player!.currentTime() || 0);
     if (currentChapter.value && currentVideoTime.value % 10 === 0) {
-      saveVideoProgress()
+      saveVideoProgress();
     }
-  })
+  });
 
-  // 监听视频结束
   player.on('ended', () => {
-    stopStudyTimer()
+    stopStudyTimer();
     if (currentChapter.value) {
-      // 标记章节为已完成
-      markCurrentChapterCompleted()
-      ElMessage.success('本章节学习完成！')
-      autoSaveProgress()
+      markCurrentChapterCompleted();
+      showToast('本章节学习完成！', 'success');
+      autoSaveProgress();
     }
-  })
-}
+  });
+};
 
-// 启动学习计时器（每秒累加）
 const startStudyTimer = () => {
-  if (studyTimer) return
-
+  if (studyTimer) return;
   studyTimer = setInterval(() => {
-    studySeconds.value++
-  }, 1000)
-}
+    studySeconds.value++;
+  }, 1000);
+};
 
-// 停止学习计时器
 const stopStudyTimer = () => {
   if (studyTimer) {
-    clearInterval(studyTimer)
-    studyTimer = null
+    clearInterval(studyTimer);
+    studyTimer = null;
   }
-}
+};
 
-// 选择章节
-const selectChapter = async (chapter) => {
-  if (!player) return
+const selectChapter = async (chapter: Chapter) => {
+  if (!player) return;
 
-  // 保存当前章节的播放进度
   if (currentChapter.value) {
-    await saveVideoProgress()
+    await saveVideoProgress();
   }
 
-  currentChapter.value = chapter
-  player.src({
-    type: 'video/mp4',
-    src: chapter.videoUrl
-  })
-  player.load()
+  currentChapter.value = chapter;
+  player.src({ type: 'video/mp4', src: chapter.videoUrl });
+  player.load();
 
-  // 恢复上次播放位置
-  const savedProgress = chapterProgressMap.value[chapter.id]
+  const savedProgress = chapterProgressMap.value[chapter.id];
   if (savedProgress && savedProgress.lastPosition > 0) {
-    player.currentTime(savedProgress.lastPosition)
-    ElMessage.info(`正在播放：${chapter.title}（从 ${formatDuration(savedProgress.lastPosition)} 继续）`)
+    player.currentTime(savedProgress.lastPosition);
+    showToast(`正在播放：${chapter.title}（从 ${formatDuration(savedProgress.lastPosition)} 继续）`, 'info');
   } else {
-    ElMessage.info(`正在播放：${chapter.title}`)
+    showToast(`正在播放：${chapter.title}`, 'info');
   }
-}
+};
 
-// 保存视频播放进度
 const saveVideoProgress = async () => {
-  if (!currentChapter.value || !player) return
+  if (!currentChapter.value || !player) return;
 
-  const currentTime = Math.floor(player.currentTime())
-  const duration = Math.floor(player.duration())
+  const currentTime = Math.floor(player.currentTime() || 0);
+  const duration = Math.floor(player.duration() || 0);
 
-  // 只有播放时长大于5秒才保存
-  if (currentTime < 5) return
+  if (currentTime < 5) return;
 
   try {
-    await updateChapterProgress(currentChapter.value.id, duration, currentTime)
-
-    // 更新本地进度缓存
+    await updateChapterProgress(currentChapter.value.id, duration, currentTime);
     chapterProgressMap.value[currentChapter.value.id] = {
       watchDuration: duration,
-      lastPosition: currentTime
-    }
+      lastPosition: currentTime,
+    };
 
-    // 检查是否接近结束（播放到95%以上自动标记完成）
     if (duration > 0 && currentTime / duration >= 0.95 && !currentChapter.value.completed) {
-      await markCurrentChapterCompleted()
+      await markCurrentChapterCompleted();
     }
   } catch (error) {
-    console.error('保存播放进度失败:', error)
+    console.error('保存播放进度失败:', error);
   }
-}
+};
 
-// 自动保存进度（每1分钟）
 const startAutoSave = () => {
-  // 立即保存一次
-  lastSaveTime.value = Date.now()
-
+  lastSaveTime.value = Date.now();
   autoSaveTimer = setInterval(() => {
     if (studySeconds.value > 0) {
-      autoSaveProgress()
+      autoSaveProgress();
     }
-  }, 60 * 1000) // 1分钟
-}
+  }, 60 * 1000);
+};
 
 const autoSaveProgress = async () => {
-  if (studySeconds.value === 0) return
+  if (studySeconds.value === 0) return;
 
   try {
-    const studyMinutes = Math.ceil(studySeconds.value / 60)
-    const completedChapters = chapters.value.filter(c => c.completed).length
-    const progressPercent = Math.floor((completedChapters / chapters.value.length) * 100)
+    const studyMinutes = Math.ceil(studySeconds.value / 60);
+    const completedChapters = chapters.value.filter((c) => c.completed).length;
+    const progressPercent = Math.floor((completedChapters / chapters.value.length) * 100);
 
-    // 1. 更新课程学习进度
     const res = await updateProgress({
       courseId: route.params.id,
-      studyMinutes: studyMinutes,
-      progressPercent: progressPercent
-    })
+      studyMinutes,
+      progressPercent,
+    });
 
-    // 2. 同步更新 study_checkin 表（今日学习时长）
-    // 注意：不传递 studyContent，避免重复追加
     await checkin({
       courseId: route.params.id,
-      studyMinutes: studyMinutes
-    })
+      studyMinutes,
+    });
 
     if (res && res.code === 200) {
-      const totalMinutes = Math.ceil((totalStudySeconds.value + studySeconds.value) / 60)
-      ElMessage.success(`学习进度已保存（累计 ${totalMinutes} 分钟）`)
-      // 更新总学习时长
-      totalStudySeconds.value += studySeconds.value
-      studySeconds.value = 0 // 重置本次学习秒数
-      lastSaveTime.value = Date.now()
-
-      // 重新加载进度以更新显示
-      await loadProgress()
+      const totalMinutes = Math.ceil((totalStudySeconds.value + studySeconds.value) / 60);
+      showToast(`学习进度已保存（累计 ${totalMinutes} 分钟）`, 'success');
+      totalStudySeconds.value += studySeconds.value;
+      studySeconds.value = 0;
+      lastSaveTime.value = Date.now();
+      await loadProgress();
     }
   } catch (error) {
-    console.error('自动保存失败:', error)
-    ElMessage.error('保存进度失败，请检查网络连接')
+    console.error('自动保存失败:', error);
+    showToast('保存进度失败，请检查网络连接', 'error');
   }
-}
+};
 
-// 学习笔记功能
+// Notes
 const addNote = () => {
   if (!player) {
-    ElMessage.warning('请先播放视频')
-    return
+    showToast('请先播放视频', 'warning');
+    return;
   }
-  currentVideoTime.value = Math.floor(player.currentTime())
-  noteForm.value.content = ''
-  noteDialogVisible.value = true
-}
+  currentVideoTime.value = Math.floor(player.currentTime() || 0);
+  noteForm.value.content = '';
+  noteDialogVisible.value = true;
+};
 
 const saveNote = () => {
   if (!noteForm.value.content.trim()) {
-    ElMessage.warning('请输入笔记内容')
-    return
+    showToast('请输入笔记内容', 'warning');
+    return;
   }
 
-  const note = {
+  const note: Note = {
     id: Date.now(),
     videoTime: currentVideoTime.value,
     content: noteForm.value.content,
     chapterId: currentChapter.value?.id,
     chapterTitle: currentChapter.value?.title,
-    createdAt: new Date().toISOString()
-  }
+    createdAt: new Date().toISOString(),
+  };
 
-  notes.value.unshift(note)
-  noteDialogVisible.value = false
-  ElMessage.success('笔记已保存')
+  notes.value.unshift(note);
+  noteDialogVisible.value = false;
+  showToast('笔记已保存', 'success');
+  localStorage.setItem(`course_notes_${route.params.id}`, JSON.stringify(notes.value));
+};
 
-  // 保存到 localStorage
-  localStorage.setItem(`course_notes_${route.params.id}`, JSON.stringify(notes.value))
-}
+const deleteNote = (noteId: number) => {
+  notes.value = notes.value.filter((n) => n.id !== noteId);
+  localStorage.setItem(`course_notes_${route.params.id}`, JSON.stringify(notes.value));
+  showToast('笔记已删除', 'success');
+};
 
-const deleteNote = (noteId) => {
-  notes.value = notes.value.filter(n => n.id !== noteId)
-  localStorage.setItem(`course_notes_${route.params.id}`, JSON.stringify(notes.value))
-  ElMessage.success('笔记已删除')
-}
-
-// 加载笔记
 const loadNotes = () => {
-  const savedNotes = localStorage.getItem(`course_notes_${route.params.id}`)
+  const savedNotes = localStorage.getItem(`course_notes_${route.params.id}`);
   if (savedNotes) {
-    notes.value = JSON.parse(savedNotes)
+    notes.value = JSON.parse(savedNotes);
   }
-}
+};
 
-// 初始化学习统计图表
+// Charts
 const initStatsChart = async () => {
-  if (!statsChart.value) return
+  if (!statsChart.value) return;
 
   try {
-    // 获取本周学习数据
-    const dashboardRes = await getDashboard()
-    let weeklyData = [0, 0, 0, 0, 0, 0, 0]
+    const dashboardRes = await getDashboard();
+    let weeklyData = [0, 0, 0, 0, 0, 0, 0];
 
-    if (dashboardRes && dashboardRes.code === 200 && dashboardRes.data && dashboardRes.data.weeklyStudyData) {
-      weeklyData = dashboardRes.data.weeklyStudyData.map(item => item.studyMinutes || 0)
+    if (dashboardRes?.code === 200 && dashboardRes.data?.weeklyStudyData) {
+      weeklyData = dashboardRes.data.weeklyStudyData.map((item: { studyMinutes?: number }) => item.studyMinutes || 0);
     }
 
-    const style = getComputedStyle(document.documentElement)
-    const primaryRgb = (style.getPropertyValue('--primary-color-rgb') || '37 99 235').trim().replace(/\s+/g, ' ')
-    const textSecondaryRgb = (style.getPropertyValue('--text-secondary-rgb') || '75 85 99').trim().replace(/\s+/g, ' ')
-    const borderRgb = (style.getPropertyValue('--border-color-rgb') || '229 231 235').trim().replace(/\s+/g, ' ')
+    const style = getComputedStyle(document.documentElement);
+    const primaryRgb = (style.getPropertyValue('--primary-color-rgb') || '37 99 235').trim().replace(/\s+/g, ' ');
+    const textSecondaryRgb = (style.getPropertyValue('--text-secondary-rgb') || '75 85 99').trim().replace(/\s+/g, ' ');
+    const borderRgb = (style.getPropertyValue('--border-color-rgb') || '229 231 235').trim().replace(/\s+/g, ' ');
 
-    const primary = `rgba(${primaryRgb.replace(/\s+/g, ',')}, 0.9)`
-    const primarySoft = `rgba(${primaryRgb.replace(/\s+/g, ',')}, 0.18)`
-    const textSecondary = `rgba(${textSecondaryRgb.replace(/\s+/g, ',')}, 0.9)`
-    const border = `rgba(${borderRgb.replace(/\s+/g, ',')}, 0.7)`
+    const primary = `rgba(${primaryRgb.replace(/\s+/g, ',')}, 0.9)`;
+    const primarySoft = `rgba(${primaryRgb.replace(/\s+/g, ',')}, 0.18)`;
+    const textSecondary = `rgba(${textSecondaryRgb.replace(/\s+/g, ',')}, 0.9)`;
+    const border = `rgba(${borderRgb.replace(/\s+/g, ',')}, 0.7)`;
 
-    chartInstance = echarts.init(statsChart.value)
+    chartInstance = echarts.init(statsChart.value);
 
-    const option = {
-      tooltip: {
-        trigger: 'axis',
-        formatter: '{b}: {c} 分钟'
-      },
+    chartInstance.setOption({
+      tooltip: { trigger: 'axis', formatter: '{b}: {c} 分钟' },
       xAxis: {
         type: 'category',
         data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
@@ -473,357 +526,128 @@ const initStatsChart = async () => {
           data: weeklyData,
           type: 'line',
           smooth: true,
-          areaStyle: {
-            color: primarySoft
-          },
-          itemStyle: {
-            color: primary
-          },
-          lineStyle: { color: primary, width: 2 }
-        }
-      ]
-    }
-
-    chartInstance.setOption(option)
+          areaStyle: { color: primarySoft },
+          itemStyle: { color: primary },
+          lineStyle: { color: primary, width: 2 },
+        },
+      ],
+    });
   } catch (error) {
-    console.error('加载学习统计失败:', error)
-    // 失败时使用空数据
-    if (chartInstance) {
-      chartInstance.setOption({
-        xAxis: { type: 'category', data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
-        yAxis: { type: 'value', name: '学习时长(分钟)' },
-        series: [{ data: [0, 0, 0, 0, 0, 0, 0], type: 'line' }]
-      })
-    }
+    console.error('加载学习统计失败:', error);
   }
-}
+};
 
+// Data Loading
 const loadCourse = async () => {
   try {
-    const res = await getCourseById(route.params.id)
-    course.value = res.data
+    const res = await getCourseById(route.params.id as string);
+    course.value = res.data;
   } catch (error) {
-    ElMessage.error('加载课程失败')
-    router.back()
+    showToast('加载课程失败', 'error');
+    router.back();
   }
-}
+};
 
 const loadChapters = async () => {
   try {
-    const res = await getCourseChapters(route.params.id)
-    if (res && res.code === 200) {
-      chapters.value = res.data || []
+    const res = await getCourseChapters(route.params.id as string);
+    if (res?.code === 200) {
+      chapters.value = res.data || [];
 
-      // 构建章节进度映射（从后端返回的数据中提取）
-      chapters.value.forEach(chapter => {
+      chapters.value.forEach((chapter) => {
         if (chapter.watchDuration || chapter.lastPosition) {
           chapterProgressMap.value[chapter.id] = {
             watchDuration: chapter.watchDuration || 0,
-            lastPosition: chapter.lastPosition || 0
-          }
+            lastPosition: chapter.lastPosition || 0,
+          };
         }
-      })
+      });
 
-      // 加载第一个未完成的章节，或第一个章节
       if (chapters.value.length > 0) {
-        await nextTick()
-        const firstIncomplete = chapters.value.find(c => !c.completed)
-        selectChapter(firstIncomplete || chapters.value[0])
+        await nextTick();
+        const firstIncomplete = chapters.value.find((c) => !c.completed);
+        selectChapter(firstIncomplete || chapters.value[0]);
       }
     }
   } catch (error) {
-    console.error('加载章节失败:', error)
-    ElMessage.error('加载章节失败')
+    console.error('加载章节失败:', error);
+    showToast('加载章节失败', 'error');
   }
-}
+};
 
 const loadProgress = async () => {
   try {
-    const res = await getCourseProgress(route.params.id)
-    if (res && res.code === 200 && res.data) {
-      progress.value = res.data
-
-      // 恢复历史学习时长
+    const res = await getCourseProgress(route.params.id as string);
+    if (res?.code === 200 && res.data) {
+      progress.value = res.data;
       if (res.data.studyDurationMinutes) {
-        totalStudySeconds.value = res.data.studyDurationMinutes * 60
+        totalStudySeconds.value = res.data.studyDurationMinutes * 60;
       }
     }
   } catch (error) {
-    console.error('加载进度失败:', error)
+    console.error('加载进度失败:', error);
   }
-}
+};
 
-// 标记当前章节为已完成
 const markCurrentChapterCompleted = async () => {
-  if (!currentChapter.value) return
+  if (!currentChapter.value) return;
 
   try {
-    await markChapterCompleted(currentChapter.value.id)
-    currentChapter.value.completed = true
-
-    // 重新加载章节列表以更新完成状态
-    await loadChapters()
+    await markChapterCompleted(currentChapter.value.id);
+    currentChapter.value.completed = true;
+    await loadChapters();
   } catch (error) {
-    console.error('标记章节完成失败:', error)
+    console.error('标记章节完成失败:', error);
   }
-}
+};
 
+// Lifecycle
 onMounted(async () => {
-  await loadCourse()
-  await loadProgress()
-  await loadChapters()
-  loadNotes()
+  await loadCourse();
+  await loadProgress();
+  await loadChapters();
+  loadNotes();
 
-  await nextTick()
-  initPlayer()
-  await initStatsChart()
-  startAutoSave()
-})
+  await nextTick();
+  initPlayer();
+  await initStatsChart();
+  startAutoSave();
+});
 
 onBeforeUnmount(async () => {
-  // 停止学习计时器
-  stopStudyTimer()
+  stopStudyTimer();
 
-  // 保存未保存的进度
   if (studySeconds.value > 0) {
     try {
       await updateProgress({
         courseId: route.params.id,
         studyMinutes: Math.ceil(studySeconds.value / 60),
-        progressPercent: progress.value.progressPercent || 0
-      })
+        progressPercent: progress.value.progressPercent || 0,
+      });
     } catch (error) {
-      console.error('离开前保存失败:', error)
+      console.error('离开前保存失败:', error);
     }
   }
 
-  if (player) {
-    player.dispose()
-  }
-  if (autoSaveTimer) {
-    clearInterval(autoSaveTimer)
-  }
-  if (chartInstance) {
-    chartInstance.dispose()
-  }
-})
+  if (player) player.dispose();
+  if (autoSaveTimer) clearInterval(autoSaveTimer);
+  if (chartInstance) chartInstance.dispose();
+});
 </script>
 
 <style scoped>
-.course-study {
-  min-height: 100vh;
-  background: var(--bg-primary);
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
 }
 
-.study-header {
-  background-color: var(--glass-bg, var(--bg-secondary));
-  border-bottom: 1px solid var(--glass-border, var(--border-color));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  padding: 16px 24px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  box-shadow: var(--shadow-sm);
-  position: sticky;
-  top: 0;
-  z-index: 20;
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -20px);
 }
 
-.study-header h2 {
-  flex: 1;
-  margin: 0;
-  font-size: 18px;
-}
-
-.timer-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--primary-color);
-}
-
-.study-content {
-  display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 20px;
-  padding: 20px;
-  max-width: 1600px;
-  margin: 0 auto;
-}
-
-.main-area {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.video-area {
-  background: rgb(0 0 0);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.video-area video {
-  width: 100%;
-  height: auto;
-}
-
-/* 章节列表 */
-.chapters-card {
-  background: white;
-}
-
-.chapters-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chapters-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.chapter-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  border-bottom: 1px solid var(--separator, var(--border-color));
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.chapter-item:hover {
-  background: var(--bg-hover);
-}
-
-.chapter-item.active {
-  background: var(--primary-bg);
-  border-left: 3px solid var(--primary-color);
-}
-
-.chapter-item:last-child {
-  border-bottom: none;
-}
-
-.chapter-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.chapter-title {
-  font-size: 14px;
-}
-
-.chapter-duration {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-/* 学习笔记 */
-.notes-card {
-  background: white;
-}
-
-.notes-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.notes-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.note-item {
-  padding: 12px;
-  border-bottom: 1px solid var(--separator, var(--border-color));
-  margin-bottom: 8px;
-}
-
-.note-item:last-child {
-  border-bottom: none;
-}
-
-.note-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.note-time {
-  font-size: 12px;
-  color: var(--primary-color);
-  font-weight: 600;
-}
-
-.note-content {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-/* 侧边栏 */
-.side-area {
-  display: flex;
-  flex-direction: column;
-}
-
-.progress-info {
-  padding: 10px 0;
-}
-
-.progress-info p {
-  margin-top: 12px;
-  color: var(--text-secondary);
-}
-
-.auto-save-hint {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 8px;
-}
-
-.info-item {
-  display: flex;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--separator, var(--border-color));
-}
-
-.info-item:last-child {
-  border-bottom: none;
-}
-
-.info-item .label {
-  width: 60px;
-  color: var(--text-muted);
-}
-
-/* 学习统计图表 */
-.stats-chart {
-  width: 100%;
-  height: 200px;
-}
-
-@media (max-width: 1024px) {
-  .study-content {
-    grid-template-columns: 1fr;
-  }
-
-  .side-area {
-    order: -1;
-  }
+.border-l-3 {
+  border-left-width: 3px;
 }
 </style>
