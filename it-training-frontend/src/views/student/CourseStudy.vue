@@ -1,141 +1,140 @@
 <template>
-  <div class="min-h-screen bg-bg-primary">
+  <div class="course-study-page">
     <!-- Header -->
-    <header class="sticky top-0 z-20 bg-glass border-b border-border-color/60 backdrop-blur-xl px-6 py-4">
-      <div class="flex items-center gap-5">
-        <Button variant="ghost" @click="goBack">
-          <template #icon>
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </template>
+    <header class="study-header">
+      <div class="header-inner">
+        <button type="button" class="back-btn" @click="goBack">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
           返回
-        </Button>
+        </button>
 
-        <h2 class="flex-1 text-lg font-semibold text-text-primary truncate">{{ course.name }}</h2>
+        <h2 class="course-name">{{ course.name }}</h2>
 
-        <div class="flex items-center gap-2 text-primary font-semibold">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <div class="study-timer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
           </svg>
           <span>本次学习: {{ formatTime(studySeconds) }}</span>
         </div>
       </div>
     </header>
 
-    <!-- Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6 p-6 max-w-[1600px] mx-auto">
-      <!-- Main Area -->
-      <div class="space-y-6">
-        <!-- Video Player -->
-        <div class="bg-black rounded-2xl overflow-hidden">
-          <video ref="videoPlayer" class="video-js vjs-big-play-centered w-full"></video>
+    <!-- Main Layout -->
+    <div class="study-layout">
+      <!-- Sidebar: Course Outline -->
+      <aside class="outline-sidebar">
+        <div class="sidebar-header">
+          <h3 class="sidebar-title">课程大纲</h3>
+          <span class="progress-badge">{{ completedCount }}/{{ chapters.length }}</span>
         </div>
 
-        <!-- Chapters -->
-        <Section title="课程章节">
-          <template #action>
-            <Tag>{{ chapters.length }} 章节</Tag>
-          </template>
-
-          <div class="max-h-[300px] overflow-y-auto">
-            <div
-              v-for="chapter in chapters"
-              :key="chapter.id"
-              class="flex items-center justify-between px-4 py-3 border-b border-border-color/60 last:border-b-0 cursor-pointer transition-colors"
-              :class="currentChapter?.id === chapter.id ? 'bg-primary/10 border-l-3 border-l-primary' : 'hover:bg-bg-secondary'"
-              @click="selectChapter(chapter)"
-            >
-              <div class="flex items-center gap-3 flex-1 min-w-0">
-                <svg v-if="chapter.completed" class="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <svg v-else class="w-5 h-5 text-text-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span class="text-sm text-text-primary truncate">{{ chapter.title }}</span>
-              </div>
-              <span class="text-xs text-text-muted flex-shrink-0">{{ formatDuration(chapter.duration) }}</span>
-            </div>
-          </div>
-        </Section>
-
-        <!-- Notes -->
-        <Section title="学习笔记">
-          <template #action>
-            <Button variant="primary" size="sm" @click="addNote">添加笔记</Button>
-          </template>
-
-          <div class="max-h-[400px] overflow-y-auto">
-            <template v-if="notes.length > 0">
-              <div
-                v-for="note in notes"
-                :key="note.id"
-                class="px-4 py-3 border-b border-border-color/60 last:border-b-0"
-              >
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-semibold text-primary">{{ formatTime(note.videoTime) }}</span>
-                  <Button variant="ghost" size="sm" class="text-error" @click="deleteNote(note.id)">删除</Button>
-                </div>
-                <p class="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{{ note.content }}</p>
-              </div>
-            </template>
-            <EmptyState v-else emoji="📝" title="暂无笔记" description="点击添加笔记记录学习心得" size="sm" />
-          </div>
-        </Section>
-      </div>
-
-      <!-- Sidebar -->
-      <div class="space-y-6">
-        <!-- Progress -->
-        <Section title="学习进度">
-          <div class="space-y-4">
-            <div>
-              <div class="flex items-center justify-between text-sm mb-2">
-                <span class="text-text-secondary">完成度</span>
-                <span class="font-semibold text-text-primary">{{ progress.progressPercent || 0 }}%</span>
-              </div>
-              <div class="h-2 bg-bg-tertiary rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-primary rounded-full transition-all duration-500"
-                  :style="{ width: `${progress.progressPercent || 0}%` }"
-                ></div>
-              </div>
-            </div>
-            <p class="text-sm text-text-secondary">已学习: {{ progress.studyDurationFormatted || '0分钟' }}</p>
-            <p class="flex items-center gap-2 text-xs text-text-muted">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <div class="chapter-list">
+          <button
+            v-for="chapter in chapters"
+            :key="chapter.id"
+            type="button"
+            class="chapter-item"
+            :class="{
+              active: currentChapter?.id === chapter.id,
+              completed: chapter.completed
+            }"
+            @click="selectChapter(chapter)"
+          >
+            <span class="chapter-status">
+              <svg v-if="chapter.completed" class="status-icon completed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              自动保存进度（每1分钟）
-            </p>
-          </div>
-        </Section>
+              <svg v-else class="status-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <circle cx="12" cy="12" r="10" />
+              </svg>
+            </span>
+            <span class="chapter-title">{{ chapter.title }}</span>
+            <span class="chapter-duration">{{ formatDuration(chapter.duration) }}</span>
+          </button>
+        </div>
+      </aside>
 
-        <!-- Course Info -->
-        <Section title="课程信息">
-          <div class="space-y-3">
-            <div class="flex items-center justify-between py-2 border-b border-border-color/60">
-              <span class="text-sm text-text-muted">分类</span>
-              <span class="text-sm text-text-primary">{{ course.categoryName }}</span>
-            </div>
-            <div class="flex items-center justify-between py-2 border-b border-border-color/60">
-              <span class="text-sm text-text-muted">难度</span>
-              <span class="text-sm text-text-primary">{{ course.difficultyName }}</span>
-            </div>
-            <div class="flex items-center justify-between py-2">
-              <span class="text-sm text-text-muted">课时</span>
-              <span class="text-sm text-text-primary">{{ course.durationHours }}小时</span>
-            </div>
-          </div>
-        </Section>
+      <!-- Main Content -->
+      <main class="study-content">
+        <!-- Video Player -->
+        <div class="video-container">
+          <video ref="videoPlayer" class="video-js vjs-big-play-centered"></video>
+        </div>
 
-        <!-- Stats Chart -->
-        <Section title="学习统计">
-          <div ref="statsChart" class="w-full h-[200px]"></div>
-        </Section>
-      </div>
+        <!-- Content Sections -->
+        <div class="content-sections">
+          <!-- Progress Card -->
+          <section class="section-card progress-card">
+            <div class="card-header">
+              <h3 class="card-title">学习进度</h3>
+              <span class="progress-text">{{ progress.progressPercent || 0 }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: `${progress.progressPercent || 0}%` }"></div>
+            </div>
+            <div class="progress-meta">
+              <span>已学习: {{ progress.studyDurationFormatted || '0分钟' }}</span>
+              <span class="auto-save-hint">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                自动保存进度
+              </span>
+            </div>
+          </section>
+
+          <!-- Notes Section -->
+          <section class="section-card">
+            <div class="card-header">
+              <h3 class="card-title">学习笔记</h3>
+              <Button variant="primary" size="sm" @click="addNote">添加笔记</Button>
+            </div>
+
+            <div class="notes-list">
+              <template v-if="notes.length > 0">
+                <div v-for="note in notes" :key="note.id" class="note-item">
+                  <div class="note-header">
+                    <span class="note-time">{{ formatTime(note.videoTime) }}</span>
+                    <button type="button" class="delete-btn" @click="deleteNote(note.id)">删除</button>
+                  </div>
+                  <p class="note-content">{{ note.content }}</p>
+                </div>
+              </template>
+              <EmptyState v-else emoji="📝" title="暂无笔记" description="点击添加笔记记录学习心得" size="sm" />
+            </div>
+          </section>
+
+          <!-- Course Info -->
+          <section class="section-card">
+            <h3 class="card-title">课程信息</h3>
+            <div class="info-list">
+              <div class="info-row">
+                <span class="info-label">分类</span>
+                <span class="info-value">{{ course.categoryName }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">难度</span>
+                <span class="info-value">{{ course.difficultyName }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">课时</span>
+                <span class="info-value">{{ course.durationHours }}小时</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Stats Chart -->
+          <section class="section-card">
+            <h3 class="card-title">学习统计</h3>
+            <div ref="statsChart" class="stats-chart"></div>
+          </section>
+        </div>
+      </main>
     </div>
 
     <!-- Add Note Modal -->
@@ -160,8 +159,8 @@
       <Transition name="toast">
         <div
           v-if="toast.visible"
-          class="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-sm font-medium shadow-lg"
-          :class="toastClass"
+          class="toast"
+          :class="toast.type"
         >
           {{ toast.message }}
         </div>
@@ -171,9 +170,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Button, Input, Modal, Tag, EmptyState, Section, FormLayout, FormItem } from '@/design-system';
+import { Button, Input, Modal, Tag, EmptyState, FormLayout, FormItem } from '@/design-system';
 import { getCourseById, getCourseChapters, markChapterCompleted, updateChapterProgress } from '@/api/course';
 import { getCourseProgress, updateProgress, checkin, getDashboard } from '@/api/learning';
 import videojs from 'video.js';
@@ -236,6 +235,8 @@ const chapters = ref<Chapter[]>([]);
 const currentChapter = ref<Chapter | null>(null);
 const chapterProgressMap = ref<Record<number, { watchDuration: number; lastPosition: number }>>({});
 
+const completedCount = computed(() => chapters.value.filter(c => c.completed).length);
+
 // Notes
 const notes = ref<Note[]>([]);
 const noteDialogVisible = ref(false);
@@ -244,15 +245,6 @@ const noteForm = ref({ content: '' });
 
 // Toast
 const toast = ref({ visible: false, message: '', type: 'success' as 'success' | 'warning' | 'error' | 'info' });
-const toastClass = computed(() => {
-  const classes: Record<string, string> = {
-    success: 'bg-success text-white',
-    warning: 'bg-warning text-white',
-    error: 'bg-error text-white',
-    info: 'bg-info text-white',
-  };
-  return classes[toast.value.type] || classes.success;
-});
 
 const showToast = (message: string, type: 'success' | 'warning' | 'error' | 'info' = 'success') => {
   toast.value = { visible: true, message, type };
@@ -636,6 +628,392 @@ onBeforeUnmount(async () => {
 </script>
 
 <style scoped>
+/* ========================================
+   Apple 风格课程学习页
+   ======================================== */
+
+.course-study-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+/* ===== Header ===== */
+.study-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(var(--bg-secondary-rgb, 255, 255, 255) / 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid var(--border-color);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 12px 24px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.back-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.course-name {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.study-timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* ===== Layout ===== */
+.study-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: calc(100vh - 57px);
+}
+
+@media (max-width: 1024px) {
+  .study-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .outline-sidebar {
+    display: none;
+  }
+}
+
+/* ===== Sidebar ===== */
+.outline-sidebar {
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 57px);
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border-right: 0.5px solid var(--border-color);
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 0.5px solid var(--border-color);
+}
+
+.sidebar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.progress-badge {
+  padding: 4px 10px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chapter-list {
+  padding: 12px 0;
+}
+
+.chapter-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.chapter-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.chapter-item.active {
+  background: rgba(var(--primary-color-rgb, 0, 122, 255) / 0.08);
+  border-left-color: var(--primary-color);
+}
+
+.chapter-item.completed .chapter-title {
+  color: var(--text-muted);
+}
+
+.chapter-status {
+  flex-shrink: 0;
+}
+
+.status-icon {
+  color: var(--text-muted);
+}
+
+.status-icon.completed {
+  color: var(--success);
+}
+
+.chapter-title {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chapter-duration {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Main Content ===== */
+.study-content {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.video-container {
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.content-sections {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+}
+
+@media (max-width: 1200px) {
+  .content-sections {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Section Card ===== */
+.section-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 2px 4px rgba(0, 0, 0, 0.04);
+  border: 0.5px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ===== Progress Card ===== */
+.progress-card {
+  grid-column: 1 / -1;
+}
+
+.progress-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-bar {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light, #5ac8fa));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.auto-save-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ===== Notes ===== */
+.notes-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.note-item {
+  padding: 12px 0;
+  border-bottom: 0.5px solid var(--border-light);
+}
+
+.note-item:last-child {
+  border-bottom: none;
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.note-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.delete-btn {
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--error);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.delete-btn:hover {
+  opacity: 0.7;
+}
+
+.note-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+/* ===== Info List ===== */
+.info-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 0.5px solid var(--border-light);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.info-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ===== Stats Chart ===== */
+.stats-chart {
+  width: 100%;
+  height: 200px;
+}
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.toast.success {
+  background: var(--success);
+  color: white;
+}
+
+.toast.warning {
+  background: var(--warning);
+  color: white;
+}
+
+.toast.error {
+  background: var(--error);
+  color: white;
+}
+
+.toast.info {
+  background: var(--info);
+  color: white;
+}
+
 .toast-enter-active,
 .toast-leave-active {
   transition: all 0.3s ease;
@@ -647,7 +1025,21 @@ onBeforeUnmount(async () => {
   transform: translate(-50%, -20px);
 }
 
-.border-l-3 {
-  border-left-width: 3px;
+/* ===== Dark Mode ===== */
+[data-theme="dark"] .study-header {
+  background: rgba(29, 29, 31, 0.72);
+}
+
+[data-theme="dark"] .outline-sidebar {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .section-card {
+  background: var(--bg-secondary);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .chapter-item.active {
+  background: rgba(var(--primary-color-rgb, 0, 122, 255) / 0.15);
 }
 </style>

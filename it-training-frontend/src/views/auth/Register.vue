@@ -1,16 +1,16 @@
 <template>
   <AuthLayout
-    title="Create Account"
-    subtitle="Join our community and start learning today"
-    footer-text="Already have an account?"
-    footer-link-text="Sign in"
+    title="创建账号"
+    subtitle="加入我们，开启你的学习之旅"
+    footer-text="已有账号？"
+    footer-link-text="立即登录"
     footer-link-to="/login"
   >
     <FormLayout>
-      <FormItem label="Username" required :error="errors.username">
+      <FormItem label="用户名" required :error="errors.username">
         <Input
           v-model="registerForm.username"
-          placeholder="4-20 characters"
+          placeholder="4-20 个字符"
           :error="!!errors.username"
           @blur="validateField('username')"
         >
@@ -23,10 +23,10 @@
         </Input>
       </FormItem>
 
-      <FormItem label="Full Name" required :error="errors.realName">
+      <FormItem label="真实姓名" required :error="errors.realName">
         <Input
           v-model="registerForm.realName"
-          placeholder="Your real name"
+          placeholder="请输入真实姓名"
           :error="!!errors.realName"
           @blur="validateField('realName')"
         >
@@ -39,11 +39,11 @@
         </Input>
       </FormItem>
 
-      <FormItem label="Phone Number" :error="errors.phone">
+      <FormItem label="手机号" :error="errors.phone">
         <Input
           v-model="registerForm.phone"
           type="tel"
-          placeholder="Mobile number"
+          placeholder="请输入手机号"
           :error="!!errors.phone"
           @blur="validateField('phone')"
         >
@@ -55,7 +55,7 @@
         </Input>
       </FormItem>
 
-      <FormItem label="Email (Optional)" :error="errors.email">
+      <FormItem label="邮箱（选填）" :error="errors.email">
         <Input
           v-model="registerForm.email"
           type="email"
@@ -72,11 +72,11 @@
         </Input>
       </FormItem>
 
-      <FormItem label="Password" required :error="errors.password">
+      <FormItem label="密码" required :error="errors.password">
         <Input
           v-model="registerForm.password"
           type="password"
-          placeholder="6-20 characters"
+          placeholder="6-20 个字符"
           :error="!!errors.password"
           @blur="validateField('password')"
         >
@@ -89,11 +89,11 @@
         </Input>
       </FormItem>
 
-      <FormItem label="Confirm Password" required :error="errors.confirmPassword">
+      <FormItem label="确认密码" required :error="errors.confirmPassword">
         <Input
           v-model="registerForm.confirmPassword"
           type="password"
-          placeholder="Repeat password"
+          placeholder="请再次输入密码"
           :error="!!errors.confirmPassword"
           @blur="validateField('confirmPassword')"
           @keyup.enter="handleRegister"
@@ -113,7 +113,7 @@
         :loading="loading"
         @click="handleRegister"
       >
-        Create Account
+        注 册
       </Button>
     </FormLayout>
   </AuthLayout>
@@ -152,31 +152,31 @@ const errors = reactive({
 // 验证规则
 const validators = {
   username: (value: string): string => {
-    if (!value) return 'Please enter username';
-    if (value.length < 4 || value.length > 20) return 'Length should be 4 to 20';
-    if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Letters, numbers and underscore only';
+    if (!value) return '请输入用户名';
+    if (value.length < 4 || value.length > 20) return '长度为 4-20 个字符';
+    if (!/^[a-zA-Z0-9_]+$/.test(value)) return '只能包含字母、数字和下划线';
     return '';
   },
   realName: (value: string): string => {
-    if (!value) return 'Please enter your real name';
+    if (!value) return '请输入真实姓名';
     return '';
   },
   phone: (value: string): string => {
-    if (value && !/^1[3-9]\d{9}$/.test(value)) return 'Invalid phone number';
+    if (value && !/^1[3-9]\d{9}$/.test(value)) return '手机号格式不正确';
     return '';
   },
   email: (value: string): string => {
-    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email address';
+    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return '邮箱格式不正确';
     return '';
   },
   password: (value: string): string => {
-    if (!value) return 'Please enter password';
-    if (value.length < 6 || value.length > 20) return 'Length should be 6 to 20';
+    if (!value) return '请输入密码';
+    if (value.length < 6 || value.length > 20) return '长度为 6-20 个字符';
     return '';
   },
   confirmPassword: (value: string): string => {
-    if (!value) return 'Please confirm password';
-    if (value !== registerForm.password) return 'Passwords do not match';
+    if (!value) return '请确认密码';
+    if (value !== registerForm.password) return '两次输入的密码不一致';
     return '';
   },
 };
@@ -203,7 +203,7 @@ const handleRegister = async () => {
     router.push('/home');
   } catch (error: any) {
     // 显示错误信息
-    errors.confirmPassword = error?.message || 'Registration failed, please try again';
+    errors.confirmPassword = error?.message || '注册失败，请重试';
   } finally {
     loading.value = false;
   }

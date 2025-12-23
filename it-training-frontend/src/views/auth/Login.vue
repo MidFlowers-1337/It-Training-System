@@ -1,16 +1,16 @@
 <template>
   <AuthLayout
-    title="Welcome Back"
-    subtitle="Sign in to continue your learning journey"
-    footer-text="Don't have an account?"
-    footer-link-text="Sign up"
+    title="欢迎回来"
+    subtitle="登录以继续你的学习之旅"
+    footer-text="还没有账号？"
+    footer-link-text="立即注册"
     footer-link-to="/register"
   >
     <FormLayout>
-      <FormItem label="Username" required :error="errors.username">
+      <FormItem label="用户名" required :error="errors.username">
         <Input
           v-model="loginForm.username"
-          placeholder="Enter your username"
+          placeholder="请输入用户名"
           :error="!!errors.username"
           @blur="validateField('username')"
         >
@@ -23,11 +23,11 @@
         </Input>
       </FormItem>
 
-      <FormItem label="Password" required :error="errors.password">
+      <FormItem label="密码" required :error="errors.password">
         <Input
           v-model="loginForm.password"
           type="password"
-          placeholder="Enter your password"
+          placeholder="请输入密码"
           :error="!!errors.password"
           @blur="validateField('password')"
           @keyup.enter="handleLogin"
@@ -41,10 +41,8 @@
         </Input>
       </FormItem>
 
-      <div class="flex items-center justify-end">
-        <a href="#" class="text-sm text-primary hover:text-primary-light transition-colors">
-          Forgot password?
-        </a>
+      <div class="forgot-link-row">
+        <a href="#" class="forgot-link">忘记密码？</a>
       </div>
 
       <Button
@@ -53,20 +51,20 @@
         :loading="loading"
         @click="handleLogin"
       >
-        Sign In
+        登 录
       </Button>
     </FormLayout>
 
     <!-- 演示账号区域 -->
     <template #extra>
-      <div class="mt-8 text-center">
-        <p class="text-xs text-text-muted uppercase tracking-wider mb-3">Demo Accounts</p>
-        <div class="flex justify-center flex-wrap gap-2">
+      <div class="demo-section">
+        <p class="demo-label">演示账号</p>
+        <div class="demo-buttons">
           <button
             v-for="(label, type) in demoAccounts"
             :key="type"
             type="button"
-            class="px-3 py-1.5 text-sm rounded-lg bg-bg-tertiary text-text-secondary hover:bg-primary/10 hover:text-primary transition-colors"
+            class="demo-btn"
             @click="fillDemo(type)"
           >
             {{ label }}
@@ -101,9 +99,9 @@ const errors = reactive({
 
 // 演示账号
 const demoAccounts: Record<string, string> = {
-  admin: 'Admin',
-  teacher1: 'Instructor',
-  student1: 'Student',
+  admin: '管理员',
+  teacher1: '讲师',
+  student1: '学员',
 };
 
 // 填充演示账号
@@ -118,9 +116,9 @@ const fillDemo = (type: string) => {
 // 验证单个字段
 const validateField = (field: 'username' | 'password') => {
   if (field === 'username') {
-    errors.username = loginForm.username ? '' : 'Please enter username';
+    errors.username = loginForm.username ? '' : '请输入用户名';
   } else if (field === 'password') {
-    errors.password = loginForm.password ? '' : 'Please enter password';
+    errors.password = loginForm.password ? '' : '请输入密码';
   }
 };
 
@@ -146,9 +144,77 @@ const handleLogin = async () => {
     }
   } catch (error: any) {
     // 显示错误信息在表单下方
-    errors.password = error?.message || 'Login failed, please try again';
+    errors.password = error?.message || '登录失败，请重试';
   } finally {
     loading.value = false;
   }
 };
 </script>
+
+<style scoped>
+.forgot-link-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.forgot-link {
+  font-size: 13px;
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.forgot-link:hover {
+  opacity: 0.8;
+}
+
+/* ===== 演示账号区域 ===== */
+.demo-section {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.demo-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.demo-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.demo-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 0.5px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.demo-btn:hover {
+  background: rgba(var(--primary-color-rgb, 0, 122, 255) / 0.1);
+  color: var(--primary-color);
+  border-color: rgba(var(--primary-color-rgb, 0, 122, 255) / 0.2);
+}
+
+/* ===== 深色模式 ===== */
+[data-theme="dark"] .demo-btn {
+  background: var(--bg-tertiary);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .demo-btn:hover {
+  background: rgba(var(--primary-color-rgb, 0, 122, 255) / 0.15);
+}
+</style>
