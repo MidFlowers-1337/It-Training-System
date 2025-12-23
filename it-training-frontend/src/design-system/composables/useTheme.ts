@@ -15,7 +15,7 @@ import {
   defaultTheme,
   themeNames,
   applyTheme,
-} from '../design-system/tokens';
+} from '../tokens';
 
 // 存储键
 const THEME_STORAGE_KEY = 'app-theme';

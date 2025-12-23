@@ -112,11 +112,11 @@
   --container-md: 768px;
   --container-lg: 1024px;
   --container-xl: 1280px;
-  
+
   --nav-height: 64px;
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 64px;
-  
+
   --z-dropdown: 1000;
   --z-sticky: 1020;
   --z-fixed: 1030;
@@ -124,6 +124,54 @@
   --z-modal: 1050;
   --z-popover: 1060;
   --z-tooltip: 1070;
+
+  /* ========================================
+     Apple 风格 - 页面留白系统
+     ======================================== */
+  --page-padding-x: 48px;
+  --page-padding-y: 64px;
+  --section-gap: 120px;
+  --section-gap-sm: 80px;
+
+  /* ========================================
+     Apple 风格 - 字体层级系统
+     ======================================== */
+  /* 超大标题 - 首屏 Hero */
+  --text-display: 80px;
+  --text-display-weight: 700;
+  --text-display-tracking: -0.03em;
+
+  /* 页面大标题 */
+  --text-h1: 48px;
+  --text-h1-weight: 700;
+  --text-h1-tracking: -0.025em;
+
+  /* 区块标题 */
+  --text-h2: 34px;
+  --text-h2-weight: 600;
+  --text-h2-tracking: -0.02em;
+
+  /* 分组标题 */
+  --text-h3: 24px;
+  --text-h3-weight: 600;
+  --text-h3-tracking: -0.01em;
+
+  /* 正文 - 17px Apple 标准 */
+  --text-body: 17px;
+  --text-body-weight: 400;
+  --text-body-leading: 1.58;
+
+  /* 辅助文字 */
+  --text-caption: 14px;
+  --text-caption-weight: 400;
+
+  /* ========================================
+     Apple 风格 - 内容宽度约束
+     ======================================== */
+  --content-narrow: 680px;
+  --content-medium: 900px;
+  --content-wide: 1200px;
+  --content-full: none;
 }
 
 /* ========================================
@@ -206,4 +254,114 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   响应式页面留白
+   ======================================== */
+@media (max-width: 768px) {
+  :root {
+    --page-padding-x: 24px;
+    --page-padding-y: 40px;
+    --section-gap: 64px;
+    --section-gap-sm: 48px;
+
+    /* 响应式字体缩小 */
+    --text-display: 48px;
+    --text-h1: 34px;
+    --text-h2: 28px;
+    --text-h3: 21px;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --page-padding-x: 80px;
+    --section-gap: 160px;
+  }
+}
+
+/* ========================================
+   Apple 风格 - 排版工具类
+   ======================================== */
+
+/* 字体层级预设类 */
+.text-display {
+  font-size: var(--text-display);
+  font-weight: var(--text-display-weight);
+  letter-spacing: var(--text-display-tracking);
+  line-height: 1.05;
+}
+
+.text-h1 {
+  font-size: var(--text-h1);
+  font-weight: var(--text-h1-weight);
+  letter-spacing: var(--text-h1-tracking);
+  line-height: 1.1;
+}
+
+.text-h2 {
+  font-size: var(--text-h2);
+  font-weight: var(--text-h2-weight);
+  letter-spacing: var(--text-h2-tracking);
+  line-height: 1.15;
+}
+
+.text-h3 {
+  font-size: var(--text-h3);
+  font-weight: var(--text-h3-weight);
+  letter-spacing: var(--text-h3-tracking);
+  line-height: 1.2;
+}
+
+.text-body {
+  font-size: var(--text-body);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-leading);
+}
+
+.text-caption {
+  font-size: var(--text-caption);
+  font-weight: var(--text-caption-weight);
+  line-height: 1.4;
+}
+
+/* 内容宽度约束 */
+.content-narrow {
+  max-width: var(--content-narrow);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.content-medium {
+  max-width: var(--content-medium);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.content-wide {
+  max-width: var(--content-wide);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.content-full {
+  max-width: var(--content-full);
+}
+
+/* 页面容器 */
+.page-container {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 var(--page-padding-x);
+}
+
+/* 区块间距 */
+.section {
+  padding: var(--section-gap) 0;
+}
+
+.section + .section {
+  padding-top: 0;
 }

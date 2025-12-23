@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * Input - 原子输入框组件
+ * Input - 原子输入框组件（Apple 风格精致化版）
  *
  * 符合 Apple-like 设计规范
- * - 灰色背景，无边框
- * - 聚焦时显示蓝色光环
+ * - 灰色背景，细边框
+ * - 聚焦时显示蓝色光晕
+ * - 内阴影增加深度感
  * - 字号 17px（防止 iOS 缩放）
  * - 支持前置/后置图标
  */
@@ -29,6 +30,8 @@ interface Props {
   error?: boolean;
   /** 错误信息 */
   errorMessage?: string;
+  /** 是否成功状态 */
+  success?: boolean;
   /** 最大长度 */
   maxlength?: number;
   /** 自动聚焦 */
@@ -50,6 +53,7 @@ const props = withDefaults(defineProps<Props>(), {
   required: false,
   error: false,
   errorMessage: '',
+  success: false,
   autofocus: false,
   autocomplete: 'off',
   size: 'md',
@@ -95,48 +99,24 @@ const handleClear = () => {
   inputRef.value?.focus();
 };
 
-// 计算容器样式
+// 计算容器样式类
 const containerClasses = computed(() => {
-  const base = [
-    'relative flex items-center',
-    'bg-bg-tertiary rounded-xl',
-    'transition-all duration-fast',
+  const classes = [
+    'ds-input-container',
+    `ds-input-container--${props.size}`,
   ];
 
-  // 尺寸
-  const sizes = {
-    sm: 'h-9',
-    md: 'h-11',
-    lg: 'h-13',
-  };
-
-  // 状态样式
-  const states = [];
   if (props.disabled) {
-    states.push('opacity-50 cursor-not-allowed');
+    classes.push('ds-input-container--disabled');
   } else if (props.error) {
-    states.push('ring-2 ring-error');
+    classes.push('ds-input-container--error');
+  } else if (props.success) {
+    classes.push('ds-input-container--success');
   } else if (isFocused.value) {
-    states.push('ring-2 ring-primary');
+    classes.push('ds-input-container--focused');
   }
 
-  return [...base, sizes[props.size], ...states].join(' ');
-});
-
-// 计算输入框样式
-const inputClasses = computed(() => {
-  const base = [
-    'w-full h-full px-4',
-    'bg-transparent border-none outline-none',
-    'text-[17px] text-text-primary',
-    'placeholder:text-text-muted',
-  ];
-
-  if (props.disabled) {
-    base.push('cursor-not-allowed');
-  }
-
-  return base.join(' ');
+  return classes.join(' ');
 });
 
 // 是否显示清除按钮
@@ -152,10 +132,10 @@ defineExpose({
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="ds-input-wrapper">
     <div :class="containerClasses">
       <!-- 前置图标插槽 -->
-      <div v-if="$slots['icon-left']" class="pl-4 text-text-muted">
+      <div v-if="$slots['icon-left']" class="ds-input-prefix">
         <slot name="icon-left" />
       </div>
 
@@ -171,7 +151,7 @@ defineExpose({
         :maxlength="maxlength"
         :autofocus="autofocus"
         :autocomplete="autocomplete"
-        :class="inputClasses"
+        class="ds-input"
         @input="handleInput"
         @focus="handleFocus"
         @blur="handleBlur"
@@ -181,24 +161,221 @@ defineExpose({
       <button
         v-if="showClearButton"
         type="button"
-        class="pr-3 text-text-muted hover:text-text-secondary transition-colors"
+        class="ds-input-clear"
         @click="handleClear"
       >
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10" />
           <path d="M15 9l-6 6M9 9l6 6" />
         </svg>
       </button>
 
       <!-- 后置图标插槽 -->
-      <div v-if="$slots['icon-right']" class="pr-4 text-text-muted">
+      <div v-if="$slots['icon-right']" class="ds-input-suffix">
         <slot name="icon-right" />
       </div>
     </div>
 
     <!-- 错误信息 -->
-    <p v-if="error && errorMessage" class="mt-1.5 text-sm text-error">
+    <p v-if="error && errorMessage" class="ds-input-error-message">
       {{ errorMessage }}
     </p>
   </div>
 </template>
+
+<style scoped>
+/* ========================================
+   Apple-like Input - 精致化样式
+   ======================================== */
+
+.ds-input-wrapper {
+  width: 100%;
+}
+
+/* ===== 容器样式 ===== */
+.ds-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+
+  /* 内阴影增加深度感 */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  /* 流畅过渡 */
+  transition:
+    border-color 0.2s cubic-bezier(0.25, 0.1, 0.25, 1.0),
+    box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1.0),
+    background-color 0.2s ease;
+}
+
+/* Hover 状态 */
+.ds-input-container:hover:not(.ds-input-container--disabled):not(.ds-input-container--focused) {
+  border-color: var(--color-border-hover, #c0c4cc);
+}
+
+/* Focus 状态：蓝色光晕 */
+.ds-input-container--focused {
+  border-color: var(--color-primary);
+  box-shadow:
+    0 0 0 3px rgba(0, 113, 227, 0.15),
+    inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Error 状态 */
+.ds-input-container--error {
+  border-color: var(--color-error);
+}
+
+.ds-input-container--error.ds-input-container--focused {
+  box-shadow:
+    0 0 0 3px rgba(255, 59, 48, 0.15),
+    inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Success 状态 */
+.ds-input-container--success {
+  border-color: var(--color-success);
+}
+
+.ds-input-container--success.ds-input-container--focused {
+  box-shadow:
+    0 0 0 3px rgba(48, 209, 88, 0.15),
+    inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Disabled 状态 */
+.ds-input-container--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-bg-secondary);
+}
+
+/* ===== 尺寸变体 ===== */
+.ds-input-container--sm {
+  height: 36px;
+  border-radius: 8px;
+}
+
+.ds-input-container--md {
+  height: 44px;
+  border-radius: 10px;
+}
+
+.ds-input-container--lg {
+  height: 52px;
+  border-radius: 12px;
+}
+
+/* ===== 输入框样式 ===== */
+.ds-input {
+  flex: 1;
+  height: 100%;
+  padding: 0 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 17px;
+  color: var(--color-text-primary);
+  -webkit-appearance: none;
+}
+
+.ds-input-container--sm .ds-input {
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.ds-input-container--lg .ds-input {
+  padding: 0 20px;
+  font-size: 17px;
+}
+
+.ds-input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+.ds-input:disabled {
+  cursor: not-allowed;
+}
+
+/* ===== 图标样式 ===== */
+.ds-input-prefix {
+  padding-left: 14px;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.ds-input-prefix + .ds-input {
+  padding-left: 8px;
+}
+
+.ds-input-suffix {
+  padding-right: 14px;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+}
+
+/* ===== 清除按钮 ===== */
+.ds-input-clear {
+  padding: 0 12px;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.ds-input-clear:hover {
+  color: var(--color-text-secondary);
+}
+
+/* ===== 错误信息 ===== */
+.ds-input-error-message {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--color-error);
+}
+
+/* ===== 深色模式适配 ===== */
+[data-theme="dark"] .ds-input-container {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .ds-input-container:hover:not(.ds-input-container--disabled):not(.ds-input-container--focused) {
+  border-color: var(--color-border-hover, #4a4a4a);
+}
+
+[data-theme="dark"] .ds-input-container--focused {
+  border-color: var(--color-primary);
+  box-shadow:
+    0 0 0 3px rgba(0, 113, 227, 0.25),
+    inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .ds-input-container--error.ds-input-container--focused {
+  box-shadow:
+    0 0 0 3px rgba(255, 59, 48, 0.25),
+    inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== 暖阳橙主题适配 ===== */
+[data-theme="warm"] .ds-input-container {
+  background: var(--color-bg-tertiary);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="warm"] .ds-input-container--focused {
+  box-shadow:
+    0 0 0 3px rgba(0, 113, 227, 0.12),
+    inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+</style>
