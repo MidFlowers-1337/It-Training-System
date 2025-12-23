@@ -32,7 +32,7 @@
         @click="toggleCollapse"
         class="h-12 flex items-center justify-center border-t border-border-color/60 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/60 transition-colors"
       >
-        <component :is="isCollapse ? ChevronsRight : ChevronsLeft" class="w-5 h-5" />
+        <component :is="isCollapse ? IconChevronsRight : IconChevronsLeft" class="w-5 h-5" />
       </button>
     </aside>
 
@@ -56,7 +56,7 @@
                 <div class="text-sm font-medium text-text-primary">{{ userStore.realName || userStore.username || '讲师' }}</div>
                 <div class="text-xs text-text-muted">讲师</div>
               </div>
-              <ChevronDown class="w-4 h-4 text-text-muted" />
+              <IconChevronDown class="w-4 h-4 text-text-muted" />
             </div>
             <template #dropdown>
               <el-dropdown-menu>
@@ -80,11 +80,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
-import { CalendarDays, ChevronDown, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -92,7 +91,36 @@ const userStore = useUserStore()
 
 const isCollapse = ref(false)
 
-const menuItems = [{ path: '/instructor/sessions', title: '我的班期', icon: CalendarDays }]
+// 内联 SVG 图标组件
+const IconCalendarDays = {
+  render: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('path', { d: 'M8 2v4' }), h('path', { d: 'M16 2v4' }),
+    h('rect', { width: '18', height: '18', x: '3', y: '4', rx: '2' }),
+    h('path', { d: 'M3 10h18' }),
+    h('path', { d: 'M8 14h.01' }), h('path', { d: 'M12 14h.01' }), h('path', { d: 'M16 14h.01' }),
+    h('path', { d: 'M8 18h.01' }), h('path', { d: 'M12 18h.01' }), h('path', { d: 'M16 18h.01' })
+  ])
+}
+
+const IconChevronDown = {
+  render: () => h('svg', { class: 'w-4 h-4', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('path', { d: 'm6 9 6 6 6-6' })
+  ])
+}
+
+const IconChevronsLeft = {
+  render: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('path', { d: 'm11 17-5-5 5-5' }), h('path', { d: 'm18 17-5-5 5-5' })
+  ])
+}
+
+const IconChevronsRight = {
+  render: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('path', { d: 'm6 17 5-5-5-5' }), h('path', { d: 'm13 17 5-5-5-5' })
+  ])
+}
+
+const menuItems = [{ path: '/instructor/sessions', title: '我的班期', icon: IconCalendarDays }]
 
 const currentRouteName = computed(() => {
   const item = menuItems.find((i) => i.path === route.path)

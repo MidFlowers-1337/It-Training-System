@@ -48,11 +48,11 @@
       <div class="mt-auto pt-4 border-t border-border-light flex flex-col gap-3">
         <div class="flex items-center justify-between text-xs text-text-muted">
           <span class="inline-flex items-center gap-1.5">
-            <Clock class="w-4 h-4" />
+            <IconClock class="w-4 h-4" />
             {{ course.durationHours }}课时
           </span>
           <span v-if="course.enrollmentCount" class="inline-flex items-center gap-1.5">
-            <Users class="w-4 h-4" />
+            <IconUsers class="w-4 h-4" />
             {{ course.enrollmentCount }}人
           </span>
         </div>
@@ -76,8 +76,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { Bot, Cloud, Clock, Code, Database, Server, Users } from 'lucide-vue-next'
+import { computed, h } from 'vue'
 
 const props = defineProps({
   course: {
@@ -96,6 +95,62 @@ const handleClick = () => {
   emit('click', props.course)
 }
 
+// 内联 SVG 图标组件
+const IconServer = {
+  render: () => h('svg', { class: 'w-7 h-7', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('rect', { width: '20', height: '8', x: '2', y: '2', rx: '2', ry: '2' }),
+    h('rect', { width: '20', height: '8', x: '2', y: '14', rx: '2', ry: '2' }),
+    h('line', { x1: '6', x2: '6.01', y1: '6', y2: '6' }),
+    h('line', { x1: '6', x2: '6.01', y1: '18', y2: '18' })
+  ])
+}
+
+const IconCode = {
+  render: () => h('svg', { class: 'w-7 h-7', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('polyline', { points: '16 18 22 12 16 6' }),
+    h('polyline', { points: '8 6 2 12 8 18' })
+  ])
+}
+
+const IconDatabase = {
+  render: () => h('svg', { class: 'w-7 h-7', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('ellipse', { cx: '12', cy: '5', rx: '9', ry: '3' }),
+    h('path', { d: 'M3 5V19A9 3 0 0 0 21 19V5' }),
+    h('path', { d: 'M3 12A9 3 0 0 0 21 12' })
+  ])
+}
+
+const IconBot = {
+  render: () => h('svg', { class: 'w-7 h-7', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('path', { d: 'M12 8V4H8' }),
+    h('rect', { width: '16', height: '12', x: '4', y: '8', rx: '2' }),
+    h('path', { d: 'M2 14h2' }), h('path', { d: 'M20 14h2' }),
+    h('path', { d: 'M15 13v2' }), h('path', { d: 'M9 13v2' })
+  ])
+}
+
+const IconCloud = {
+  render: () => h('svg', { class: 'w-7 h-7', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('path', { d: 'M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z' })
+  ])
+}
+
+const IconClock = {
+  render: () => h('svg', { class: 'w-4 h-4', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('circle', { cx: '12', cy: '12', r: '10' }),
+    h('polyline', { points: '12 6 12 12 16 14' })
+  ])
+}
+
+const IconUsers = {
+  render: () => h('svg', { class: 'w-4 h-4', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+    h('path', { d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' }),
+    h('circle', { cx: '9', cy: '7', r: '4' }),
+    h('path', { d: 'M22 21v-2a4 4 0 0 0-3-3.87' }),
+    h('path', { d: 'M16 3.13a4 4 0 0 1 0 7.75' })
+  ])
+}
+
 const categoryColor = computed(() => {
   const colors = {
     BACKEND: 'var(--primary-color)',
@@ -109,13 +164,13 @@ const categoryColor = computed(() => {
 
 const categoryIcon = computed(() => {
   const map = {
-    BACKEND: Server,
-    FRONTEND: Code,
-    DATABASE: Database,
-    AI: Bot,
-    CLOUD: Cloud,
+    BACKEND: IconServer,
+    FRONTEND: IconCode,
+    DATABASE: IconDatabase,
+    AI: IconBot,
+    CLOUD: IconCloud,
   }
-  return map[props.course.category] || Code
+  return map[props.course.category] || IconCode
 })
 
 const difficultyName = computed(() => {
