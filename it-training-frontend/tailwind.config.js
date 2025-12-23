@@ -3,7 +3,11 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
+    // PrimeVue PassThrough 支持
+    "./src/design-system/**/*.{vue,js,ts}",
   ],
+  // 暗色模式通过 data-theme 属性控制
+  darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {

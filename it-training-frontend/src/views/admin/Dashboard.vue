@@ -1,138 +1,189 @@
 <template>
-  <div class="space-y-6">
-    <section class="page-hero glass p-8 md:p-10">
-      <div class="absolute inset-0 pointer-events-none" style="background: var(--gradient-hero)"></div>
-      <div class="relative">
-        <p class="inline-flex items-center gap-2 text-sm text-text-secondary">
-          <BarChart3 class="w-4 h-4 text-primary" />
-          管理后台
-        </p>
-        <h1 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-text-primary">Dashboard</h1>
-        <p class="mt-2 text-sm md:text-base text-text-secondary">系统概览与关键指标。</p>
-      </div>
-    </section>
+  <div class="dashboard-page">
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1 class="page-title">控制台</h1>
+      <p class="page-subtitle">系统概览与关键指标</p>
+    </header>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div v-for="stat in stats" :key="stat.label" class="card p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-            <component :is="stat.icon" class="w-6 h-6" />
+    <div class="stats-grid">
+      <div v-for="stat in stats" :key="stat.label" class="stat-card">
+        <div class="stat-top">
+          <div class="stat-icon" :class="stat.colorClass">
+            <component :is="stat.icon" />
           </div>
-          <span class="badge badge-secondary">
-            <span :class="stat.trend > 0 ? 'text-success' : 'text-error'">
-              {{ stat.trend > 0 ? '+' : '' }}{{ stat.trend }}%
-            </span>
+          <span class="stat-trend" :class="stat.trend > 0 ? 'trend-up' : 'trend-down'">
+            {{ stat.trend > 0 ? '+' : '' }}{{ stat.trend }}%
           </span>
         </div>
-        <h3 class="text-text-secondary text-sm font-medium">{{ stat.label }}</h3>
-        <p class="text-2xl font-bold text-text-primary mt-1">{{ stat.value }}</p>
+        <h3 class="stat-label">{{ stat.label }}</h3>
+        <p class="stat-value">{{ stat.value }}</p>
       </div>
     </div>
 
     <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="charts-grid">
       <!-- Enrollment Trend -->
-      <div class="card p-6">
-        <h3 class="text-lg font-semibold tracking-tight text-text-primary mb-1">Enrollment Trends</h3>
-        <p class="text-sm text-text-muted mb-6">近 7 天报名趋势。</p>
-        <div ref="enrollmentChartRef" class="h-80 w-full"></div>
-      </div>
+      <section class="chart-card">
+        <div class="card-header">
+          <div class="card-header-text">
+            <h2 class="card-title">报名趋势</h2>
+            <p class="card-subtitle">近 7 天报名统计</p>
+          </div>
+        </div>
+        <div ref="enrollmentChartRef" class="chart-container"></div>
+      </section>
 
       <!-- Popular Courses -->
-      <div class="card p-6">
-        <h3 class="text-lg font-semibold tracking-tight text-text-primary mb-1">Popular Courses</h3>
-        <p class="text-sm text-text-muted mb-6">热门课程占比。</p>
-        <div ref="courseChartRef" class="h-80 w-full"></div>
-      </div>
+      <section class="chart-card">
+        <div class="card-header">
+          <div class="card-header-text">
+            <h2 class="card-title">热门课程</h2>
+            <p class="card-subtitle">课程报名分布</p>
+          </div>
+        </div>
+        <div ref="courseChartRef" class="chart-container"></div>
+      </section>
     </div>
 
     <!-- Recent Activity -->
-    <div class="card p-6">
-      <h3 class="text-lg font-semibold tracking-tight text-text-primary">Recent Activity</h3>
-      <div class="mt-4 inset-group">
-        <div v-for="(activity, index) in recentActivities" :key="index">
-          <div class="inset-item">
-            <div class="min-w-0">
-              <p class="text-sm text-text-primary truncate">{{ activity.message }}</p>
-              <p class="text-xs text-text-muted mt-1">{{ activity.time }}</p>
-            </div>
+    <section class="activity-section">
+      <div class="card-header">
+        <h2 class="card-title">最近动态</h2>
+      </div>
+      <div class="activity-list">
+        <div v-for="(activity, index) in recentActivities" :key="index" class="activity-item">
+          <div class="activity-content">
+            <span class="activity-message">{{ activity.message }}</span>
+            <span class="activity-time">{{ activity.time }}</span>
           </div>
-          <div v-if="index < recentActivities.length - 1" class="inset-divider"></div>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import * as echarts from 'echarts'
-import { Users, BookOpen, GraduationCap, BarChart3 } from 'lucide-vue-next'
+<script setup lang="ts">
+import { ref, h, onMounted, onUnmounted, nextTick, type Component } from 'vue';
+import * as echarts from 'echarts';
 
-// Stats Data
-const stats = [
-  { 
-    label: 'Total Students', 
-    value: '2,543', 
-    trend: 12.5, 
-    icon: Users
-  },
-  { 
-    label: 'Active Courses', 
-    value: '45', 
-    trend: 4.2, 
-    icon: BookOpen
-  },
-  { 
-    label: 'Course Completions', 
-    value: '1,201', 
-    trend: 8.1, 
-    icon: GraduationCap
-  },
-  { 
-    label: 'Total Revenue', 
-    value: '$45,231', 
-    trend: -2.4, 
-    icon: BarChart3
+// Icon Components
+const UsersIcon: Component = {
+  render() {
+    return h('svg', { class: 'icon-svg', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
+      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' })
+    ]);
   }
-]
+};
 
-// Recent Activity Data
-const recentActivities = [
-  { message: 'New student registered: John Doe', time: '2 minutes ago' },
-  { message: 'Course "Vue.js Fundamentals" updated', time: '1 hour ago' },
-  { message: 'System maintenance scheduled', time: '3 hours ago' },
-  { message: 'New review posted for "Advanced React"', time: '5 hours ago' }
-]
+const BookOpenIcon: Component = {
+  render() {
+    return h('svg', { class: 'icon-svg', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
+      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' })
+    ]);
+  }
+};
 
-// Charts
-const enrollmentChartRef = ref(null)
-const courseChartRef = ref(null)
-let enrollmentChart = null
-let courseChart = null
-let themeObserver = null
+const GraduationCapIcon: Component = {
+  render() {
+    return h('svg', { class: 'icon-svg', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
+      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 14l9-5-9-5-9 5 9 5z' }),
+      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z' }),
+      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222' })
+    ]);
+  }
+};
 
-const normalizeRgb = (value, fallback) => {
-  const cleaned = (value || '').trim()
-  if (!cleaned) return fallback
-  return cleaned.replace(/\\s+/g, ' ')
+const BarChartIcon: Component = {
+  render() {
+    return h('svg', { class: 'icon-svg', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
+      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' })
+    ]);
+  }
+};
+
+// Types
+interface Stat {
+  label: string;
+  value: string;
+  trend: number;
+  icon: Component;
+  colorClass: string;
 }
 
-const rgba = (rgb, alpha) => `rgba(${rgb.replace(/\\s+/g, ',')}, ${alpha})`
+interface Activity {
+  message: string;
+  time: string;
+}
+
+// Stats Data
+const stats: Stat[] = [
+  {
+    label: '总学员数',
+    value: '2,543',
+    trend: 12.5,
+    icon: UsersIcon,
+    colorClass: 'icon-primary'
+  },
+  {
+    label: '活跃课程',
+    value: '45',
+    trend: 4.2,
+    icon: BookOpenIcon,
+    colorClass: 'icon-info'
+  },
+  {
+    label: '课程完成',
+    value: '1,201',
+    trend: 8.1,
+    icon: GraduationCapIcon,
+    colorClass: 'icon-success'
+  },
+  {
+    label: '总收入',
+    value: '¥45,231',
+    trend: -2.4,
+    icon: BarChartIcon,
+    colorClass: 'icon-warning'
+  }
+];
+
+// Recent Activity Data
+const recentActivities: Activity[] = [
+  { message: '新学员注册：张三', time: '2 分钟前' },
+  { message: '课程「Vue.js 入门」已更新', time: '1 小时前' },
+  { message: '系统维护计划已安排', time: '3 小时前' },
+  { message: '「高级 React」课程收到新评价', time: '5 小时前' }
+];
+
+// Charts
+const enrollmentChartRef = ref<HTMLElement | null>(null);
+const courseChartRef = ref<HTMLElement | null>(null);
+let enrollmentChart: echarts.ECharts | null = null;
+let courseChart: echarts.ECharts | null = null;
+let themeObserver: MutationObserver | null = null;
+
+const normalizeRgb = (value: string, fallback: string): string => {
+  const cleaned = (value || '').trim();
+  if (!cleaned) return fallback;
+  return cleaned.replace(/\s+/g, ' ');
+};
+
+const rgba = (rgb: string, alpha: number): string => `rgba(${rgb.replace(/\s+/g, ',')}, ${alpha})`;
 
 const getThemeColors = () => {
-  const style = getComputedStyle(document.documentElement)
-  const primaryRgb = normalizeRgb(style.getPropertyValue('--primary-color-rgb'), '37 99 235')
-  const primaryLightRgb = normalizeRgb(style.getPropertyValue('--primary-light-rgb'), '59 130 246')
-  const infoRgb = normalizeRgb(style.getPropertyValue('--info-color-rgb'), primaryRgb)
-  const successRgb = normalizeRgb(style.getPropertyValue('--success-color-rgb'), '5 150 105')
-  const warningRgb = normalizeRgb(style.getPropertyValue('--warning-color-rgb'), '217 119 6')
-  const errorRgb = normalizeRgb(style.getPropertyValue('--error-color-rgb'), '220 38 38')
-  const textPrimaryRgb = normalizeRgb(style.getPropertyValue('--text-primary-rgb'), '17 24 39')
-  const textSecondaryRgb = normalizeRgb(style.getPropertyValue('--text-secondary-rgb'), '75 85 99')
-  const borderRgb = normalizeRgb(style.getPropertyValue('--border-color-rgb'), '229 231 235')
-  const bgSecondaryRgb = normalizeRgb(style.getPropertyValue('--bg-secondary-rgb'), '255 255 255')
+  const style = getComputedStyle(document.documentElement);
+  const primaryRgb = normalizeRgb(style.getPropertyValue('--primary-color-rgb'), '0 122 255');
+  const primaryLightRgb = normalizeRgb(style.getPropertyValue('--primary-light-rgb'), '90 200 250');
+  const infoRgb = normalizeRgb(style.getPropertyValue('--info-rgb'), primaryRgb);
+  const successRgb = normalizeRgb(style.getPropertyValue('--success-rgb'), '52 199 89');
+  const warningRgb = normalizeRgb(style.getPropertyValue('--warning-rgb'), '255 149 0');
+  const errorRgb = normalizeRgb(style.getPropertyValue('--error-rgb'), '255 59 48');
+  const textPrimaryRgb = normalizeRgb(style.getPropertyValue('--text-primary-rgb'), '0 0 0');
+  const textSecondaryRgb = normalizeRgb(style.getPropertyValue('--text-secondary-rgb'), '142 142 147');
+  const borderRgb = normalizeRgb(style.getPropertyValue('--border-color-rgb'), '209 209 214');
+  const bgSecondaryRgb = normalizeRgb(style.getPropertyValue('--bg-secondary-rgb'), '255 255 255');
 
   return {
     primaryRgb,
@@ -145,8 +196,8 @@ const getThemeColors = () => {
     textSecondaryRgb,
     borderRgb,
     bgSecondaryRgb,
-  }
-}
+  };
+};
 
 const initCharts = () => {
   const {
@@ -160,19 +211,19 @@ const initCharts = () => {
     textSecondaryRgb,
     borderRgb,
     bgSecondaryRgb,
-  } = getThemeColors()
+  } = getThemeColors();
 
-  const primary = rgba(primaryRgb, 0.95)
-  const primarySoft = rgba(primaryRgb, 0.18)
-  const primaryLight = rgba(primaryLightRgb, 0.9)
-  const textColor = rgba(textPrimaryRgb, 1)
-  const textSecondary = rgba(textSecondaryRgb, 0.9)
-  const borderColor = rgba(borderRgb, 0.75)
-  const surface = rgba(bgSecondaryRgb, 0.92)
+  const primary = rgba(primaryRgb, 0.95);
+  const primarySoft = rgba(primaryRgb, 0.18);
+  const primaryLight = rgba(primaryLightRgb, 0.9);
+  const textColor = rgba(textPrimaryRgb, 1);
+  const textSecondary = rgba(textSecondaryRgb, 0.9);
+  const borderColor = rgba(borderRgb, 0.75);
+  const surface = rgba(bgSecondaryRgb, 0.92);
 
   // Enrollment Chart
   if (enrollmentChartRef.value) {
-    enrollmentChart = echarts.init(enrollmentChartRef.value)
+    enrollmentChart = echarts.init(enrollmentChartRef.value);
     enrollmentChart.setOption({
       backgroundColor: 'transparent',
       tooltip: {
@@ -192,7 +243,7 @@ const initCharts = () => {
       xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
         axisLine: { lineStyle: { color: borderColor } },
         axisLabel: { color: textSecondary }
       },
@@ -202,7 +253,7 @@ const initCharts = () => {
         axisLabel: { color: textSecondary }
       },
       series: [{
-        name: 'Enrollments',
+        name: '报名数',
         type: 'line',
         smooth: true,
         data: [120, 132, 101, 134, 90, 230, 210],
@@ -215,12 +266,12 @@ const initCharts = () => {
           ])
         }
       }]
-    })
+    });
   }
 
   // Course Chart
   if (courseChartRef.value) {
-    courseChart = echarts.init(courseChartRef.value)
+    courseChart = echarts.init(courseChartRef.value);
     courseChart.setOption({
       backgroundColor: 'transparent',
       tooltip: {
@@ -234,7 +285,7 @@ const initCharts = () => {
         textStyle: { color: textSecondary }
       },
       series: [{
-        name: 'Popular Courses',
+        name: '热门课程',
         type: 'pie',
         radius: ['40%', '70%'],
         avoidLabelOverlap: false,
@@ -261,32 +312,273 @@ const initCharts = () => {
           { value: 300, name: 'Python' }
         ]
       }]
-    })
+    });
+  }
+};
+
+const handleResize = () => {
+  enrollmentChart?.resize();
+  courseChart?.resize();
+};
+
+onMounted(() => {
+  initCharts();
+  window.addEventListener('resize', handleResize);
+  themeObserver = new MutationObserver(() => {
+    nextTick(() => {
+      enrollmentChart?.dispose();
+      courseChart?.dispose();
+      initCharts();
+    });
+  });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+  themeObserver?.disconnect();
+  enrollmentChart?.dispose();
+  courseChart?.dispose();
+});
+</script>
+
+<style scoped>
+/* ========================================
+   Apple Workbench 风格 Dashboard
+   ======================================== */
+
+.dashboard-page {
+  padding: 0;
+}
+
+/* ===== Page Header ===== */
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+/* ===== Stats Grid ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-const handleResize = () => {
-  enrollmentChart?.resize()
-  courseChart?.resize()
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-onMounted(() => {
-  initCharts()
-  window.addEventListener('resize', handleResize)
-  themeObserver = new MutationObserver(() => {
-    nextTick(() => {
-      enrollmentChart?.dispose()
-      courseChart?.dispose()
-      initCharts()
-    })
-  })
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
-})
+.stat-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 2px 4px rgba(0, 0, 0, 0.04);
+  border: 0.5px solid rgba(0, 0, 0, 0.05);
+}
 
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-  themeObserver?.disconnect()
-  enrollmentChart?.dispose()
-  courseChart?.dispose()
-})
-</script>
+.stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+}
+
+.icon-svg {
+  width: 24px;
+  height: 24px;
+}
+
+.stat-icon.icon-primary {
+  background: rgba(var(--primary-color-rgb, 0, 122, 255) / 0.1);
+  color: var(--primary-color);
+  border: 1px solid rgba(var(--primary-color-rgb, 0, 122, 255) / 0.2);
+}
+
+.stat-icon.icon-info {
+  background: rgba(var(--info-rgb, 0, 122, 255) / 0.1);
+  color: var(--info);
+  border: 1px solid rgba(var(--info-rgb, 0, 122, 255) / 0.2);
+}
+
+.stat-icon.icon-success {
+  background: rgba(var(--success-rgb, 52, 199, 89) / 0.1);
+  color: var(--success);
+  border: 1px solid rgba(var(--success-rgb, 52, 199, 89) / 0.2);
+}
+
+.stat-icon.icon-warning {
+  background: rgba(var(--warning-rgb, 255, 149, 0) / 0.1);
+  color: var(--warning);
+  border: 1px solid rgba(var(--warning-rgb, 255, 149, 0) / 0.2);
+}
+
+.stat-trend {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-trend.trend-up {
+  background: rgba(var(--success-rgb, 52, 199, 89) / 0.1);
+  color: var(--success);
+}
+
+.stat-trend.trend-down {
+  background: rgba(var(--error-rgb, 255, 59, 48) / 0.1);
+  color: var(--error);
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.stat-value {
+  margin-top: 4px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Charts Grid ===== */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1024px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 2px 4px rgba(0, 0, 0, 0.04);
+  border: 0.5px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-subtitle {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.chart-container {
+  height: 280px;
+  width: 100%;
+}
+
+/* ===== Activity Section ===== */
+.activity-section {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 2px 4px rgba(0, 0, 0, 0.04);
+  border: 0.5px solid rgba(0, 0, 0, 0.05);
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-item {
+  padding: 14px 0;
+  border-bottom: 0.5px solid var(--border-light);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.activity-item:first-child {
+  padding-top: 0;
+}
+
+.activity-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.activity-message {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.activity-time {
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ===== Dark Mode ===== */
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .chart-card,
+[data-theme="dark"] .activity-section {
+  background: var(--bg-secondary);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+</style>
