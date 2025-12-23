@@ -20,7 +20,6 @@
     "axios": "^1.13.2",
     "echarts": "^6.0.0",
     "element-plus": "^2.12.0",
-    "lucide-vue-next": "^0.562.0",
     "markdown-it": "^14.1.0",
     "pinia": "^3.0.4",
     "postcss": "^8.5.6",
