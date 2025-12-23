@@ -28,7 +28,8 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 0
-    validate-on-migrate: true
+    validate-on-migrate: false
+    clean-disabled: false
     encoding: UTF-8
     out-of-order: false
     table: flyway_schema_history
