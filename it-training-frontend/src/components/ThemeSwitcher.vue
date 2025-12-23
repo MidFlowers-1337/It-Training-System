@@ -33,9 +33,9 @@
 
 <script setup>
 import { computed, h } from 'vue'
-import { useTheme } from '@/composables/useTheme'
+import { useTheme } from '@/design-system/composables/useTheme'
 
-const { currentTheme, setTheme, themes } = useTheme()
+const { currentTheme, setTheme, themeOptions } = useTheme()
 
 // 内联 SVG 图标组件
 const IconSparkles = {
@@ -67,15 +67,15 @@ const IconCheck = {
 }
 
 const iconByTheme = {
-  default: IconSparkles,
-  warm: IconSun,
+  light: IconSun,
+  warm: IconSparkles,
   dark: IconMoon,
 }
 
 const currentIcon = computed(() => iconByTheme[currentTheme.value] || IconSparkles)
 
 const options = computed(() =>
-  themes.map((theme) => ({
+  themeOptions.value.map((theme) => ({
     ...theme,
     icon: iconByTheme[theme.value] || IconSparkles,
   })),
