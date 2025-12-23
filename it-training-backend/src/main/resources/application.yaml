@@ -28,7 +28,10 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 0
-    validate-on-migrate: false
+    # Keep validation enabled globally to prevent drifted schemas from applying
+    # incompatible migrations. Local overrides can still disable this in
+    # profile-specific files if needed for development.
+    validate-on-migrate: true
     clean-disabled: false
     encoding: UTF-8
     out-of-order: false
