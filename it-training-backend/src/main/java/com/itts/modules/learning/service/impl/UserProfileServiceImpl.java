@@ -1,9 +1,22 @@
 package com.itts.modules.learning.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.itts.common.utils.LevelDifficultyUtils;
 import com.itts.modules.learning.dto.UserProfileResponse;
-import com.itts.modules.learning.entity.*;
-import com.itts.modules.learning.mapper.*;
+import com.itts.modules.learning.entity.Achievement;
+import com.itts.modules.learning.entity.LearningProgress;
+import com.itts.modules.learning.entity.StudyCheckin;
+import com.itts.modules.learning.entity.UserAchievement;
+import com.itts.modules.learning.entity.UserLearningStats;
+import com.itts.modules.learning.entity.UserPreference;
+import com.itts.modules.learning.entity.UserSkillTag;
+import com.itts.modules.learning.mapper.AchievementMapper;
+import com.itts.modules.learning.mapper.LearningProgressMapper;
+import com.itts.modules.learning.mapper.StudyCheckinMapper;
+import com.itts.modules.learning.mapper.UserAchievementMapper;
+import com.itts.modules.learning.mapper.UserLearningStatsMapper;
+import com.itts.modules.learning.mapper.UserPreferenceMapper;
+import com.itts.modules.learning.mapper.UserSkillTagMapper;
 import com.itts.modules.learning.service.UserProfileService;
 import com.itts.modules.user.entity.SysUser;
 import com.itts.modules.user.mapper.SysUserMapper;
@@ -12,7 +25,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -84,11 +103,11 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         // 设置学习统计
         if (stats != null) {
-            // 根据学习时长计算等级
-            int level = calculateLevel(stats.getTotalStudyMinutes());
+            // 根据学习时长计算等级（使用工具类）
+            int level = LevelDifficultyUtils.calculateLevelByMinutes(stats.getTotalStudyMinutes());
             builder.totalStudyMinutes(stats.getTotalStudyMinutes())
                    .learningLevel(level)
-                   .levelName(getLevelName(level))
+                   .levelName(LevelDifficultyUtils.getLevelName(level))
                    .currentStreak(stats.getCurrentStreakDays())
                    .maxStreak(stats.getMaxStreakDays())
                    .achievementPoints(stats.getTotalAchievementPoints())
@@ -97,7 +116,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         } else {
             builder.totalStudyMinutes(0)
                    .learningLevel(1)
-                   .levelName("学习新手")
+                   .levelName(LevelDifficultyUtils.getLevelName(1))
                    .currentStreak(0)
                    .maxStreak(0)
                    .achievementPoints(0);
@@ -120,7 +139,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                 Collections.emptyList();
             builder.preference(UserProfileResponse.LearningPreference.builder()
                 .preferredCategories(categories)
-                .preferredDifficulty(getDifficultyName(preference.getPreferredDifficulty()))
+                .preferredDifficulty(LevelDifficultyUtils.getDifficultyName(preference.getPreferredDifficulty()))
                 .dailyStudyGoal(preference.getWeeklyHours() != null ? 
                     preference.getWeeklyHours() * 60 / 7 : 30)  // 转换为每日分钟
                 .preferredStudyTime("晚间")  // 默认值
@@ -181,7 +200,7 @@ public class UserProfileServiceImpl implements UserProfileService {
             preference.setPreferredCategories(String.join(",", preferredCategories));
         }
         if (preferredDifficulty != null) {
-            preference.setPreferredDifficulty(getDifficultyValue(preferredDifficulty));
+            preference.setPreferredDifficulty(LevelDifficultyUtils.getDifficultyValue(preferredDifficulty));
         }
         if (dailyStudyGoal != null) {
             preference.setWeeklyHours(dailyStudyGoal * 7 / 60);  // 转换为每周小时
@@ -241,64 +260,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         return assessment;
     }
 
-    /**
-     * 根据学习时长计算等级
-     */
-    private int calculateLevel(Integer totalMinutes) {
-        if (totalMinutes == null || totalMinutes < 60) return 1;
-        if (totalMinutes < 300) return 2;
-        if (totalMinutes < 1000) return 3;
-        if (totalMinutes < 3000) return 4;
-        if (totalMinutes < 6000) return 5;
-        if (totalMinutes < 12000) return 6;
-        if (totalMinutes < 24000) return 7;
-        return 8;
-    }
-
-    /**
-     * 获取等级名称
-     */
-    private String getLevelName(Integer level) {
-        if (level == null) return "学习新手";
-        switch (level) {
-            case 1: return "学习新手";
-            case 2: return "初级学员";
-            case 3: return "中级学员";
-            case 4: return "高级学员";
-            case 5: return "学习达人";
-            case 6: return "学习专家";
-            case 7: return "学习大师";
-            default: return level > 7 ? "学习宗师" : "学习新手";
-        }
-    }
-
-    /**
-     * 获取难度名称
-     */
-    private String getDifficultyName(Integer difficulty) {
-        if (difficulty == null) return "中等";
-        switch (difficulty) {
-            case 1: return "入门";
-            case 2: return "初级";
-            case 3: return "中级";
-            case 4: return "高级";
-            default: return "中等";
-        }
-    }
-
-    /**
-     * 获取难度值
-     */
-    private Integer getDifficultyValue(String difficulty) {
-        if (difficulty == null) return 2;
-        switch (difficulty) {
-            case "入门": return 1;
-            case "初级": return 2;
-            case "中级": return 3;
-            case "高级": return 4;
-            default: return 2;
-        }
-    }
+    // ==================== 私有辅助方法 ====================
 
     /**
      * 计算能力雷达图数据

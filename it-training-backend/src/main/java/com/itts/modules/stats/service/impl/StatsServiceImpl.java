@@ -1,6 +1,9 @@
 package com.itts.modules.stats.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.itts.common.config.RedisCacheConfig;
+import com.itts.enums.CourseStatus;
+import com.itts.enums.DeleteFlag;
 import com.itts.enums.EnrollmentStatus;
 import com.itts.enums.RoleEnum;
 import com.itts.enums.SessionStatus;
@@ -18,6 +21,7 @@ import com.itts.modules.user.entity.SysUser;
 import com.itts.modules.user.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -43,35 +47,37 @@ public class StatsServiceImpl implements StatsService {
     private final EnrollmentMapper enrollmentMapper;
 
     @Override
+    @Cacheable(value = RedisCacheConfig.CACHE_STATS, key = "'overview'")
     public StatsOverviewResponse getOverview() {
         StatsOverviewResponse response = new StatsOverviewResponse();
 
         // 课程总数（已上架）
         LambdaQueryWrapper<Course> courseWrapper = new LambdaQueryWrapper<>();
-        courseWrapper.eq(Course::getStatus, 1).eq(Course::getDeleted, 0);
+        courseWrapper.eq(Course::getStatus, CourseStatus.PUBLISHED.getCode())
+                .eq(Course::getDeleted, DeleteFlag.NOT_DELETED);
         response.setCourseCount(courseMapper.selectCount(courseWrapper));
 
         // 班期总数
         LambdaQueryWrapper<ClassSession> sessionWrapper = new LambdaQueryWrapper<>();
-        sessionWrapper.eq(ClassSession::getDeleted, 0);
+        sessionWrapper.eq(ClassSession::getDeleted, DeleteFlag.NOT_DELETED);
         response.setSessionCount(classSessionMapper.selectCount(sessionWrapper));
 
         // 进行中的班期数
         LambdaQueryWrapper<ClassSession> activeSessionWrapper = new LambdaQueryWrapper<>();
-        activeSessionWrapper.eq(ClassSession::getDeleted, 0)
+        activeSessionWrapper.eq(ClassSession::getDeleted, DeleteFlag.NOT_DELETED)
                 .in(ClassSession::getStatus, SessionStatus.ENROLLING.getCode(), SessionStatus.IN_PROGRESS.getCode());
         response.setActiveSessionCount(classSessionMapper.selectCount(activeSessionWrapper));
 
         // 学员总数
         LambdaQueryWrapper<SysUser> studentWrapper = new LambdaQueryWrapper<>();
         studentWrapper.eq(SysUser::getRole, RoleEnum.STUDENT.name())
-                .eq(SysUser::getDeleted, 0);
+                .eq(SysUser::getDeleted, DeleteFlag.NOT_DELETED);
         response.setStudentCount(sysUserMapper.selectCount(studentWrapper));
 
         // 讲师总数
         LambdaQueryWrapper<SysUser> instructorWrapper = new LambdaQueryWrapper<>();
         instructorWrapper.eq(SysUser::getRole, RoleEnum.INSTRUCTOR.name())
-                .eq(SysUser::getDeleted, 0);
+                .eq(SysUser::getDeleted, DeleteFlag.NOT_DELETED);
         response.setInstructorCount(sysUserMapper.selectCount(instructorWrapper));
 
         // 报名总数（有效报名）
@@ -90,74 +96,17 @@ public class StatsServiceImpl implements StatsService {
     }
 
     @Override
+    @Cacheable(value = RedisCacheConfig.CACHE_HOT_RANKING, key = "'top_' + #limit")
     public List<CourseHotItem> getCourseHotRanking(int limit) {
         if (limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
 
-        // 查询所有有效报名
-        LambdaQueryWrapper<Enrollment> enrollmentWrapper = new LambdaQueryWrapper<>();
-        enrollmentWrapper.eq(Enrollment::getStatus, EnrollmentStatus.ENROLLED.getCode());
-        List<Enrollment> enrollments = enrollmentMapper.selectList(enrollmentWrapper);
-
-        // 获取班期ID -> 课程ID映射
-        List<Long> sessionIds = enrollments.stream()
-                .map(Enrollment::getSessionId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        if (sessionIds.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        LambdaQueryWrapper<ClassSession> sessionWrapper = new LambdaQueryWrapper<>();
-        sessionWrapper.in(ClassSession::getId, sessionIds);
-        List<ClassSession> sessions = classSessionMapper.selectList(sessionWrapper);
-
-        Map<Long, Long> sessionToCourse = sessions.stream()
-                .collect(Collectors.toMap(ClassSession::getId, ClassSession::getCourseId));
-
-        // 统计每门课程的报名数
-        Map<Long, Long> courseEnrollments = new HashMap<>();
-        for (Enrollment enrollment : enrollments) {
-            Long courseId = sessionToCourse.get(enrollment.getSessionId());
-            if (courseId != null) {
-                courseEnrollments.merge(courseId, 1L, Long::sum);
-            }
-        }
-
-        // 获取课程信息
-        if (courseEnrollments.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        LambdaQueryWrapper<Course> courseWrapper = new LambdaQueryWrapper<>();
-        courseWrapper.in(Course::getId, courseEnrollments.keySet());
-        List<Course> courses = courseMapper.selectList(courseWrapper);
-
-        Map<Long, Course> courseMap = courses.stream()
-                .collect(Collectors.toMap(Course::getId, c -> c));
-
-        // 构建排行结果
-        List<CourseHotItem> result = courseEnrollments.entrySet().stream()
-                .map(entry -> {
-                    Course course = courseMap.get(entry.getKey());
-                    if (course == null) return null;
-                    return new CourseHotItem(
-                            course.getId(),
-                            course.getName(),
-                            course.getCategory(),
-                            entry.getValue()
-                    );
-                })
-                .filter(item -> item != null)
-                .sorted((a, b) -> Long.compare(b.getEnrollmentCount(), a.getEnrollmentCount()))
-                .limit(limit)
-                .collect(Collectors.toList());
-
-        return result;
+        // 使用一次JOIN查询获取课程热度排行（优化：避免N+1问题）
+        return courseMapper.selectCourseHotRanking(EnrollmentStatus.ENROLLED.getCode(), limit);
     }
 
     @Override
+    @Cacheable(value = RedisCacheConfig.CACHE_STATS, key = "'trend_' + #days")
     public List<EnrollmentTrendItem> getEnrollmentTrend(int days) {
         if (days <= 0) days = 7;
         if (days > 90) days = 90;

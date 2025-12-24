@@ -3,13 +3,20 @@ package com.itts.modules.learning.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.itts.common.utils.UserCourseQueryHelper;
 import com.itts.modules.course.entity.Course;
 import com.itts.modules.course.mapper.CourseMapper;
 import com.itts.modules.enrollment.entity.Enrollment;
 import com.itts.modules.enrollment.mapper.EnrollmentMapper;
 import com.itts.modules.learning.dto.CourseRecommendResponse;
-import com.itts.modules.learning.entity.*;
-import com.itts.modules.learning.mapper.*;
+import com.itts.modules.learning.entity.CourseSimilarity;
+import com.itts.modules.learning.entity.LearningProgress;
+import com.itts.modules.learning.entity.UserPreference;
+import com.itts.modules.learning.entity.UserSkillTag;
+import com.itts.modules.learning.mapper.CourseSimilarityMapper;
+import com.itts.modules.learning.mapper.LearningProgressMapper;
+import com.itts.modules.learning.mapper.UserPreferenceMapper;
+import com.itts.modules.learning.mapper.UserSkillTagMapper;
 import com.itts.modules.learning.service.ContentBasedRecommendService;
 import com.itts.modules.session.entity.ClassSession;
 import com.itts.modules.session.mapper.ClassSessionMapper;
@@ -20,7 +27,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +55,7 @@ public class ContentBasedRecommendServiceImpl implements ContentBasedRecommendSe
     private final UserSkillTagMapper skillTagMapper;
     private final UserPreferenceMapper preferenceMapper;
     private final ObjectMapper objectMapper;
+    private final UserCourseQueryHelper userCourseQueryHelper;
 
     // 类别名称映射
     private static final Map<String, String> CATEGORY_NAMES = Map.of(
@@ -77,7 +94,7 @@ public class ContentBasedRecommendServiceImpl implements ContentBasedRecommendSe
             .collect(Collectors.toSet());
 
         // 获取用户已报名的课程ID
-        Set<Long> enrolledCourseIds = getEnrolledCourseIds(userId);
+        Set<Long> enrolledCourseIds = userCourseQueryHelper.getEnrolledCourseIds(userId);
 
         // 基于已学课程找相似课程
         Map<Long, Double> courseScores = new HashMap<>();
@@ -196,8 +213,8 @@ public class ContentBasedRecommendServiceImpl implements ContentBasedRecommendSe
             return recommendByUserHistory(userId, limit);
         }
 
-        Set<Long> enrolledCourseIds = getEnrolledCourseIds(userId);
-        Set<Long> learnedCourseIds = getLearnedCourseIds(userId);
+        Set<Long> enrolledCourseIds = userCourseQueryHelper.getEnrolledCourseIds(userId);
+        Set<Long> learnedCourseIds = userCourseQueryHelper.getLearnedCourseIds(userId);
 
         Map<Long, Double> courseScores = new HashMap<>();
         Map<Long, List<String>> courseReasons = new HashMap<>();
@@ -259,8 +276,8 @@ public class ContentBasedRecommendServiceImpl implements ContentBasedRecommendSe
             return recommendByUserHistory(userId, limit);
         }
 
-        Set<Long> enrolledCourseIds = getEnrolledCourseIds(userId);
-        Set<Long> learnedCourseIds = getLearnedCourseIds(userId);
+        Set<Long> enrolledCourseIds = userCourseQueryHelper.getEnrolledCourseIds(userId);
+        Set<Long> learnedCourseIds = userCourseQueryHelper.getLearnedCourseIds(userId);
 
         // 解析偏好类别
         List<String> preferredCategories = new ArrayList<>();
@@ -414,35 +431,6 @@ public class ContentBasedRecommendServiceImpl implements ContentBasedRecommendSe
 
     // ==================== 辅助方法 ====================
 
-    private Set<Long> getEnrolledCourseIds(Long userId) {
-        // 获取用户报名的所有班期
-        List<Enrollment> enrollments = enrollmentMapper.selectList(
-            new LambdaQueryWrapper<Enrollment>()
-                .eq(Enrollment::getUserId, userId)
-                .eq(Enrollment::getStatus, 0) // 已报名状态
-        );
-        
-        // 通过班期获取课程ID
-        Set<Long> courseIds = new HashSet<>();
-        for (Enrollment enrollment : enrollments) {
-            ClassSession session = sessionMapper.selectById(enrollment.getSessionId());
-            if (session != null) {
-                courseIds.add(session.getCourseId());
-            }
-        }
-        return courseIds;
-    }
-
-    private Set<Long> getLearnedCourseIds(Long userId) {
-        List<LearningProgress> progressList = progressMapper.selectList(
-            new LambdaQueryWrapper<LearningProgress>()
-                .eq(LearningProgress::getUserId, userId)
-        );
-        return progressList.stream()
-            .map(LearningProgress::getCourseId)
-            .collect(Collectors.toSet());
-    }
-
     private Set<String> parseTags(String tags) {
         if (tags == null || tags.isEmpty()) {
             return Collections.emptySet();
@@ -454,7 +442,7 @@ public class ContentBasedRecommendServiceImpl implements ContentBasedRecommendSe
     }
 
     private List<CourseRecommendResponse> getPopularCourses(Long userId, int limit) {
-        Set<Long> enrolledCourseIds = getEnrolledCourseIds(userId);
+        Set<Long> enrolledCourseIds = userCourseQueryHelper.getEnrolledCourseIds(userId);
 
         // 获取报名人数最多的课程
         List<Course> courses = courseMapper.selectList(

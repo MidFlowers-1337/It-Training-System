@@ -54,10 +54,13 @@ public class AiRecommendServiceImpl implements AiRecommendService {
     @Value("${ai.recommend.fallback-on-error:true}")
     private boolean fallbackOnError;
 
+    @Value("${spring.ai.openai.chat.options.model:deepseek-chat}")
+    private String aiModelName;
+
     @Override
     public AiRecommendResponse getRecommendation(String learningGoal) {
         long startTime = System.currentTimeMillis();
-        Long userId = getCurrentUserId();
+        Long userId = SecurityUtils.getCurrentUserId();
 
         log.info("开始AI推荐, userId={}, learningGoal={}", userId, learningGoal);
 
@@ -78,8 +81,8 @@ public class AiRecommendServiceImpl implements AiRecommendService {
         if (aiEnabled) {
             try {
                 response = callAiForRecommendation(learningGoal, availableCourses);
-                modelUsed = "deepseek-chat";
-                log.info("AI推荐成功");
+                modelUsed = aiModelName;
+                log.info("AI推荐成功, model={}", modelUsed);
             } catch (Exception e) {
                 log.error("AI推荐失败，使用降级策略: {}", e.getMessage());
                 if (fallbackOnError) {
@@ -320,18 +323,6 @@ public class AiRecommendServiceImpl implements AiRecommendService {
             // 日志记录失败不影响主流程
             AiRecommendServiceImpl.log.error("保存推荐日志失败: {}", e.getMessage());
         }
-    }
-
-    /**
-     * 获取当前登录用户ID
-     */
-    private Long getCurrentUserId() {
-        String username = SecurityUtils.getCurrentUsername();
-        SysUser user = sysUserMapper.selectByUsername(username);
-        if (user == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
-        return user.getId();
     }
 
     /**

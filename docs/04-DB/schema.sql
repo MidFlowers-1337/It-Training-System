@@ -109,7 +109,7 @@ CREATE TABLE `enrollment` (
     KEY `idx_user_id` (`user_id`),
     KEY `idx_session_id` (`session_id`),
     KEY `idx_status` (`status`),
-    KEY `idx_user_session` (`user_id`, `session_id`),
+    UNIQUE KEY `uk_user_session` (`user_id`, `session_id`),
     CONSTRAINT `fk_enrollment_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE RESTRICT,
     CONSTRAINT `fk_enrollment_session` FOREIGN KEY (`session_id`) REFERENCES `class_session` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='报名记录表';

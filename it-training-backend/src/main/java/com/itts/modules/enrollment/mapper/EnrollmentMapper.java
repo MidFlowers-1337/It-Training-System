@@ -8,6 +8,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 /**
  * 报名 Mapper
  */
@@ -38,4 +40,9 @@ public interface EnrollmentMapper extends BaseMapper<Enrollment> {
      * 查询班期学员列表
      */
     IPage<Enrollment> selectStudentsBySessionId(Page<Enrollment> page, @Param("sessionId") Long sessionId);
+
+    /**
+     * 查询用户的报名列表（带关联信息，避免 N+1 查询）
+     */
+    List<Enrollment> selectUserEnrollmentsWithDetails(@Param("userId") Long userId);
 }

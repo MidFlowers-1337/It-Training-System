@@ -144,7 +144,8 @@ logging:
 ai:
   recommend:
     enabled: ${AI_RECOMMEND_ENABLED:true}
-    timeout: ${AI_RECOMMEND_TIMEOUT:10000}
+    # AI 调用超时时间（毫秒），默认 30 秒，AI 响应较慢需要较长超时
+    timeout: ${AI_RECOMMEND_TIMEOUT:30000}
     fallback-on-error: ${AI_RECOMMEND_FALLBACK:true}
 
 # ============================================================================
@@ -158,6 +159,13 @@ app:
     allowed-headers: "*"
     allow-credentials: true
     max-age: 3600
+
+  # 接口限流配置
+  rate-limit:
+    # 窗口时间（秒）
+    window-seconds: ${RATE_LIMIT_WINDOW:60}
+    # 窗口内最大请求数
+    max-requests: ${RATE_LIMIT_MAX:100}
 
   # 文件上传配置
   upload:

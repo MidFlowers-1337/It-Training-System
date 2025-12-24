@@ -3,10 +3,13 @@ package com.itts.modules.course.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.itts.common.config.RedisCacheConfig;
 import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
 import com.itts.enums.CourseCategory;
 import com.itts.enums.CourseDifficulty;
+import com.itts.enums.CourseStatus;
+import com.itts.enums.DeleteFlag;
 import com.itts.modules.course.dto.CourseCreateRequest;
 import com.itts.modules.course.dto.CourseResponse;
 import com.itts.modules.course.dto.CourseUpdateRequest;
@@ -16,6 +19,9 @@ import com.itts.modules.course.service.CourseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -38,7 +44,7 @@ public class CourseServiceImpl implements CourseService {
         Page<Course> pageParam = new Page<>(page, size);
 
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Course::getDeleted, 0);
+        wrapper.eq(Course::getDeleted, DeleteFlag.NOT_DELETED);
 
         // 分类过滤
         if (StringUtils.hasText(category)) {
@@ -70,10 +76,11 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Cacheable(value = RedisCacheConfig.CACHE_COURSE_LIST, key = "'published'")
     public List<CourseResponse> listPublishedCourses() {
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Course::getDeleted, 0)
-                .eq(Course::getStatus, 1) // 已发布
+        wrapper.eq(Course::getDeleted, DeleteFlag.NOT_DELETED)
+                .eq(Course::getStatus, CourseStatus.PUBLISHED.getCode()) // 已发布
                 .orderByAsc(Course::getName);
 
         List<Course> courses = courseMapper.selectList(wrapper);
@@ -83,9 +90,10 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Cacheable(value = RedisCacheConfig.CACHE_COURSES, key = "#id")
     public CourseResponse getCourseById(Long id) {
         Course course = courseMapper.selectById(id);
-        if (course == null || course.getDeleted() == 1) {
+        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
             throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
         }
         return convertToResponse(course);
@@ -93,6 +101,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
     public CourseResponse createCourse(CourseCreateRequest request) {
         log.info("创建课程: {}", request.getCode());
 
@@ -104,8 +113,8 @@ public class CourseServiceImpl implements CourseService {
 
         Course course = new Course();
         BeanUtils.copyProperties(request, course);
-        course.setStatus(0); // 默认草稿状态
-        course.setDeleted(0);
+        course.setStatus(CourseStatus.DRAFT.getCode()); // 默认草稿状态
+        course.setDeleted(DeleteFlag.NOT_DELETED);
 
         courseMapper.insert(course);
 
@@ -115,11 +124,15 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisCacheConfig.CACHE_COURSES, key = "#id"),
+            @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
+    })
     public CourseResponse updateCourse(Long id, CourseUpdateRequest request) {
         log.info("更新课程: {}", id);
 
         Course course = courseMapper.selectById(id);
-        if (course == null || course.getDeleted() == 1) {
+        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
             throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
         }
 
@@ -154,11 +167,15 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisCacheConfig.CACHE_COURSES, key = "#id"),
+            @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
+    })
     public void deleteCourse(Long id) {
         log.info("删除课程: {}", id);
 
         Course course = courseMapper.selectById(id);
-        if (course == null || course.getDeleted() == 1) {
+        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
             throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
         }
 
@@ -169,7 +186,7 @@ public class CourseServiceImpl implements CourseService {
         }
 
         // 软删除
-        course.setDeleted(1);
+        course.setDeleted(DeleteFlag.DELETED);
         courseMapper.updateById(course);
 
         log.info("课程删除成功: {}", id);
@@ -177,15 +194,19 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisCacheConfig.CACHE_COURSES, key = "#id"),
+            @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
+    })
     public void publishCourse(Long id) {
         log.info("发布课程: {}", id);
 
         Course course = courseMapper.selectById(id);
-        if (course == null || course.getDeleted() == 1) {
+        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
             throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
         }
 
-        course.setStatus(1); // 已发布
+        course.setStatus(CourseStatus.PUBLISHED.getCode()); // 已发布
         courseMapper.updateById(course);
 
         log.info("课程发布成功: {}", id);
@@ -193,15 +214,19 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisCacheConfig.CACHE_COURSES, key = "#id"),
+            @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
+    })
     public void unpublishCourse(Long id) {
         log.info("下架课程: {}", id);
 
         Course course = courseMapper.selectById(id);
-        if (course == null || course.getDeleted() == 1) {
+        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
             throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
         }
 
-        course.setStatus(0); // 草稿
+        course.setStatus(CourseStatus.DRAFT.getCode()); // 草稿
         courseMapper.updateById(course);
 
         log.info("课程下架成功: {}", id);
@@ -229,7 +254,8 @@ public class CourseServiceImpl implements CourseService {
         }
 
         // 设置状态名称
-        response.setStatusName(course.getStatus() == 1 ? "已发布" : "草稿");
+        CourseStatus status = CourseStatus.fromCode(course.getStatus());
+        response.setStatusName(status != null ? status.getDesc() : "未知");
 
         return response;
     }

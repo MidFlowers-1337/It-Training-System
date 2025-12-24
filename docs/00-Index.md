@@ -2,7 +2,7 @@
 
 > 项目名称：基于 SpringBoot + Vue 的 IT 技能培训智能选课系统
 > 版本：v1.1.0
-> 最后更新：2025-12-14
+> 最后更新：2025-12-24
 
 ---
 
@@ -35,6 +35,7 @@
 | 文档 | 说明 | 状态 |
 |------|------|------|
 | [PagesAndFlows.md](05-Frontend/PagesAndFlows.md) | 页面清单与交互流程 | ✅ 已完成 |
+| [DesignSystem-v6-Apple-UI.md](05-Frontend/DesignSystem-v6-Apple-UI.md) | 设计系统规范 | ✅ 已完成 |
 
 ### 06-测试
 | 文档 | 说明 | 状态 |
@@ -63,24 +64,28 @@
 | [data-flow.excalidraw](09-Diagrams/data-flow.excalidraw) | 数据流图 (Excalidraw) | ✅ 已完成 |
 
 ### 10-技术指南
-
 | 文档 | 说明 | 状态 |
 |------|------|------|
 | [TechnicalConcepts.md](10-TechGuide/TechnicalConcepts.md) | 技术概念解释 | ✅ 已完成 |
 
 ### 11-发布文档
-
 | 文档 | 说明 | 状态 |
 |------|------|------|
 | [ReleaseChecklist.md](11-Release/ReleaseChecklist.md) | 发布检查清单 | ✅ 已完成 |
+
+### AI 集成文档
+| 文档 | 说明 | 状态 |
+|------|------|------|
+| [AI_INTEGRATION.md](AI_INTEGRATION.md) | AI 集成指南 | ✅ 已完成 |
+| [AI_TROUBLESHOOTING.md](AI_TROUBLESHOOTING.md) | AI 故障排查 | ✅ 已完成 |
 
 ---
 
 ## 🚀 快速开始
 
 ### 技术栈
-- **后端**：Spring Boot 3.x + Java 17 + MyBatis-Plus + MySQL + Spring Security + JWT + Spring AI
-- **前端**：Vue 3 + Vite + Pinia + Vue Router + Element Plus + Axios
+- **后端**：Spring Boot 3.2.5 + Java 17 + MyBatis-Plus 3.5.5 + MySQL 8.0 + Spring Security 6.x + JWT + Spring AI 1.0.0-M4
+- **前端**：Vue 3.5 + Vite 7.x + Pinia 3.x + Vue Router 4.x + Element Plus 2.12 + PrimeVue 4.5 + Axios
 - **可选**：Redis、Docker Compose
 
 ### 角色说明
@@ -88,7 +93,7 @@
 |------|------|----------|
 | ADMIN | 系统管理员 | 全部功能 |
 | INSTRUCTOR | 讲师 | 查看分配班期、学员名单 |
-| STUDENT | 学员 | 浏览课程、报名、AI推荐 |
+| STUDENT | 学员 | 浏览课程、报名、AI推荐、学习中心 |
 
 ---
 
@@ -124,6 +129,40 @@
 - [x] 个人中心
 - [x] 账号设置
 - [x] 安全加固（环境变量配置）
+
+---
+
+## 📁 项目结构
+
+```
+it-training-system/
+├── it-training-backend/          # 后端项目
+│   └── src/main/java/com/itts/
+│       ├── common/               # 公共模块
+│       └── modules/              # 业务模块
+│           ├── ai/               # AI 推荐
+│           ├── auth/             # 认证授权
+│           ├── course/           # 课程管理
+│           ├── enrollment/       # 报名管理
+│           ├── learning/         # 学习管理
+│           ├── notification/     # 通知服务
+│           ├── session/          # 班期管理
+│           ├── stats/            # 统计模块
+│           ├── student/          # 学员模块
+│           └── user/             # 用户管理
+│
+├── it-training-frontend/         # 前端项目
+│   └── src/
+│       ├── api/                  # API 接口
+│       ├── components/           # 公共组件
+│       ├── design-system/        # 设计系统
+│       └── views/                # 页面组件
+│           ├── admin/            # 管理端
+│           ├── instructor/       # 讲师端
+│           └── student/          # 学员端
+│
+└── docs/                         # 项目文档
+```
 
 ---
 

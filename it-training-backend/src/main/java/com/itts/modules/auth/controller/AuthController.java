@@ -33,6 +33,13 @@ public class AuthController {
         return R.ok(response);
     }
 
+    @Operation(summary = "用户登出")
+    @PostMapping("/logout")
+    public R<Void> logout() {
+        authService.logout();
+        return R.ok();
+    }
+
     @Operation(summary = "用户注册")
     @PostMapping("/register")
     public R<TokenResponse> register(@Valid @RequestBody RegisterRequest request) {

@@ -154,18 +154,6 @@
       </FormLayout>
     </Modal>
 
-    <!-- Toast -->
-    <Teleport to="body">
-      <Transition name="toast">
-        <div
-          v-if="toast.visible"
-          class="toast"
-          :class="toast.type"
-        >
-          {{ toast.message }}
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
@@ -175,6 +163,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { Button, Input, Modal, Tag, EmptyState, FormLayout, FormItem } from '@/design-system';
 import { getCourseById, getCourseChapters, markChapterCompleted, updateChapterProgress } from '@/api/course';
 import { getCourseProgress, updateProgress, checkin, getDashboard } from '@/api/learning';
+import { ElMessage } from 'element-plus';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import * as echarts from 'echarts';
@@ -243,20 +232,10 @@ const noteDialogVisible = ref(false);
 const currentVideoTime = ref(0);
 const noteForm = ref({ content: '' });
 
-// Toast
-const toast = ref({ visible: false, message: '', type: 'success' as 'success' | 'warning' | 'error' | 'info' });
-
-const showToast = (message: string, type: 'success' | 'warning' | 'error' | 'info' = 'success') => {
-  toast.value = { visible: true, message, type };
-  setTimeout(() => {
-    toast.value.visible = false;
-  }, 3000);
-};
-
 // Methods
 const goBack = () => {
   if (player && !player.paused()) {
-    showToast('请先暂停视频', 'warning');
+    ElMessage.warning('请先暂停视频');
     return;
   }
   router.back();
@@ -323,7 +302,7 @@ const initPlayer = () => {
     stopStudyTimer();
     if (currentChapter.value) {
       markCurrentChapterCompleted();
-      showToast('本章节学习完成！', 'success');
+      ElMessage.success('本章节学习完成！');
       autoSaveProgress();
     }
   });
@@ -357,9 +336,9 @@ const selectChapter = async (chapter: Chapter) => {
   const savedProgress = chapterProgressMap.value[chapter.id];
   if (savedProgress && savedProgress.lastPosition > 0) {
     player.currentTime(savedProgress.lastPosition);
-    showToast(`正在播放：${chapter.title}（从 ${formatDuration(savedProgress.lastPosition)} 继续）`, 'info');
+    ElMessage.info(`正在播放：${chapter.title}（从 ${formatDuration(savedProgress.lastPosition)} 继续）`);
   } else {
-    showToast(`正在播放：${chapter.title}`, 'info');
+    ElMessage.info(`正在播放：${chapter.title}`);
   }
 };
 
@@ -416,7 +395,7 @@ const autoSaveProgress = async () => {
 
     if (res && res.code === 200) {
       const totalMinutes = Math.ceil((totalStudySeconds.value + studySeconds.value) / 60);
-      showToast(`学习进度已保存（累计 ${totalMinutes} 分钟）`, 'success');
+      ElMessage.success(`学习进度已保存（累计 ${totalMinutes} 分钟）`);
       totalStudySeconds.value += studySeconds.value;
       studySeconds.value = 0;
       lastSaveTime.value = Date.now();
@@ -424,14 +403,14 @@ const autoSaveProgress = async () => {
     }
   } catch (error) {
     console.error('自动保存失败:', error);
-    showToast('保存进度失败，请检查网络连接', 'error');
+    ElMessage.error('保存进度失败，请检查网络连接');
   }
 };
 
 // Notes
 const addNote = () => {
   if (!player) {
-    showToast('请先播放视频', 'warning');
+    ElMessage.warning('请先播放视频');
     return;
   }
   currentVideoTime.value = Math.floor(player.currentTime() || 0);
@@ -441,7 +420,7 @@ const addNote = () => {
 
 const saveNote = () => {
   if (!noteForm.value.content.trim()) {
-    showToast('请输入笔记内容', 'warning');
+    ElMessage.warning('请输入笔记内容');
     return;
   }
 
@@ -456,14 +435,14 @@ const saveNote = () => {
 
   notes.value.unshift(note);
   noteDialogVisible.value = false;
-  showToast('笔记已保存', 'success');
+  ElMessage.success('笔记已保存');
   localStorage.setItem(`course_notes_${route.params.id}`, JSON.stringify(notes.value));
 };
 
 const deleteNote = (noteId: number) => {
   notes.value = notes.value.filter((n) => n.id !== noteId);
   localStorage.setItem(`course_notes_${route.params.id}`, JSON.stringify(notes.value));
-  showToast('笔记已删除', 'success');
+  ElMessage.success('笔记已删除');
 };
 
 const loadNotes = () => {
@@ -535,7 +514,7 @@ const loadCourse = async () => {
     const res = await getCourseById(route.params.id as string);
     course.value = res.data;
   } catch (error) {
-    showToast('加载课程失败', 'error');
+    ElMessage.error('加载课程失败');
     router.back();
   }
 };
@@ -563,7 +542,7 @@ const loadChapters = async () => {
     }
   } catch (error) {
     console.error('加载章节失败:', error);
-    showToast('加载章节失败', 'error');
+    ElMessage.error('加载章节失败');
   }
 };
 
@@ -978,51 +957,6 @@ onBeforeUnmount(async () => {
 .stats-chart {
   width: 100%;
   height: 200px;
-}
-
-/* ===== Toast ===== */
-.toast {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2000;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.toast.success {
-  background: var(--success);
-  color: white;
-}
-
-.toast.warning {
-  background: var(--warning);
-  color: white;
-}
-
-.toast.error {
-  background: var(--error);
-  color: white;
-}
-
-.toast.info {
-  background: var(--info);
-  color: white;
-}
-
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
-}
-
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -20px);
 }
 
 /* ===== Dark Mode ===== */

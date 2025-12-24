@@ -3,6 +3,11 @@ package com.itts.common.security;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,13 +16,23 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
  * JwtTokenProvider 单元测试
  */
+@ExtendWith(MockitoExtension.class)
 @DisplayName("JWT Token 提供者测试")
 class JwtTokenProviderTest {
+
+    @Mock
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
 
     private JwtTokenProvider jwtTokenProvider;
 
@@ -27,7 +42,11 @@ class JwtTokenProviderTest {
 
     @BeforeEach
     void setUp() {
-        jwtTokenProvider = new JwtTokenProvider();
+        // Mock Redis operations
+        lenient().when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        lenient().doNothing().when(valueOperations).set(anyString(), anyString(), anyLong(), any());
+
+        jwtTokenProvider = new JwtTokenProvider(stringRedisTemplate);
         // 使用反射设置私有字段
         ReflectionTestUtils.setField(jwtTokenProvider, "jwtSecret", TEST_SECRET);
         ReflectionTestUtils.setField(jwtTokenProvider, "jwtExpiration", TEST_EXPIRATION);
@@ -137,7 +156,7 @@ class JwtTokenProviderTest {
     @DisplayName("验证过期 Token")
     void validateToken_ExpiredToken() {
         // 创建一个过期时间为0的 Provider
-        JwtTokenProvider expiredProvider = new JwtTokenProvider();
+        JwtTokenProvider expiredProvider = new JwtTokenProvider(stringRedisTemplate);
         ReflectionTestUtils.setField(expiredProvider, "jwtSecret", TEST_SECRET);
         ReflectionTestUtils.setField(expiredProvider, "jwtExpiration", 0L); // 立即过期
 
@@ -236,7 +255,7 @@ class JwtTokenProviderTest {
         String token = jwtTokenProvider.generateToken("testuser");
 
         // 创建使用不同密钥的 Provider
-        JwtTokenProvider differentProvider = new JwtTokenProvider();
+        JwtTokenProvider differentProvider = new JwtTokenProvider(stringRedisTemplate);
         ReflectionTestUtils.setField(differentProvider, "jwtSecret",
                 "AnotherSecretKeyThatIsAtLeast256BitsLongForSecurityPurposes12345");
         ReflectionTestUtils.setField(differentProvider, "jwtExpiration", TEST_EXPIRATION);

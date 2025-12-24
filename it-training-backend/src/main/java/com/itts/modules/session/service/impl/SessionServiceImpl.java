@@ -3,8 +3,10 @@ package com.itts.modules.session.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.itts.common.config.RedisCacheConfig;
 import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
+import com.itts.enums.DeleteFlag;
 import com.itts.enums.SessionStatus;
 import com.itts.modules.course.entity.Course;
 import com.itts.modules.course.mapper.CourseMapper;
@@ -16,15 +18,15 @@ import com.itts.modules.session.mapper.ClassSessionMapper;
 import com.itts.modules.session.service.SessionService;
 import com.itts.modules.user.entity.SysUser;
 import com.itts.modules.user.mapper.SysUserMapper;
+import com.itts.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -53,9 +55,10 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    @Cacheable(value = RedisCacheConfig.CACHE_SESSION_LIST, key = "'enrollable_' + (#courseId ?: 'all')")
     public List<SessionResponse> listEnrollableSessions(Long courseId) {
         LambdaQueryWrapper<ClassSession> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ClassSession::getDeleted, 0)
+        wrapper.eq(ClassSession::getDeleted, DeleteFlag.NOT_DELETED)
                 .eq(ClassSession::getStatus, SessionStatus.ENROLLING.getCode()); // 报名中
 
         if (courseId != null) {
@@ -74,9 +77,10 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    @Cacheable(value = RedisCacheConfig.CACHE_SESSIONS, key = "#id")
     public SessionResponse getSessionById(Long id) {
         ClassSession session = classSessionMapper.selectById(id);
-        if (session == null || session.getDeleted() == 1) {
+        if (session == null || DeleteFlag.isDeleted(session.getDeleted())) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
         return convertToResponse(fillAssociations(session));
@@ -84,6 +88,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
     public SessionResponse createSession(SessionCreateRequest request) {
         log.info("创建班期: {}", request.getSessionCode());
 
@@ -95,13 +100,13 @@ public class SessionServiceImpl implements SessionService {
 
         // 验证课程存在
         Course course = courseMapper.selectById(request.getCourseId());
-        if (course == null || course.getDeleted() == 1) {
+        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
             throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
         }
 
         // 验证讲师存在
         SysUser instructor = sysUserMapper.selectById(request.getInstructorId());
-        if (instructor == null || instructor.getDeleted() == 1) {
+        if (instructor == null || DeleteFlag.isDeleted(instructor.getDeleted())) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
@@ -109,7 +114,7 @@ public class SessionServiceImpl implements SessionService {
         BeanUtils.copyProperties(request, session);
         session.setCurrentEnrollment(0); // 初始报名人数为0
         session.setStatus(SessionStatus.ENROLLING.getCode()); // 默认为报名中，方便快速开放
-        session.setDeleted(0);
+        session.setDeleted(DeleteFlag.NOT_DELETED);
 
         classSessionMapper.insert(session);
 
@@ -123,11 +128,15 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisCacheConfig.CACHE_SESSIONS, key = "#id"),
+            @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
+    })
     public SessionResponse updateSession(Long id, SessionUpdateRequest request) {
         log.info("更新班期: {}", id);
 
         ClassSession session = classSessionMapper.selectById(id);
-        if (session == null || session.getDeleted() == 1) {
+        if (session == null || DeleteFlag.isDeleted(session.getDeleted())) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
 
@@ -135,7 +144,7 @@ public class SessionServiceImpl implements SessionService {
         if (request.getInstructorId() != null) {
             // 验证讲师存在
             SysUser instructor = sysUserMapper.selectById(request.getInstructorId());
-            if (instructor == null || instructor.getDeleted() == 1) {
+            if (instructor == null || DeleteFlag.isDeleted(instructor.getDeleted())) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
             session.setInstructorId(request.getInstructorId());
@@ -171,11 +180,15 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisCacheConfig.CACHE_SESSIONS, key = "#id"),
+            @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
+    })
     public void deleteSession(Long id) {
         log.info("删除班期: {}", id);
 
         ClassSession session = classSessionMapper.selectById(id);
-        if (session == null || session.getDeleted() == 1) {
+        if (session == null || DeleteFlag.isDeleted(session.getDeleted())) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
 
@@ -186,7 +199,7 @@ public class SessionServiceImpl implements SessionService {
         }
 
         // 软删除
-        session.setDeleted(1);
+        session.setDeleted(DeleteFlag.DELETED);
         classSessionMapper.updateById(session);
 
         log.info("班期删除成功: {}", id);
@@ -194,11 +207,15 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisCacheConfig.CACHE_SESSIONS, key = "#id"),
+            @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
+    })
     public void openEnrollment(Long id) {
         log.info("开放班期报名: {}", id);
 
         ClassSession session = classSessionMapper.selectById(id);
-        if (session == null || session.getDeleted() == 1) {
+        if (session == null || DeleteFlag.isDeleted(session.getDeleted())) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
 
@@ -210,11 +227,15 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisCacheConfig.CACHE_SESSIONS, key = "#id"),
+            @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
+    })
     public void closeEnrollment(Long id) {
         log.info("关闭班期报名: {}", id);
 
         ClassSession session = classSessionMapper.selectById(id);
-        if (session == null || session.getDeleted() == 1) {
+        if (session == null || DeleteFlag.isDeleted(session.getDeleted())) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
 
@@ -226,7 +247,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public List<SessionResponse> getMySessionsAsInstructor() {
-        Long instructorId = getCurrentUserId();
+        Long instructorId = SecurityUtils.getCurrentUserId();
 
         LambdaQueryWrapper<ClassSession> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClassSession::getInstructorId, instructorId)
@@ -239,31 +260,6 @@ public class SessionServiceImpl implements SessionService {
                 .map(this::fillAssociations)
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * 获取当前登录用户ID
-     */
-    private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Object principal = authentication.getPrincipal();
-        String username;
-        if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
-        } else {
-            username = principal.toString();
-        }
-
-        SysUser user = sysUserMapper.selectByUsername(username);
-        if (user == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
-
-        return user.getId();
     }
 
     /**

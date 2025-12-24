@@ -1,6 +1,8 @@
 package com.itts.modules.auth.service.impl;
 
 import com.itts.enums.RoleEnum;
+import com.itts.enums.UserStatus;
+import com.itts.enums.DeleteFlag;
 import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
 import com.itts.common.security.JwtTokenProvider;
@@ -53,7 +55,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 检查用户状态
-        if (user.getStatus() != 1) {
+        if (user.getStatus() != UserStatus.ENABLED.getCode()) {
             throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
         }
 
@@ -63,6 +65,28 @@ public class AuthServiceImpl implements AuthService {
         log.info("用户登录成功: {}", request.getUsername());
 
         return buildTokenResponse(token, user);
+    }
+
+    @Override
+    public void logout() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            String username;
+            if (principal instanceof UserDetails) {
+                username = ((UserDetails) principal).getUsername();
+            } else {
+                username = principal.toString();
+            }
+
+            // 使Token失效
+            jwtTokenProvider.invalidateToken(username);
+
+            // 清除安全上下文
+            SecurityContextHolder.clearContext();
+
+            log.info("用户登出成功: {}", username);
+        }
     }
 
     @Override
@@ -89,8 +113,8 @@ public class AuthServiceImpl implements AuthService {
         user.setPhone(request.getPhone());
         user.setEmail(request.getEmail());
         user.setRole(RoleEnum.STUDENT.name()); // 默认注册为学员
-        user.setStatus(1); // 默认启用
-        user.setDeleted(0);
+        user.setStatus(UserStatus.ENABLED.getCode()); // 默认启用
+        user.setDeleted(DeleteFlag.NOT_DELETED);
 
         sysUserMapper.insert(user);
 

@@ -35,6 +35,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -110,33 +112,38 @@ public class StudentServiceImpl implements StudentService {
         stats.setMaxStreakDays(streak.getMaxStreakDays());
         stats.setTotalCheckinDays(streak.getTotalCheckinDays());
 
-        // 3. 获取课程统计
-        LambdaQueryWrapper<Enrollment> enrollmentWrapper = new LambdaQueryWrapper<>();
-        enrollmentWrapper.eq(Enrollment::getUserId, userId)
-                .eq(Enrollment::getStatus, 0); // 0-已报名
-
-        List<Enrollment> enrollments = enrollmentMapper.selectList(enrollmentWrapper);
+        // 3. 获取课程统计（使用JOIN查询避免N+1问题）
+        List<Enrollment> enrollmentsWithDetails = enrollmentMapper.selectUserEnrollmentsWithDetails(userId);
 
         int completedCourses = 0;
         int inProgressCourses = 0;
 
-        for (Enrollment enrollment : enrollments) {
-            ClassSession session = classSessionMapper.selectById(enrollment.getSessionId());
-            if (session == null) {
-                continue;
-            }
+        // 收集所有课程ID一次性查询进度
+        Set<Long> courseIds = enrollmentsWithDetails.stream()
+                .filter(e -> e.getCourseId() != null && e.getStatus() != null && e.getStatus() == 0)
+                .map(Enrollment::getCourseId)
+                .collect(Collectors.toSet());
 
-            LambdaQueryWrapper<LearningProgress> progressWrapper = new LambdaQueryWrapper<>();
-            progressWrapper.eq(LearningProgress::getUserId, userId)
-                    .eq(LearningProgress::getCourseId, session.getCourseId());
+        if (!courseIds.isEmpty()) {
+            // 一次查询所有学习进度
+            List<LearningProgress> progressList = learningProgressMapper.selectList(
+                    new LambdaQueryWrapper<LearningProgress>()
+                            .eq(LearningProgress::getUserId, userId)
+                            .in(LearningProgress::getCourseId, courseIds)
+            );
 
-            LearningProgress progress = learningProgressMapper.selectOne(progressWrapper);
+            // 转换为Map便于查找
+            Map<Long, LearningProgress> progressMap = progressList.stream()
+                    .collect(Collectors.toMap(LearningProgress::getCourseId, p -> p, (a, b) -> a));
 
-            if (progress != null) {
-                if (progress.getProgressPercent() >= 100) {
-                    completedCourses++;
-                } else if (progress.getProgressPercent() > 0) {
-                    inProgressCourses++;
+            for (Long courseId : courseIds) {
+                LearningProgress progress = progressMap.get(courseId);
+                if (progress != null) {
+                    if (progress.getProgressPercent() >= 100) {
+                        completedCourses++;
+                    } else if (progress.getProgressPercent() > 0) {
+                        inProgressCourses++;
+                    }
                 }
             }
         }
@@ -347,43 +354,45 @@ public class StudentServiceImpl implements StudentService {
     }
 
     /**
-     * 获取我的课程列表
+     * 获取我的课程列表（使用JOIN查询避免N+1问题）
      */
     private List<StudentDashboardResponse.MyCourseItem> getMyCourses(Long userId, int limit) {
-        // 查询用户报名的课程
-        LambdaQueryWrapper<Enrollment> enrollmentWrapper = new LambdaQueryWrapper<>();
-        enrollmentWrapper.eq(Enrollment::getUserId, userId)
-                .eq(Enrollment::getStatus, 0) // 0-已报名
-                .orderByDesc(Enrollment::getCreatedAt)
-                .last("LIMIT " + limit);
+        // 使用JOIN查询直接获取报名和课程信息
+        List<Enrollment> enrollmentsWithDetails = enrollmentMapper.selectUserEnrollmentsWithDetails(userId);
 
-        List<Enrollment> enrollments = enrollmentMapper.selectList(enrollmentWrapper);
+        // 过滤已报名状态并限制数量
+        List<Enrollment> filteredEnrollments = enrollmentsWithDetails.stream()
+                .filter(e -> e.getStatus() != null && e.getStatus() == 0 && e.getCourseId() != null)
+                .limit(limit)
+                .collect(Collectors.toList());
 
-        return enrollments.stream().map(enrollment -> {
-            // 通过 sessionId 获取班期信息
-            ClassSession session = classSessionMapper.selectById(enrollment.getSessionId());
-            if (session == null) {
-                return null;
-            }
+        if (filteredEnrollments.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-            // 通过班期获取课程信息
-            Course course = courseMapper.selectById(session.getCourseId());
-            if (course == null) {
-                return null;
-            }
+        // 收集所有课程ID一次性查询进度
+        Set<Long> courseIds = filteredEnrollments.stream()
+                .map(Enrollment::getCourseId)
+                .collect(Collectors.toSet());
 
-            // 获取学习进度
-            LambdaQueryWrapper<LearningProgress> progressWrapper = new LambdaQueryWrapper<>();
-            progressWrapper.eq(LearningProgress::getUserId, userId)
-                    .eq(LearningProgress::getCourseId, course.getId());
+        // 一次查询所有学习进度
+        List<LearningProgress> progressList = learningProgressMapper.selectList(
+                new LambdaQueryWrapper<LearningProgress>()
+                        .eq(LearningProgress::getUserId, userId)
+                        .in(LearningProgress::getCourseId, courseIds)
+        );
 
-            LearningProgress progress = learningProgressMapper.selectOne(progressWrapper);
+        // 转换为Map便于查找
+        Map<Long, LearningProgress> progressMap = progressList.stream()
+                .collect(Collectors.toMap(LearningProgress::getCourseId, p -> p, (a, b) -> a));
 
+        return filteredEnrollments.stream().map(enrollment -> {
             StudentDashboardResponse.MyCourseItem item = new StudentDashboardResponse.MyCourseItem();
-            item.setCourseId(course.getId());
-            item.setCourseName(course.getName());
-            item.setCoverImage(course.getCoverImage());
+            item.setCourseId(enrollment.getCourseId());
+            item.setCourseName(enrollment.getCourseName());
+            item.setCoverImage(enrollment.getCoverImage());
 
+            LearningProgress progress = progressMap.get(enrollment.getCourseId());
             if (progress != null) {
                 item.setProgressPercent(progress.getProgressPercent());
                 if (progress.getProgressPercent() >= 100) {
@@ -399,7 +408,7 @@ public class StudentServiceImpl implements StudentService {
             }
 
             return item;
-        }).filter(item -> item != null).collect(Collectors.toList());
+        }).collect(Collectors.toList());
     }
 
     /**

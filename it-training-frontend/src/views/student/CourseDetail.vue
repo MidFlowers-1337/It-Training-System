@@ -279,51 +279,23 @@
     </div>
 
     <!-- Enroll Confirm Modal -->
-    <Modal
+    <EnrollConfirmModal
       v-model="enrollModalVisible"
-      title="确认报名"
-      confirm-text="确认报名"
-      :confirm-loading="enrolling"
-      @confirm="handleEnroll"
-      @cancel="enrollModalVisible = false"
-    >
-      <div v-if="selectedSession" class="enroll-confirm">
-        <p class="confirm-text">确定要报名「{{ selectedSession.sessionCode }}」班期吗？</p>
-        <div class="confirm-details">
-          <div class="confirm-row">
-            <span class="confirm-label">开班日期</span>
-            <span class="confirm-value">{{ selectedSession.startDate }}</span>
-          </div>
-          <div class="confirm-row">
-            <span class="confirm-label">上课时间</span>
-            <span class="confirm-value">{{ selectedSession.schedule || '待定' }}</span>
-          </div>
-        </div>
-      </div>
-    </Modal>
-
-    <!-- Toast -->
-    <Teleport to="body">
-      <Transition name="toast">
-        <div
-          v-if="showToast"
-          class="toast"
-          :class="toastType"
-        >
-          {{ toastMessage }}
-        </div>
-      </Transition>
-    </Teleport>
+      :session="selectedSession"
+      @success="loadSessions"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, markRaw, type Component } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Button, Modal } from '@/design-system'
+import { Button } from '@/design-system'
 import { getCourseById } from '@/api/course'
 import { getEnrollableSessions } from '@/api/session'
-import { enroll } from '@/api/enrollment'
+import { getCategoryName, getDifficultyName } from '@/utils/courseMapping'
+import { getCategoryIcon } from '@/utils/categoryIcons'
+import { EnrollConfirmModal } from './course-detail'
 
 interface Course {
   id?: number
@@ -357,10 +329,6 @@ const sessions = ref<Session[]>([])
 const loading = ref(false)
 const enrollModalVisible = ref(false)
 const selectedSession = ref<Session | null>(null)
-const enrolling = ref(false)
-const toastMessage = ref('')
-const toastType = ref<'success' | 'error'>('success')
-const showToast = ref(false)
 const activeTab = ref('overview')
 
 // Tabs
@@ -375,69 +343,6 @@ const skillTags = computed(() => {
   if (!course.value.tags) return []
   return course.value.tags.split(',').filter((t) => t.trim())
 })
-
-// Category Icons
-const IconServer = markRaw({
-  template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>`,
-})
-
-const IconLayout = markRaw({
-  template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>`,
-})
-
-const IconDatabase = markRaw({
-  template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
-})
-
-const IconBrain = markRaw({
-  template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.54"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.54"/></svg>`,
-})
-
-const IconCloud = markRaw({
-  template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`,
-})
-
-const IconCode = markRaw({
-  template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
-})
-
-const categoryIcons: Record<string, Component> = {
-  BACKEND: IconServer,
-  FRONTEND: IconLayout,
-  DATABASE: IconDatabase,
-  AI: IconBrain,
-  CLOUD: IconCloud,
-}
-
-const getCategoryIcon = (category?: string): Component => {
-  return categoryIcons[category || ''] || IconCode
-}
-
-const getCategoryName = (category?: string): string => {
-  const names: Record<string, string> = {
-    BACKEND: '后端开发',
-    FRONTEND: '前端开发',
-    DATABASE: '数据库',
-    AI: '人工智能',
-    CLOUD: '云计算',
-  }
-  return names[category || ''] || '课程'
-}
-
-const getDifficultyName = (difficulty?: number): string => {
-  const names: Record<number, string> = { 1: '入门', 2: '初级', 3: '中级', 4: '高级' }
-  return names[difficulty || 0] || '未知'
-}
-
-// Toast helper
-const toast = (message: string, type: 'success' | 'error' = 'success') => {
-  toastMessage.value = message
-  toastType.value = type
-  showToast.value = true
-  setTimeout(() => {
-    showToast.value = false
-  }, 3000)
-}
 
 // API calls
 const loadCourse = async () => {
@@ -466,25 +371,6 @@ const openEnrollModal = (session: Session) => {
   if (session.remainingQuota <= 0) return
   selectedSession.value = session
   enrollModalVisible.value = true
-}
-
-const handleEnroll = async () => {
-  if (!selectedSession.value) return
-
-  enrolling.value = true
-  try {
-    await enroll(selectedSession.value.id)
-    enrollModalVisible.value = false
-    toast('报名成功！可在"我的课程"中查看', 'success')
-    loadSessions()
-  } catch (error: unknown) {
-    const err = error as { response?: { data?: { message?: string } } }
-    const errorMsg = err.response?.data?.message || '报名失败，请稍后重试'
-    toast(errorMsg, 'error')
-    console.error('报名失败:', error)
-  } finally {
-    enrolling.value = false
-  }
 }
 
 onMounted(() => {
@@ -1081,79 +967,6 @@ onMounted(() => {
   font-size: 15px;
   color: var(--text-secondary);
   margin-bottom: 24px;
-}
-
-/* ===== Enroll Modal ===== */
-.enroll-confirm {
-  padding: 8px 0;
-}
-
-.confirm-text {
-  font-size: 15px;
-  color: var(--text-primary);
-  margin-bottom: 16px;
-}
-
-.confirm-details {
-  background: var(--bg-tertiary);
-  border-radius: 8px;
-  padding: 12px 16px;
-}
-
-.confirm-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-}
-
-.confirm-row:not(:last-child) {
-  border-bottom: 0.5px solid var(--border-light);
-}
-
-.confirm-label {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.confirm-value {
-  font-size: 13px;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-/* ===== Toast ===== */
-.toast {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2000;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.toast.success {
-  background: var(--success);
-  color: white;
-}
-
-.toast.error {
-  background: var(--error);
-  color: white;
-}
-
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
-}
-
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -20px);
 }
 
 /* ===== Responsive ===== */
