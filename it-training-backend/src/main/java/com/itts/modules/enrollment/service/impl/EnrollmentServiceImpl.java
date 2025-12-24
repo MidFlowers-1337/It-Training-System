@@ -1,10 +1,10 @@
 package com.itts.modules.enrollment.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
+import com.itts.enums.DeleteFlag;
 import com.itts.enums.EnrollmentStatus;
 import com.itts.enums.SessionStatus;
 import com.itts.modules.enrollment.dto.EnrollmentResponse;
@@ -26,6 +26,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DuplicateKeyException;
+
 /**
  * 报名服务实现
  */
@@ -42,12 +44,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Transactional
     public EnrollmentResponse enroll(Long sessionId) {
         // 获取当前用户
-        Long userId = getCurrentUserId();
+        Long userId = SecurityUtils.getCurrentUserId();
         log.info("用户报名: userId={}, sessionId={}", userId, sessionId);
 
         // 检查班期是否存在
         ClassSession session = classSessionMapper.selectById(sessionId);
-        if (session == null || session.getDeleted() == 1) {
+        if (session == null || DeleteFlag.isDeleted(session.getDeleted())) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
 
@@ -75,7 +77,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollment.setStatus(EnrollmentStatus.ENROLLED.getCode());
         enrollment.setEnrolledAt(LocalDateTime.now());
 
-        enrollmentMapper.insert(enrollment);
+        try {
+            enrollmentMapper.insert(enrollment);
+        } catch (DuplicateKeyException e) {
+            // 并发插入导致的唯一约束冲突，回滚名额增量
+            classSessionMapper.decrementEnrollment(sessionId);
+            throw new BusinessException(ErrorCode.ENROLLMENT_DUPLICATE);
+        }
 
         log.info("报名成功: enrollmentId={}", enrollment.getId());
 
@@ -93,7 +101,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Override
     @Transactional
     public void cancelEnrollment(Long enrollmentId, String reason) {
-        Long userId = getCurrentUserId();
+        Long userId = SecurityUtils.getCurrentUserId();
         log.info("取消报名: userId={}, enrollmentId={}", userId, enrollmentId);
 
         // 查询报名记录
@@ -133,16 +141,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public List<EnrollmentResponse> getMyEnrollments() {
-        Long userId = getCurrentUserId();
+        Long userId = SecurityUtils.getCurrentUserId();
 
-        LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Enrollment::getUserId, userId)
-                .orderByDesc(Enrollment::getEnrolledAt);
-
-        List<Enrollment> enrollments = enrollmentMapper.selectList(wrapper);
+        // 使用关联查询避免 N+1 问题
+        List<Enrollment> enrollments = enrollmentMapper.selectUserEnrollmentsWithDetails(userId);
 
         return enrollments.stream()
-                .map(this::fillAndConvert)
+                .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -163,18 +168,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             throw new BusinessException(ErrorCode.ENROLLMENT_NOT_FOUND);
         }
         return fillAndConvert(enrollment);
-    }
-
-    /**
-     * 获取当前登录用户ID
-     */
-    private Long getCurrentUserId() {
-        String username = SecurityUtils.getCurrentUsername();
-        SysUser user = sysUserMapper.selectByUsername(username);
-        if (user == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
-        return user.getId();
     }
 
     /**
@@ -208,7 +201,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
 
         // 设置状态名称
-        response.setStatusName(enrollment.getStatus() == 0 ? "已报名" : "已取消");
+        EnrollmentStatus enrollStatus = EnrollmentStatus.fromCode(enrollment.getStatus());
+        response.setStatusName(enrollStatus != null ? enrollStatus.getDesc() : "未知");
 
         return response;
     }
@@ -221,7 +215,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         BeanUtils.copyProperties(enrollment, response);
 
         // 设置状态名称
-        response.setStatusName(enrollment.getStatus() == 0 ? "已报名" : "已取消");
+        EnrollmentStatus status = EnrollmentStatus.fromCode(enrollment.getStatus());
+        response.setStatusName(status != null ? status.getDesc() : "未知");
 
         // 设置学员信息别名（用于讲师端）
         response.setStudentName(enrollment.getRealName());

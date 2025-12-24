@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
 import com.itts.common.util.VerificationCodeUtil;
+import com.itts.enums.UserStatus;
 import com.itts.modules.learning.mapper.LearningProgressMapper;
 import com.itts.modules.learning.mapper.StudyCheckinMapper;
 import com.itts.modules.learning.mapper.UserAchievementMapper;
@@ -269,7 +270,7 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         // 软删除：设置状态为禁用
-        user.setStatus(0);
+        user.setStatus(UserStatus.DISABLED.getCode());
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
 

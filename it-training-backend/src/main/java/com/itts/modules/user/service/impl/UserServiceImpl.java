@@ -3,6 +3,8 @@ package com.itts.modules.user.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.itts.enums.UserStatus;
+import com.itts.enums.DeleteFlag;
 import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
 import com.itts.modules.user.dto.PasswordResetRequest;
@@ -36,7 +38,7 @@ public class UserServiceImpl implements UserService {
         Page<SysUser> pageParam = new Page<>(page, size);
 
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getDeleted, 0);
+        wrapper.eq(SysUser::getDeleted, DeleteFlag.NOT_DELETED);
 
         // 角色过滤
         if (StringUtils.hasText(role)) {
@@ -65,7 +67,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserById(Long id) {
         SysUser user = sysUserMapper.selectById(id);
-        if (user == null || user.getDeleted() == 1) {
+        if (user == null || DeleteFlag.isDeleted(user.getDeleted())) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         return convertToResponse(user);
@@ -85,8 +87,8 @@ public class UserServiceImpl implements UserService {
         SysUser user = new SysUser();
         BeanUtils.copyProperties(request, user);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setStatus(1); // 默认启用
-        user.setDeleted(0);
+        user.setStatus(UserStatus.ENABLED.getCode()); // 默认启用
+        user.setDeleted(DeleteFlag.NOT_DELETED);
 
         sysUserMapper.insert(user);
 
@@ -100,7 +102,7 @@ public class UserServiceImpl implements UserService {
         log.info("更新用户: {}", id);
 
         SysUser user = sysUserMapper.selectById(id);
-        if (user == null || user.getDeleted() == 1) {
+        if (user == null || DeleteFlag.isDeleted(user.getDeleted())) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
@@ -136,12 +138,12 @@ public class UserServiceImpl implements UserService {
         log.info("删除用户: {}", id);
 
         SysUser user = sysUserMapper.selectById(id);
-        if (user == null || user.getDeleted() == 1) {
+        if (user == null || DeleteFlag.isDeleted(user.getDeleted())) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
         // 软删除
-        user.setDeleted(1);
+        user.setDeleted(DeleteFlag.DELETED);
         sysUserMapper.updateById(user);
 
         log.info("用户删除成功: {}", id);
@@ -153,7 +155,7 @@ public class UserServiceImpl implements UserService {
         log.info("重置用户密码: {}", id);
 
         SysUser user = sysUserMapper.selectById(id);
-        if (user == null || user.getDeleted() == 1) {
+        if (user == null || DeleteFlag.isDeleted(user.getDeleted())) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
@@ -169,7 +171,7 @@ public class UserServiceImpl implements UserService {
         log.info("更新用户状态: {}, status: {}", id, status);
 
         SysUser user = sysUserMapper.selectById(id);
-        if (user == null || user.getDeleted() == 1) {
+        if (user == null || DeleteFlag.isDeleted(user.getDeleted())) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 

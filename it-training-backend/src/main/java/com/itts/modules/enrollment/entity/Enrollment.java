@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -91,6 +92,18 @@ public class Enrollment implements Serializable {
     private String courseName;
 
     /**
+     * 课程ID（非数据库字段）
+     */
+    @TableField(exist = false)
+    private Long courseId;
+
+    /**
+     * 课程封面图片（非数据库字段）
+     */
+    @TableField(exist = false)
+    private String coverImage;
+
+    /**
      * 讲师姓名（非数据库字段）
      */
     @TableField(exist = false)
@@ -107,4 +120,22 @@ public class Enrollment implements Serializable {
      */
     @TableField(exist = false)
     private String studentPhone;
+
+    /**
+     * 开班日期（非数据库字段）
+     */
+    @TableField(exist = false)
+    private LocalDate startDate;
+
+    /**
+     * 结束日期（非数据库字段）
+     */
+    @TableField(exist = false)
+    private LocalDate endDate;
+
+    /**
+     * 上课时间描述（非数据库字段）
+     */
+    @TableField(exist = false)
+    private String schedule;
 }

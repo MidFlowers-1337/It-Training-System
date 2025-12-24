@@ -2,6 +2,7 @@ package com.itts.modules.learning.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.itts.enums.LearningStatus;
 import com.itts.modules.course.entity.Course;
 import com.itts.modules.course.mapper.CourseMapper;
 import com.itts.modules.learning.dto.AchievementResponse;
@@ -125,13 +126,13 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
         progress.setLastStudyAt(LocalDateTime.now());
         
         // 检查是否完成
-        if (progress.getProgressPercent() >= 100 && !"completed".equals(progress.getStatus())) {
-            progress.setStatus("completed");
+        if (progress.getProgressPercent() >= 100 && !LearningStatus.COMPLETED.getCode().equals(progress.getStatus())) {
+            progress.setStatus(LearningStatus.COMPLETED.getCode());
             progress.setCompletedAt(LocalDateTime.now());
             // 更新完成课程数
             userLearningStatsService.incrementCompletedCourses(userId);
-        } else if (progress.getProgressPercent() > 0 && "not_started".equals(progress.getStatus())) {
-            progress.setStatus("in_progress");
+        } else if (progress.getProgressPercent() > 0 && LearningStatus.NOT_STARTED.getCode().equals(progress.getStatus())) {
+            progress.setStatus(LearningStatus.IN_PROGRESS.getCode());
         }
         
         updateById(progress);
@@ -161,7 +162,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
         progress.setCourseId(courseId);
         progress.setProgressPercent(0);
         progress.setStudyDurationMinutes(0);
-        progress.setStatus("not_started");
+        progress.setStatus(LearningStatus.NOT_STARTED.getCode());
         save(progress);
         
         return progress;
@@ -180,9 +181,9 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
             progress = initProgress(userId, courseId);
         }
         
-        if (!"completed".equals(progress.getStatus())) {
+        if (!LearningStatus.COMPLETED.getCode().equals(progress.getStatus())) {
             progress.setProgressPercent(100);
-            progress.setStatus("completed");
+            progress.setStatus(LearningStatus.COMPLETED.getCode());
             progress.setCompletedAt(LocalDateTime.now());
             progress.setLastStudyAt(LocalDateTime.now());
             updateById(progress);
@@ -202,7 +203,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
         List<LearningProgress> progressList = list(
             new LambdaQueryWrapper<LearningProgress>()
                 .eq(LearningProgress::getUserId, userId)
-                .in(LearningProgress::getStatus, "not_started", "in_progress")
+                .in(LearningProgress::getStatus, LearningStatus.NOT_STARTED.getCode(), LearningStatus.IN_PROGRESS.getCode())
                 .orderByDesc(LearningProgress::getLastStudyAt)
         );
         

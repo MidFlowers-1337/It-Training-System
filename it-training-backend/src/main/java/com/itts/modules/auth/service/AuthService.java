@@ -17,6 +17,11 @@ public interface AuthService {
     TokenResponse login(LoginRequest request);
 
     /**
+     * 用户登出
+     */
+    void logout();
+
+    /**
      * 用户注册
      * @param request 注册请求
      * @return Token响应
