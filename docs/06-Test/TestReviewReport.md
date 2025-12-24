@@ -436,3 +436,4 @@ class EnrollmentIntegrationTest {
 | 版本 | 日期 | 修改人 | 修改内容 |
 |------|------|--------|----------|
 | v1.0.0 | 2025-12-14 | 测试架构师 Murat | 初始审查报告 |
+| v1.1.0 | 2025-12-24 | 系统优化 | 创建测试基类 BaseServiceTest，消除 SecurityContext Mock 重复代码；新增 LearningProgressServiceTest 覆盖学习进度模块核心功能 |
