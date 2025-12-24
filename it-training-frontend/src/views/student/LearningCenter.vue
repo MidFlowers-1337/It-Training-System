@@ -87,61 +87,12 @@
       <!-- Left Column -->
       <main class="main-column">
         <!-- Check-in Card -->
-        <section class="section-card">
-          <div class="card-header">
-            <h2 class="card-title">今日打卡</h2>
-            <span
-              class="status-badge"
-              :class="dashboard.todayCheckedIn ? 'status-success' : 'status-warning'"
-            >
-              {{ dashboard.todayCheckedIn ? '已打卡' : '未打卡' }}
-            </span>
-          </div>
-
-          <!-- Not Checked In -->
-          <div v-if="!dashboard.todayCheckedIn" class="checkin-form">
-            <div class="study-time-box">
-              <div class="study-time-row">
-                <span class="study-time-label">今日学习时长</span>
-                <span class="study-time-value tabular-nums">{{ todayStudyMinutes }} 分钟</span>
-              </div>
-              <p class="study-time-hint">系统将自动统计你今天的学习时长。</p>
-            </div>
-
-            <div class="note-field">
-              <label class="note-label">学习笔记（可选）</label>
-              <textarea
-                v-model="checkinForm.studyContent"
-                class="note-textarea"
-                placeholder="记录今天学到了什么..."
-              ></textarea>
-            </div>
-
-            <div class="checkin-actions">
-              <Button variant="primary" :disabled="checkinLoading || todayStudyMinutes === 0" @click="handleCheckin">
-                {{ checkinLoading ? '打卡中...' : '立即打卡' }}
-              </Button>
-              <span v-if="todayStudyMinutes === 0" class="checkin-warning">请先学习课程后再打卡</span>
-            </div>
-          </div>
-
-          <!-- Already Checked In -->
-          <div v-else class="checkin-success">
-            <div class="success-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div class="success-info">
-              <p class="success-text">
-                今日已打卡，学习了
-                <span class="success-minutes tabular-nums">{{ todayCheckin?.studyMinutes || 0 }}</span>
-                分钟
-              </p>
-              <p v-if="todayCheckin?.studyContent" class="success-note">{{ todayCheckin.studyContent }}</p>
-            </div>
-          </div>
-        </section>
+        <CheckinCard
+          :is-checked-in="dashboard.todayCheckedIn || false"
+          :study-minutes="todayStudyMinutes"
+          :checkin-data="todayCheckin"
+          @success="handleCheckinSuccess"
+        />
 
         <!-- In Progress Courses -->
         <section class="section-card">
@@ -186,98 +137,27 @@
       <!-- Right Column -->
       <aside class="side-column">
         <!-- Weekly Study Chart -->
-        <section class="section-card">
-          <div class="card-header">
-            <div class="card-header-left">
-              <h2 class="card-title">本周学习</h2>
-              <p class="card-subtitle">分钟趋势</p>
-            </div>
-          </div>
-
-          <div v-if="dashboard.weeklyStudyData?.length" class="weekly-chart">
-            <div v-for="(d, i) in dashboard.weeklyStudyData" :key="i" class="chart-bar-wrapper">
-              <div class="chart-bar-container">
-                <div class="chart-bar" :style="{ height: `${getBarHeight(d.studyMinutes)}%` }"></div>
-              </div>
-              <span class="chart-label">{{ weekDays[new Date(d.date).getDay()] }}</span>
-            </div>
-          </div>
-
-          <EmptyState v-else emoji="✨" title="暂无统计" description="开始学习后，这里会展示你的本周趋势。" size="sm" />
-        </section>
+        <WeeklyChart :weekly-data="dashboard.weeklyStudyData" />
 
         <!-- Calendar -->
-        <section class="section-card">
-          <div class="card-header">
-            <h2 class="card-title">打卡日历</h2>
-            <div class="calendar-nav">
-              <button type="button" class="nav-btn" @click="prevMonth">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <span class="nav-month tabular-nums">{{ monthLabel }}</span>
-              <button type="button" class="nav-btn" @click="nextMonth">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="calendar-weekdays">
-            <span v-for="d in weekDays" :key="d" class="weekday">{{ d }}</span>
-          </div>
-
-          <div class="calendar-grid">
-            <div
-              v-for="(day, idx) in calendarDays"
-              :key="idx"
-              class="calendar-day"
-              :class="{
-                'other-month': !day.currentMonth,
-                'checked-in': day.checkedIn,
-                'is-today': day.isToday,
-              }"
-            >
-              {{ day.date }}
-            </div>
-          </div>
-
-          <div class="calendar-legend">
-            <span class="legend-item">
-              <span class="legend-dot legend-dot-success"></span>
-              已打卡
-            </span>
-            <span class="legend-item">
-              <span class="legend-dot legend-dot-today"></span>
-              今天
-            </span>
-          </div>
-        </section>
+        <CheckinCalendar
+          :year="currentYear"
+          :month="currentMonth"
+          :checkin-dates="checkinDates"
+          @prev="prevMonth"
+          @next="nextMonth"
+        />
       </aside>
     </div>
-
-    <!-- Toast -->
-    <Teleport to="body">
-      <Transition name="toast">
-        <div
-          v-if="toast.visible"
-          class="toast"
-          :class="toast.type"
-        >
-          {{ toast.message }}
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Button, EmptyState } from '@/design-system';
-import { getDashboard, checkin, getTodayCheckin, getMonthlyCheckinDates } from '@/api/learning';
+import { getDashboard, getTodayCheckin, getMonthlyCheckinDates } from '@/api/learning';
+import { CheckinCard, WeeklyChart, CheckinCalendar } from './learning-center';
 
 // Types
 interface Dashboard {
@@ -312,69 +192,10 @@ const router = useRouter();
 const dashboard = ref<Dashboard>({});
 const todayCheckin = ref<TodayCheckin | null>(null);
 const checkinDates = ref<string[]>([]);
-const checkinLoading = ref(false);
 const todayStudyMinutes = ref(0);
 
 const currentYear = ref(new Date().getFullYear());
 const currentMonth = ref(new Date().getMonth() + 1);
-
-const checkinForm = reactive({
-  studyContent: '',
-});
-
-// Toast
-const toast = ref({ visible: false, message: '', type: 'success' as 'success' | 'warning' | 'error' | 'info' });
-
-const showToast = (message: string, type: 'success' | 'warning' | 'error' | 'info' = 'success') => {
-  toast.value = { visible: true, message, type };
-  setTimeout(() => {
-    toast.value.visible = false;
-  }, 3000);
-};
-
-const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
-
-const monthLabel = computed(() => `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}`);
-
-const calendarDays = computed(() => {
-  const year = currentYear.value;
-  const month = currentMonth.value;
-  const firstDay = new Date(year, month - 1, 1);
-  const lastDay = new Date(year, month, 0);
-  const daysInMonth = lastDay.getDate();
-  const startWeekDay = firstDay.getDay();
-
-  const days: Array<{ date: number; currentMonth: boolean; checkedIn: boolean; isToday: boolean }> = [];
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-  const prevMonthLastDay = new Date(year, month - 1, 0).getDate();
-  for (let i = startWeekDay - 1; i >= 0; i--) {
-    days.push({ date: prevMonthLastDay - i, currentMonth: false, checkedIn: false, isToday: false });
-  }
-
-  for (let i = 1; i <= daysInMonth; i++) {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-    days.push({
-      date: i,
-      currentMonth: true,
-      checkedIn: checkinDates.value.includes(dateStr),
-      isToday: dateStr === todayStr,
-    });
-  }
-
-  const remaining = 42 - days.length;
-  for (let i = 1; i <= remaining; i++) {
-    days.push({ date: i, currentMonth: false, checkedIn: false, isToday: false });
-  }
-
-  return days;
-});
-
-const getBarHeight = (minutes: number): number => {
-  const maxMinutes = Math.max(...(dashboard.value.weeklyStudyData?.map((d) => d.studyMinutes) || [60]));
-  return maxMinutes > 0 ? (minutes / maxMinutes) * 100 : 0;
-};
 
 const calculateTodayStudyMinutes = () => {
   const today = dashboard.value.weeklyStudyData?.find((d) => {
@@ -415,31 +236,10 @@ const loadMonthlyCheckins = async () => {
   }
 };
 
-const handleCheckin = async () => {
-  if (todayStudyMinutes.value === 0) {
-    showToast('请先学习课程后再打卡', 'warning');
-    return;
-  }
-
-  checkinLoading.value = true;
-  try {
-    const res = await checkin({ studyMinutes: todayStudyMinutes.value, studyContent: checkinForm.studyContent });
-    if (res.code === 200) {
-      showToast('打卡成功！', 'success');
-      if (res.data?.newAchievementEarned && res.data?.newAchievement?.name) {
-        setTimeout(() => {
-          showToast(`恭喜获得成就：${res.data.newAchievement.name}`, 'success');
-        }, 1500);
-      }
-      await loadDashboard();
-      await loadTodayCheckin();
-      await loadMonthlyCheckins();
-    }
-  } catch (error) {
-    showToast('打卡失败，请重试', 'error');
-  } finally {
-    checkinLoading.value = false;
-  }
+const handleCheckinSuccess = async () => {
+  await loadDashboard();
+  await loadTodayCheckin();
+  await loadMonthlyCheckins();
 };
 
 const prevMonth = () => {
@@ -747,138 +547,6 @@ onMounted(() => {
   border: 0.5px solid rgba(255, 149, 0, 0.3);
 }
 
-/* ===== Check-in Form ===== */
-.checkin-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.study-time-box {
-  padding: 16px;
-  background: var(--bg-tertiary);
-  border-radius: 12px;
-  border: 0.5px solid var(--border-color);
-}
-
-.study-time-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-}
-
-.study-time-label {
-  color: var(--text-secondary);
-}
-
-.study-time-value {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.study-time-hint {
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.note-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.note-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.note-textarea {
-  width: 100%;
-  min-height: 100px;
-  padding: 12px 16px;
-  background: var(--bg-tertiary);
-  border: 0.5px solid var(--border-color);
-  border-radius: 12px;
-  font-size: 14px;
-  font-family: inherit;
-  color: var(--text-primary);
-  resize: vertical;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.note-textarea::placeholder {
-  color: var(--text-muted);
-}
-
-.note-textarea:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 0, 122, 255) / 0.12);
-}
-
-.checkin-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.checkin-warning {
-  font-size: 12px;
-  color: var(--warning);
-}
-
-/* Check-in Success */
-.checkin-success {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding-top: 4px;
-}
-
-.success-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(52, 199, 89, 0.12);
-  border-radius: 12px;
-  color: var(--success);
-  flex-shrink: 0;
-}
-
-.success-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-.success-info {
-  min-width: 0;
-}
-
-.success-text {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.success-minutes {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.success-note {
-  margin-top: 6px;
-  font-size: 13px;
-  color: var(--text-muted);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 /* ===== Course List ===== */
 .course-list {
   display: flex;
@@ -952,205 +620,6 @@ onMounted(() => {
   transition: width 0.3s ease;
 }
 
-/* ===== Weekly Chart ===== */
-.weekly-chart {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  height: 140px;
-  align-items: end;
-}
-
-.chart-bar-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  height: 100%;
-}
-
-.chart-bar-container {
-  flex: 1;
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-  background: var(--bg-tertiary);
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-.chart-bar {
-  width: 100%;
-  min-height: 4px;
-  background: var(--primary-color);
-  border-radius: 20px;
-  transition: height 0.3s ease;
-}
-
-.chart-label {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-/* ===== Calendar ===== */
-.calendar-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.nav-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-tertiary);
-  border: 0.5px solid var(--border-color);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.nav-btn:hover {
-  background: var(--bg-hover);
-}
-
-.nav-btn svg {
-  width: 14px;
-  height: 14px;
-  color: var(--text-secondary);
-}
-
-.nav-month {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  min-width: 80px;
-  text-align: center;
-}
-
-.calendar-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.weekday {
-  padding: 8px 0;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-
-.calendar-day {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  font-size: 13px;
-  color: var(--text-primary);
-  transition: background-color 0.15s ease;
-}
-
-.calendar-day:hover {
-  background: var(--bg-tertiary);
-}
-
-.calendar-day.other-month {
-  color: var(--text-muted);
-  opacity: 0.5;
-}
-
-.calendar-day.checked-in {
-  background: rgba(52, 199, 89, 0.15);
-  color: var(--success);
-  font-weight: 600;
-}
-
-.calendar-day.is-today {
-  box-shadow: inset 0 0 0 2px rgba(var(--primary-color-rgb, 0, 122, 255) / 0.3);
-}
-
-.calendar-legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 16px;
-}
-
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.legend-dot-success {
-  background: var(--success);
-}
-
-.legend-dot-today {
-  border: 2px solid var(--primary-color);
-}
-
-/* ===== Toast ===== */
-.toast {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2000;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  color: white;
-}
-
-.toast.success {
-  background: var(--success);
-}
-
-.toast.warning {
-  background: var(--warning);
-}
-
-.toast.error {
-  background: var(--error);
-}
-
-.toast.info {
-  background: var(--info);
-}
-
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
-}
-
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -20px);
-}
-
 /* ===== Utility ===== */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
@@ -1189,19 +658,5 @@ onMounted(() => {
 
 [data-theme="dark"] .course-item:hover {
   background: var(--bg-hover);
-}
-
-[data-theme="dark"] .note-textarea {
-  background: var(--bg-tertiary);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="dark"] .nav-btn {
-  background: var(--bg-tertiary);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="dark"] .calendar-day.checked-in {
-  background: rgba(52, 199, 89, 0.2);
 }
 </style>

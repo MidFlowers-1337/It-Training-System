@@ -229,98 +229,35 @@
       </div>
     </div>
 
-    <!-- Password Dialog -->
-    <Modal v-model="showPasswordDialog" title="修改密码" width="400px">
-      <FormLayout>
-        <FormItem label="当前密码" required :error="passwordErrors.currentPassword">
-          <Input v-model="passwordForm.currentPassword" type="password" placeholder="请输入当前密码" />
-        </FormItem>
-        <FormItem label="新密码" required :error="passwordErrors.newPassword">
-          <Input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码" />
-        </FormItem>
-        <FormItem label="确认密码" required :error="passwordErrors.confirmPassword">
-          <Input v-model="passwordForm.confirmPassword" type="password" placeholder="请再次输入新密码" />
-        </FormItem>
-      </FormLayout>
-      <template #footer>
-        <Button variant="secondary" @click="showPasswordDialog = false">取消</Button>
-        <Button variant="primary" :loading="saving" @click="handleChangePassword">确认修改</Button>
-      </template>
-    </Modal>
+    <!-- Dialog Components -->
+    <ChangePasswordDialog
+      v-model="showPasswordDialog"
+      @success="handlePasswordChanged"
+    />
 
-    <!-- Email Dialog -->
-    <Modal v-model="showEmailDialog" title="绑定邮箱" width="400px">
-      <FormLayout>
-        <FormItem label="邮箱">
-          <Input v-model="emailForm.email" placeholder="请输入邮箱" />
-        </FormItem>
-        <FormItem label="验证码">
-          <div class="code-input-group">
-            <Input v-model="emailForm.code" placeholder="请输入验证码" />
-            <Button variant="secondary" :disabled="emailCountdown > 0" @click="handleSendEmailCode">
-              {{ emailCountdown > 0 ? `${emailCountdown}s` : '发送验证码' }}
-            </Button>
-          </div>
-        </FormItem>
-      </FormLayout>
-      <template #footer>
-        <Button variant="secondary" @click="showEmailDialog = false">取消</Button>
-        <Button variant="primary" :loading="saving" @click="handleBindEmail">确认绑定</Button>
-      </template>
-    </Modal>
+    <BindVerificationDialog
+      v-model="showEmailDialog"
+      type="email"
+      :send-code-fn="sendEmailCode"
+      :bind-fn="bindEmail"
+      @success="handleBindSuccess"
+    />
 
-    <!-- Phone Dialog -->
-    <Modal v-model="showPhoneDialog" title="绑定手机" width="400px">
-      <FormLayout>
-        <FormItem label="手机号">
-          <Input v-model="phoneForm.phone" placeholder="请输入手机号" />
-        </FormItem>
-        <FormItem label="验证码">
-          <div class="code-input-group">
-            <Input v-model="phoneForm.code" placeholder="请输入验证码" />
-            <Button variant="secondary" :disabled="phoneCountdown > 0" @click="handleSendPhoneCode">
-              {{ phoneCountdown > 0 ? `${phoneCountdown}s` : '发送验证码' }}
-            </Button>
-          </div>
-        </FormItem>
-      </FormLayout>
-      <template #footer>
-        <Button variant="secondary" @click="showPhoneDialog = false">取消</Button>
-        <Button variant="primary" :loading="saving" @click="handleBindPhone">确认绑定</Button>
-      </template>
-    </Modal>
+    <BindVerificationDialog
+      v-model="showPhoneDialog"
+      type="phone"
+      :send-code-fn="sendPhoneCode"
+      :bind-fn="bindPhone"
+      @success="handleBindSuccess"
+    />
 
-    <!-- Delete Account Dialog -->
-    <Modal v-model="showDeleteDialog" title="注销账号" width="400px">
-      <Alert type="error" title="警告">
-        注销账号后，您的所有数据将被清除且无法恢复，请谨慎操作！
-      </Alert>
-      <FormLayout class="delete-form">
-        <FormItem label="密码确认">
-          <Input v-model="deleteForm.password" type="password" placeholder="请输入密码确认注销" />
-        </FormItem>
-      </FormLayout>
-      <template #footer>
-        <Button variant="secondary" @click="showDeleteDialog = false">取消</Button>
-        <Button variant="danger" :loading="saving" @click="handleDeleteAccount">确认注销</Button>
-      </template>
-    </Modal>
+    <DeleteAccountDialog v-model="showDeleteDialog" />
 
-    <!-- Avatar Dialog -->
-    <Modal v-model="showAvatarDialog" title="更换头像" width="400px">
-      <FormLayout>
-        <FormItem label="头像URL">
-          <Input v-model="avatarUrl" placeholder="请输入头像图片URL" />
-        </FormItem>
-        <FormItem label="预览">
-          <Avatar :src="avatarUrl" :size="80" />
-        </FormItem>
-      </FormLayout>
-      <template #footer>
-        <Button variant="secondary" @click="showAvatarDialog = false">取消</Button>
-        <Button variant="primary" :loading="saving" @click="handleUpdateAvatar">确认更换</Button>
-      </template>
-    </Modal>
+    <AvatarUploadDialog
+      v-model="showAvatarDialog"
+      :current-avatar="userInfo.avatar"
+      @success="handleAvatarUpdated"
+    />
 
     <!-- Toast -->
     <Teleport to="body">
@@ -338,26 +275,27 @@ import { ref, reactive, onMounted } from 'vue';
 import {
   Button,
   Input,
-  Modal,
   FormLayout,
   FormItem,
   Avatar,
-  Alert,
 } from '@/design-system';
 import { useUserStore } from '@/store/user';
 import {
   getCurrentUser,
   updateProfile,
-  changePassword,
-  uploadAvatar,
   getSecurityInfo,
   bindEmail,
   bindPhone,
   sendEmailCode,
   sendPhoneCode,
-  deleteAccount,
 } from '@/api/user';
 import { getUserProfile } from '@/api/learning';
+import {
+  ChangePasswordDialog,
+  BindVerificationDialog,
+  DeleteAccountDialog,
+  AvatarUploadDialog,
+} from './personal-center';
 
 const userStore = useUserStore();
 
@@ -411,9 +349,6 @@ const showPhoneDialog = ref(false);
 const showDeleteDialog = ref(false);
 const showAvatarDialog = ref(false);
 
-const emailCountdown = ref(0);
-const phoneCountdown = ref(0);
-
 const profileForm = reactive({
   realName: '',
   email: '',
@@ -424,23 +359,6 @@ const errors = reactive({
   email: '',
   phone: '',
 });
-
-const passwordForm = reactive({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: '',
-});
-
-const passwordErrors = reactive({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: '',
-});
-
-const emailForm = reactive({ email: '', code: '' });
-const phoneForm = reactive({ phone: '', code: '' });
-const deleteForm = reactive({ password: '' });
-const avatarUrl = ref('');
 
 // Toast
 const toast = ref({ visible: false, message: '', type: 'success' as 'success' | 'error' });
@@ -520,162 +438,19 @@ const saveProfile = async () => {
   }
 };
 
-const validatePassword = (): boolean => {
-  passwordErrors.currentPassword = '';
-  passwordErrors.newPassword = '';
-  passwordErrors.confirmPassword = '';
-  let valid = true;
-
-  if (!passwordForm.currentPassword) {
-    passwordErrors.currentPassword = '请输入当前密码';
-    valid = false;
-  }
-  if (!passwordForm.newPassword) {
-    passwordErrors.newPassword = '请输入新密码';
-    valid = false;
-  } else if (passwordForm.newPassword.length < 6 || passwordForm.newPassword.length > 20) {
-    passwordErrors.newPassword = '密码长度在6-20个字符之间';
-    valid = false;
-  }
-  if (!passwordForm.confirmPassword) {
-    passwordErrors.confirmPassword = '请确认新密码';
-    valid = false;
-  } else if (passwordForm.confirmPassword !== passwordForm.newPassword) {
-    passwordErrors.confirmPassword = '两次输入的密码不一致';
-    valid = false;
-  }
-  return valid;
+// Dialog callbacks
+const handlePasswordChanged = () => {
+  showToast('密码修改成功，请重新登录');
+  userStore.logout();
 };
 
-const handleChangePassword = async () => {
-  if (!validatePassword()) return;
-  try {
-    saving.value = true;
-    await changePassword(passwordForm);
-    showToast('密码修改成功，请重新登录');
-    showPasswordDialog.value = false;
-    passwordForm.currentPassword = '';
-    passwordForm.newPassword = '';
-    passwordForm.confirmPassword = '';
-    userStore.logout();
-  } catch (error: any) {
-    showToast(error.message || '修改失败', 'error');
-  } finally {
-    saving.value = false;
-  }
+const handleBindSuccess = () => {
+  fetchUserInfo();
+  fetchSecurityInfo();
 };
 
-const handleSendEmailCode = async () => {
-  if (!emailForm.email) {
-    showToast('请输入邮箱', 'error');
-    return;
-  }
-  try {
-    await sendEmailCode(emailForm.email);
-    showToast('验证码已发送');
-    emailCountdown.value = 60;
-    const timer = setInterval(() => {
-      emailCountdown.value--;
-      if (emailCountdown.value <= 0) clearInterval(timer);
-    }, 1000);
-  } catch (error) {
-    showToast('发送失败', 'error');
-  }
-};
-
-const handleBindEmail = async () => {
-  if (!emailForm.email || !emailForm.code) {
-    showToast('请填写完整信息', 'error');
-    return;
-  }
-  try {
-    saving.value = true;
-    await bindEmail(emailForm.email, emailForm.code);
-    showToast('绑定成功');
-    showEmailDialog.value = false;
-    fetchUserInfo();
-    fetchSecurityInfo();
-  } catch (error) {
-    showToast('绑定失败', 'error');
-  } finally {
-    saving.value = false;
-  }
-};
-
-const handleSendPhoneCode = async () => {
-  if (!phoneForm.phone) {
-    showToast('请输入手机号', 'error');
-    return;
-  }
-  try {
-    await sendPhoneCode(phoneForm.phone);
-    showToast('验证码已发送');
-    phoneCountdown.value = 60;
-    const timer = setInterval(() => {
-      phoneCountdown.value--;
-      if (phoneCountdown.value <= 0) clearInterval(timer);
-    }, 1000);
-  } catch (error) {
-    showToast('发送失败', 'error');
-  }
-};
-
-const handleBindPhone = async () => {
-  if (!phoneForm.phone || !phoneForm.code) {
-    showToast('请填写完整信息', 'error');
-    return;
-  }
-  try {
-    saving.value = true;
-    await bindPhone(phoneForm.phone, phoneForm.code);
-    showToast('绑定成功');
-    showPhoneDialog.value = false;
-    fetchUserInfo();
-    fetchSecurityInfo();
-  } catch (error) {
-    showToast('绑定失败', 'error');
-  } finally {
-    saving.value = false;
-  }
-};
-
-const handleUpdateAvatar = async () => {
-  if (!avatarUrl.value) {
-    showToast('请输入头像URL', 'error');
-    return;
-  }
-  try {
-    saving.value = true;
-    await uploadAvatar(avatarUrl.value);
-    showToast('头像更新成功');
-    showAvatarDialog.value = false;
-    fetchUserInfo();
-    userStore.setUserInfo({
-      ...userStore.userInfo,
-      avatar: avatarUrl.value,
-    });
-  } catch (error) {
-    showToast('更新失败', 'error');
-  } finally {
-    saving.value = false;
-  }
-};
-
-const handleDeleteAccount = async () => {
-  if (!deleteForm.password) {
-    showToast('请输入密码', 'error');
-    return;
-  }
-  try {
-    saving.value = true;
-    await deleteAccount(deleteForm.password);
-    showToast('账号已注销');
-    userStore.logout();
-  } catch (error: any) {
-    showToast(error.message || '注销失败', 'error');
-  } finally {
-    saving.value = false;
-  }
+const handleAvatarUpdated = (avatar: string) => {
+  userInfo.value.avatar = avatar;
 };
 
 const getRoleName = (role: string) => {
@@ -1131,21 +906,6 @@ onMounted(() => {
   margin-top: 4px;
   font-size: 12px;
   color: var(--text-muted);
-}
-
-/* Code Input Group */
-.code-input-group {
-  display: flex;
-  gap: 8px;
-}
-
-.code-input-group > :first-child {
-  flex: 1;
-}
-
-/* Delete Form */
-.delete-form {
-  margin-top: 16px;
 }
 
 /* ===== Toast ===== */
