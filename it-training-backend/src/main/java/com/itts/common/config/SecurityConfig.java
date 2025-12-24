@@ -65,7 +65,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/statistics/**").hasRole("ADMIN")
 
                         // 学员专属接口
-                        .requestMatchers("/api/v1/ai/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/ai/recommend").hasRole("STUDENT")
+
+                        // AI 测试接口只允许管理员访问
+                        .requestMatchers("/api/v1/ai/test/**").hasRole("ADMIN")
+
                         .requestMatchers(HttpMethod.POST, "/api/v1/enrollments").hasRole("STUDENT")
 
                         // 其他需要认证

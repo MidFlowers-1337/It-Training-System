@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器
+ * 所有异常都映射到正确的 HTTP 状态码，使 API 语义更清晰
  */
 @Slf4j
 @RestControllerAdvice
@@ -26,11 +28,14 @@ public class GlobalExceptionHandler {
 
     /**
      * 业务异常处理
+     * 根据 BusinessException 中的 httpStatus 返回对应的 HTTP 状态码
      */
     @ExceptionHandler(BusinessException.class)
-    public R<Void> handleBusinessException(BusinessException e) {
-        log.warn("业务异常: code={}, message={}", e.getCode(), e.getMessage());
-        return R.fail(e.getCode(), e.getMessage());
+    public ResponseEntity<R<Void>> handleBusinessException(BusinessException e) {
+        log.warn("业务异常: code={}, message={}, httpStatus={}",
+                e.getCode(), e.getMessage(), e.getHttpStatus());
+        R<Void> response = R.fail(e.getCode(), e.getMessage());
+        return ResponseEntity.status(e.getHttpStatus()).body(response);
     }
 
     /**
