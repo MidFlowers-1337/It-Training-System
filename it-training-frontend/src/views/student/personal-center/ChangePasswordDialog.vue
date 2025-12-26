@@ -111,6 +111,7 @@ async function handleSubmit() {
     await changePassword({
       currentPassword: form.currentPassword,
       newPassword: form.newPassword,
+      confirmPassword: form.confirmPassword,
     });
     ElMessage.success('密码修改成功');
     visible.value = false;
