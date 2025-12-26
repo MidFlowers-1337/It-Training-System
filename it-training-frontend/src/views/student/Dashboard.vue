@@ -69,11 +69,28 @@
 
             <!-- 操作按钮 -->
             <div class="mt-6 flex flex-wrap gap-3">
-              <Button variant="primary" :disabled="todayStats.checkedIn" @click="checkin">
+              <button
+                class="px-4 py-2.5 rounded-xl bg-bg-tertiary border border-border-color font-medium text-sm transition-colors"
+                :class="todayStats.checkedIn
+                  ? 'text-text-muted cursor-not-allowed'
+                  : 'text-primary hover:bg-bg-hover'"
+                :disabled="todayStats.checkedIn"
+                @click="checkin"
+              >
                 {{ todayStats.checkedIn ? '今日已打卡' : '学习打卡' }}
-              </Button>
-              <Button variant="secondary" @click="goToLearningPlan">学习计划</Button>
-              <Button variant="ghost" @click="router.push('/courses')">浏览课程</Button>
+              </button>
+              <button
+                class="px-4 py-2.5 rounded-xl bg-bg-tertiary border border-border-color text-text-primary font-medium text-sm hover:bg-bg-hover transition-colors"
+                @click="goToLearningPlan"
+              >
+                学习计划
+              </button>
+              <button
+                class="px-4 py-2.5 rounded-xl bg-bg-tertiary border border-border-color text-text-primary font-medium text-sm hover:bg-bg-hover transition-colors"
+                @click="router.push('/courses')"
+              >
+                浏览课程
+              </button>
             </div>
           </div>
 
