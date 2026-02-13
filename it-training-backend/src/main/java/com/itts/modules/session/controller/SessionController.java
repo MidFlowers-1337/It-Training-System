@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -64,6 +65,7 @@ public class SessionController {
 
     @Operation(summary = "创建班期")
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public R<SessionResponse> createSession(@Valid @RequestBody SessionCreateRequest request) {
         SessionResponse session = sessionService.createSession(request);
         return R.ok(session);
@@ -71,6 +73,7 @@ public class SessionController {
 
     @Operation(summary = "更新班期")
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<SessionResponse> updateSession(@PathVariable Long id, @Valid @RequestBody SessionUpdateRequest request) {
         SessionResponse session = sessionService.updateSession(id, request);
         return R.ok(session);
@@ -78,6 +81,7 @@ public class SessionController {
 
     @Operation(summary = "删除班期")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<Void> deleteSession(@PathVariable Long id) {
         sessionService.deleteSession(id);
         return R.ok();
@@ -85,6 +89,7 @@ public class SessionController {
 
     @Operation(summary = "开放报名")
     @PatchMapping("/{id}/open")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<Void> openEnrollment(@PathVariable Long id) {
         sessionService.openEnrollment(id);
         return R.ok();
@@ -92,6 +97,7 @@ public class SessionController {
 
     @Operation(summary = "关闭报名")
     @PatchMapping("/{id}/close")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<Void> closeEnrollment(@PathVariable Long id) {
         sessionService.closeEnrollment(id);
         return R.ok();

@@ -21,14 +21,17 @@ import com.itts.modules.user.mapper.SysUserMapper;
 import com.itts.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -69,9 +72,14 @@ public class SessionServiceImpl implements SessionService {
 
         List<ClassSession> sessions = classSessionMapper.selectList(wrapper);
 
-        // 填充关联信息
+        if (sessions.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 批量填充关联信息，避免 N+1 查询
+        batchFillAssociations(sessions);
+
         return sessions.stream()
-                .map(this::fillAssociations)
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -87,7 +95,7 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
     public SessionResponse createSession(SessionCreateRequest request) {
         log.info("创建班期: {}", request.getSessionCode());
@@ -111,7 +119,14 @@ public class SessionServiceImpl implements SessionService {
         }
 
         ClassSession session = new ClassSession();
-        BeanUtils.copyProperties(request, session);
+        session.setCourseId(request.getCourseId());
+        session.setInstructorId(request.getInstructorId());
+        session.setSessionCode(request.getSessionCode());
+        session.setStartDate(request.getStartDate());
+        session.setEndDate(request.getEndDate());
+        session.setSchedule(request.getSchedule());
+        session.setLocation(request.getLocation());
+        session.setMaxCapacity(request.getMaxCapacity());
         session.setCurrentEnrollment(0); // 初始报名人数为0
         session.setStatus(SessionStatus.ENROLLING.getCode()); // 默认为报名中，方便快速开放
         session.setDeleted(DeleteFlag.NOT_DELETED);
@@ -127,7 +142,7 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Caching(evict = {
             @CacheEvict(value = RedisCacheConfig.CACHE_SESSIONS, key = "#id"),
             @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
@@ -179,7 +194,7 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Caching(evict = {
             @CacheEvict(value = RedisCacheConfig.CACHE_SESSIONS, key = "#id"),
             @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
@@ -206,7 +221,7 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Caching(evict = {
             @CacheEvict(value = RedisCacheConfig.CACHE_SESSIONS, key = "#id"),
             @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
@@ -226,7 +241,7 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Caching(evict = {
             @CacheEvict(value = RedisCacheConfig.CACHE_SESSIONS, key = "#id"),
             @CacheEvict(value = RedisCacheConfig.CACHE_SESSION_LIST, allEntries = true)
@@ -256,10 +271,64 @@ public class SessionServiceImpl implements SessionService {
 
         List<ClassSession> sessions = classSessionMapper.selectList(wrapper);
 
+        if (sessions.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 批量填充关联信息，避免 N+1 查询
+        batchFillAssociations(sessions);
+
         return sessions.stream()
-                .map(this::fillAssociations)
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 批量填充关联信息（课程名称、讲师姓名）
+     * 收集所有 courseId 和 instructorId，一次性批量查询，避免 N+1 问题
+     */
+    private void batchFillAssociations(List<ClassSession> sessions) {
+        // 收集需要查询的 courseId（排除已有名称的）
+        Set<Long> courseIds = sessions.stream()
+                .filter(s -> s.getCourseId() != null && s.getCourseName() == null)
+                .map(ClassSession::getCourseId)
+                .collect(Collectors.toSet());
+
+        // 收集需要查询的 instructorId（排除已有名称的）
+        Set<Long> instructorIds = sessions.stream()
+                .filter(s -> s.getInstructorId() != null && s.getInstructorName() == null)
+                .map(ClassSession::getInstructorId)
+                .collect(Collectors.toSet());
+
+        // 批量查询课程
+        Map<Long, Course> courseMap = Collections.emptyMap();
+        if (!courseIds.isEmpty()) {
+            courseMap = courseMapper.selectBatchIds(courseIds).stream()
+                    .collect(Collectors.toMap(Course::getId, Function.identity()));
+        }
+
+        // 批量查询讲师
+        Map<Long, SysUser> instructorMap = Collections.emptyMap();
+        if (!instructorIds.isEmpty()) {
+            instructorMap = sysUserMapper.selectBatchIds(instructorIds).stream()
+                    .collect(Collectors.toMap(SysUser::getId, Function.identity()));
+        }
+
+        // 填充
+        for (ClassSession session : sessions) {
+            if (session.getCourseId() != null && session.getCourseName() == null) {
+                Course course = courseMap.get(session.getCourseId());
+                if (course != null) {
+                    session.setCourseName(course.getName());
+                }
+            }
+            if (session.getInstructorId() != null && session.getInstructorName() == null) {
+                SysUser instructor = instructorMap.get(session.getInstructorId());
+                if (instructor != null) {
+                    session.setInstructorName(instructor.getRealName());
+                }
+            }
+        }
     }
 
     /**
@@ -289,19 +358,30 @@ public class SessionServiceImpl implements SessionService {
      * 转换为响应对象
      */
     private SessionResponse convertToResponse(ClassSession session) {
-        SessionResponse response = new SessionResponse();
-        BeanUtils.copyProperties(session, response);
-
         // 计算剩余名额
         int remaining = session.getMaxCapacity() - (session.getCurrentEnrollment() == null ? 0 : session.getCurrentEnrollment());
-        response.setRemainingQuota(remaining);
 
-        // 设置状态名称
+        // 获取状态名称
         SessionStatus status = SessionStatus.fromCode(session.getStatus());
-        if (status != null) {
-            response.setStatusName(status.getDesc());
-        }
 
-        return response;
+        return SessionResponse.builder()
+                .id(session.getId())
+                .courseId(session.getCourseId())
+                .courseName(session.getCourseName())
+                .instructorId(session.getInstructorId())
+                .instructorName(session.getInstructorName())
+                .sessionCode(session.getSessionCode())
+                .startDate(session.getStartDate())
+                .endDate(session.getEndDate())
+                .schedule(session.getSchedule())
+                .location(session.getLocation())
+                .maxCapacity(session.getMaxCapacity())
+                .currentEnrollment(session.getCurrentEnrollment())
+                .remainingQuota(remaining)
+                .status(session.getStatus())
+                .statusName(status != null ? status.getDesc() : null)
+                .createdAt(session.getCreatedAt())
+                .updatedAt(session.getUpdatedAt())
+                .build();
     }
 }
