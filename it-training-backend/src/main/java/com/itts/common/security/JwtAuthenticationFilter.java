@@ -1,5 +1,6 @@
 package com.itts.common.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,19 +40,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
-            if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-                String username = jwtTokenProvider.getUsernameFromToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (StringUtils.hasText(jwt)) {
+                // 一次解析完成验证 + Claims 提取，避免重复 parseSignedClaims
+                Claims claims = jwtTokenProvider.validateTokenAndGetClaims(jwt);
+                if (claims != null) {
+                    String username = jwtTokenProvider.getUsernameFromClaims(claims);
+                    Long userId = jwtTokenProvider.getUserIdFromClaims(claims);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("用户 {} 认证成功", username);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+
+                    // 优先使用 JWT 中的 userId；若旧 Token 无 userId claim，则存入 null
+                    if (userId != null) {
+                        authentication.setDetails(userId);
+                    } else {
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    }
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("用户 {} 认证成功, userId={}", username, userId);
+                } else {
+                    log.debug("请求 {} {} 的JWT token验证未通过", method, requestURI);
+                }
             } else {
                 log.debug("请求 {} {} 没有有效的JWT token", method, requestURI);
             }
