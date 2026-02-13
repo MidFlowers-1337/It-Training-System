@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -54,6 +55,7 @@ public class UserController {
 
     @Operation(summary = "创建用户")
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public R<UserResponse> createUser(@Valid @RequestBody UserCreateRequest request) {
         UserResponse user = userService.createUser(request);
         return R.ok(user);
@@ -61,6 +63,7 @@ public class UserController {
 
     @Operation(summary = "更新用户")
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
         UserResponse user = userService.updateUser(id, request);
         return R.ok(user);
@@ -68,6 +71,7 @@ public class UserController {
 
     @Operation(summary = "删除用户")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return R.ok();
@@ -75,6 +79,7 @@ public class UserController {
 
     @Operation(summary = "重置用户密码")
     @PatchMapping("/{id}/password")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody PasswordResetRequest request) {
         userService.resetPassword(id, request);
         return R.ok();
@@ -82,6 +87,7 @@ public class UserController {
 
     @Operation(summary = "更新用户状态")
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<Void> updateStatus(
             @PathVariable Long id,
             @Parameter(description = "状态: 0-禁用, 1-启用") @RequestParam Integer status) {

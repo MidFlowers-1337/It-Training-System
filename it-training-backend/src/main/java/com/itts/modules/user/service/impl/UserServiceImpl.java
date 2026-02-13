@@ -7,6 +7,7 @@ import com.itts.enums.UserStatus;
 import com.itts.enums.DeleteFlag;
 import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
+import com.itts.common.security.JwtTokenProvider;
 import com.itts.modules.user.dto.PasswordResetRequest;
 import com.itts.modules.user.dto.UserCreateRequest;
 import com.itts.modules.user.dto.UserResponse;
@@ -16,7 +17,6 @@ import com.itts.modules.user.mapper.SysUserMapper;
 import com.itts.modules.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +32,7 @@ public class UserServiceImpl implements UserService {
 
     private final SysUserMapper sysUserMapper;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     public IPage<UserResponse> listUsers(int page, int size, String role, String keyword) {
@@ -74,7 +75,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserResponse createUser(UserCreateRequest request) {
         log.info("创建用户: {}", request.getUsername());
 
@@ -85,7 +86,11 @@ public class UserServiceImpl implements UserService {
         }
 
         SysUser user = new SysUser();
-        BeanUtils.copyProperties(request, user);
+        user.setUsername(request.getUsername());
+        user.setRealName(request.getRealName());
+        user.setPhone(request.getPhone());
+        user.setEmail(request.getEmail());
+        user.setRole(request.getRole());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setStatus(UserStatus.ENABLED.getCode()); // 默认启用
         user.setDeleted(DeleteFlag.NOT_DELETED);
@@ -97,7 +102,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
         log.info("更新用户: {}", id);
 
@@ -133,7 +138,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteUser(Long id) {
         log.info("删除用户: {}", id);
 
@@ -150,7 +155,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void resetPassword(Long id, PasswordResetRequest request) {
         log.info("重置用户密码: {}", id);
 
@@ -162,11 +167,14 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         sysUserMapper.updateById(user);
 
+        // 使目标用户的Token失效，强制重新登录
+        jwtTokenProvider.invalidateToken(user.getUsername());
+
         log.info("用户密码重置成功: {}", id);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateStatus(Long id, Integer status) {
         log.info("更新用户状态: {}, status: {}", id, status);
 
@@ -185,8 +193,17 @@ public class UserServiceImpl implements UserService {
      * 转换为响应对象
      */
     private UserResponse convertToResponse(SysUser user) {
-        UserResponse response = new UserResponse();
-        BeanUtils.copyProperties(user, response);
-        return response;
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .realName(user.getRealName())
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .role(user.getRole())
+                .status(user.getStatus())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
     }
 }

@@ -3,11 +3,12 @@ package com.itts.modules.user.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
+import com.itts.common.security.JwtTokenProvider;
 import com.itts.common.util.VerificationCodeUtil;
 import com.itts.enums.UserStatus;
 import com.itts.modules.learning.mapper.LearningProgressMapper;
-import com.itts.modules.learning.mapper.StudyCheckinMapper;
-import com.itts.modules.learning.mapper.UserAchievementMapper;
+import com.itts.modules.checkin.mapper.StudyCheckinMapper;
+import com.itts.modules.achievement.mapper.UserAchievementMapper;
 import com.itts.modules.learning.mapper.UserLearningStatsMapper;
 import com.itts.modules.student.mapper.UserChapterProgressMapper;
 import com.itts.modules.student.mapper.UserLearningStreakMapper;
@@ -39,6 +40,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final SysUserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final VerificationCodeUtil verificationCodeUtil;
+    private final JwtTokenProvider jwtTokenProvider;
     private final com.itts.modules.notification.service.NotificationService notificationService;
 
     // 学习数据相关的Mapper
@@ -60,7 +62,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserResponse updateProfile(Long userId, ProfileUpdateRequest request) {
         SysUser user = userMapper.selectById(userId);
         if (user == null) {
@@ -90,7 +92,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void changePassword(Long userId, ChangePasswordRequest request) {
         // 验证两次密码是否一致
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
@@ -112,11 +114,14 @@ public class ProfileServiceImpl implements ProfileService {
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
 
+        // 使旧Token失效，强制重新登录
+        jwtTokenProvider.invalidateToken(user.getUsername());
+
         log.info("用户 {} 修改了密码", userId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public String updateAvatar(Long userId, String avatarUrl) {
         SysUser user = userMapper.selectById(userId);
         if (user == null) {
@@ -151,7 +156,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void bindEmail(Long userId, String email, String code) {
         // 验证验证码
         if (!verificationCodeUtil.verifyEmailCode(email, code)) {
@@ -181,7 +186,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void bindPhone(Long userId, String phone, String code) {
         // 验证验证码
         if (!verificationCodeUtil.verifyPhoneCode(phone, code)) {
@@ -230,7 +235,7 @@ public class ProfileServiceImpl implements ProfileService {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "发送验证码失败，请稍后重试");
         }
 
-        log.info("发送邮箱验证码成功:  -> {}", maskEmail(email), code);
+        log.info("发送邮箱验证码成功: {}", maskEmail(email));
     }
 
     @Override
@@ -253,12 +258,12 @@ public class ProfileServiceImpl implements ProfileService {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "发送验证码失败，请稍后重试");
         }
 
-        log.info("发送手机验证码成功: {} -> {}", maskPhone(phone), code);
+        log.info("发送手机验证码成功: {}", maskPhone(phone));
     }
 
     @Override
-    @Transactional
-    public void deleteAccount(Long userId, String password) {
+    @Transactional(rollbackFor = Exception.class)
+    public void disableAccount(Long userId, String password) {
         SysUser user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
@@ -274,11 +279,14 @@ public class ProfileServiceImpl implements ProfileService {
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
 
-        log.info("用户 {} 注销了账号", userId);
+        // 使Token失效，强制登出
+        jwtTokenProvider.invalidateToken(user.getUsername());
+
+        log.info("用户 {} 停用了账号", userId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void clearLearningData(Long userId, String password) {
         SysUser user = userMapper.selectById(userId);
         if (user == null) {
@@ -298,8 +306,8 @@ public class ProfileServiceImpl implements ProfileService {
 
         // 删除打卡记录
         studyCheckinMapper.delete(
-            new LambdaQueryWrapper<com.itts.modules.learning.entity.StudyCheckin>()
-                .eq(com.itts.modules.learning.entity.StudyCheckin::getUserId, userId)
+            new LambdaQueryWrapper<com.itts.modules.checkin.entity.StudyCheckin>()
+                .eq(com.itts.modules.checkin.entity.StudyCheckin::getUserId, userId)
         );
 
         // 删除学习统计
@@ -310,8 +318,8 @@ public class ProfileServiceImpl implements ProfileService {
 
         // 删除用户成就
         userAchievementMapper.delete(
-            new LambdaQueryWrapper<com.itts.modules.learning.entity.UserAchievement>()
-                .eq(com.itts.modules.learning.entity.UserAchievement::getUserId, userId)
+            new LambdaQueryWrapper<com.itts.modules.achievement.entity.UserAchievement>()
+                .eq(com.itts.modules.achievement.entity.UserAchievement::getUserId, userId)
         );
 
         // 删除章节进度
@@ -339,17 +347,17 @@ public class ProfileServiceImpl implements ProfileService {
      * 转换为响应对象
      */
     private UserResponse convertToResponse(SysUser user) {
-        UserResponse response = new UserResponse();
-        response.setId(user.getId());
-        response.setUsername(user.getUsername());
-        response.setRealName(user.getRealName());
-        response.setEmail(user.getEmail());
-        response.setPhone(user.getPhone());
-        response.setAvatar(user.getAvatar());
-        response.setRole(user.getRole());
-        response.setStatus(user.getStatus());
-        response.setCreatedAt(user.getCreatedAt());
-        return response;
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .realName(user.getRealName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .avatar(user.getAvatar())
+                .role(user.getRole())
+                .status(user.getStatus())
+                .createdAt(user.getCreatedAt())
+                .build();
     }
 
     /**

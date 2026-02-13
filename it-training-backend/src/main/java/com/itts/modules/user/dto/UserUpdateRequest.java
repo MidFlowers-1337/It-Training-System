@@ -1,6 +1,8 @@
 package com.itts.modules.user.dto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -32,6 +34,7 @@ public class UserUpdateRequest {
     /**
      * 头像URL
      */
+    @Size(max = 500, message = "头像URL不能超过500个字符")
     private String avatar;
 
     /**
@@ -43,5 +46,7 @@ public class UserUpdateRequest {
     /**
      * 状态: 0-禁用, 1-启用
      */
+    @Min(value = 0, message = "状态值最小为0")
+    @Max(value = 1, message = "状态值最大为1")
     private Integer status;
 }

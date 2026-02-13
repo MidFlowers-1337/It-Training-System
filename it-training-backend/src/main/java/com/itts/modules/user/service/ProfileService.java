@@ -77,11 +77,11 @@ public interface ProfileService {
     void sendPhoneCode(String phone);
 
     /**
-     * 注销账号
+     * 停用账号（软删除）
      * @param userId 用户ID
      * @param password 密码确认
      */
-    void deleteAccount(Long userId, String password);
+    void disableAccount(Long userId, String password);
 
     /**
      * 清除学习数据
