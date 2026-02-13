@@ -96,4 +96,52 @@
         ORDER BY e.enrolled_at DESC
     </select>
 
+    <!-- 分页查询用户的报名列表（带关联信息） -->
+    <select id="selectUserEnrollmentsPage" resultMap="EnrollmentWithDetailsMap">
+        SELECT
+            e.*,
+            u.username AS user_name,
+            u.real_name AS real_name,
+            u.email AS student_email,
+            u.phone AS student_phone,
+            cs.session_code AS session_code,
+            cs.course_id AS course_id,
+            c.name AS course_name,
+            c.cover_image AS cover_image,
+            i.real_name AS instructor_name,
+            cs.start_date AS start_date,
+            cs.end_date AS end_date,
+            cs.schedule AS schedule
+        FROM enrollment e
+        LEFT JOIN sys_user u ON e.user_id = u.id AND u.deleted = 0
+        LEFT JOIN class_session cs ON e.session_id = cs.id AND cs.deleted = 0
+        LEFT JOIN course c ON cs.course_id = c.id AND c.deleted = 0
+        LEFT JOIN sys_user i ON cs.instructor_id = i.id AND i.deleted = 0
+        WHERE e.user_id = #{userId}
+        ORDER BY e.enrolled_at DESC
+    </select>
+
+    <!-- 查询所有报名记录（带关联信息，用于数据导出） -->
+    <select id="selectAllWithDetails" resultMap="EnrollmentWithDetailsMap">
+        SELECT
+            e.*,
+            u.username AS user_name,
+            u.real_name AS real_name,
+            u.email AS student_email,
+            u.phone AS student_phone,
+            cs.session_code AS session_code,
+            cs.course_id AS course_id,
+            c.name AS course_name,
+            i.real_name AS instructor_name,
+            cs.start_date AS start_date,
+            cs.end_date AS end_date
+        FROM enrollment e
+        LEFT JOIN sys_user u ON e.user_id = u.id AND u.deleted = 0
+        LEFT JOIN class_session cs ON e.session_id = cs.id AND cs.deleted = 0
+        LEFT JOIN course c ON cs.course_id = c.id AND c.deleted = 0
+        LEFT JOIN sys_user i ON cs.instructor_id = i.id AND i.deleted = 0
+        WHERE e.status = 0
+        ORDER BY e.enrolled_at DESC
+    </select>
+
 </mapper>

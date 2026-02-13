@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itts.modules.course.mapper.CourseChapterMapper">
+
+    <!--
+        批量更新章节排序（单条 CASE WHEN SQL，替代 N 次单独 UPDATE）
+        参数: chapters - 包含 id 和 sortOrder 的 CourseChapter 列表
+    -->
+    <update id="batchUpdateSortOrder" parameterType="java.util.List">
+        UPDATE course_chapter
+        SET sort_order = CASE id
+            <foreach collection="list" item="chapter">
+                WHEN #{chapter.id} THEN #{chapter.sortOrder}
+            </foreach>
+            END,
+            updated_at = NOW()
+        WHERE id IN
+        <foreach collection="list" item="chapter" open="(" separator="," close=")">
+            #{chapter.id}
+        </foreach>
+    </update>
+
+</mapper>

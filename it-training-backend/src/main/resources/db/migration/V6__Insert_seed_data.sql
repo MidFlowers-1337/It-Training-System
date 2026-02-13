@@ -11,21 +11,22 @@
 -- ⚠️ 安全警告：以下为开发/演示环境种子数据，生产环境部署前必须：
 -- 1. 删除或禁用这些默认账号
 -- 2. 创建新的管理员账号并使用强密码
--- 密码已使用 BCrypt 加密存储
+-- 密码已使用 BCrypt 加密存储（明文: 123456）
+-- 注意: 使用 $2a$ 前缀（Java BCryptPasswordEncoder 默认版本）
 
 -- 管理员账号
 INSERT INTO `sys_user` (`id`, `username`, `password`, `real_name`, `phone`, `email`, `role`, `status`, `created_at`, `updated_at`, `deleted`) VALUES
-(1, 'admin', '$2b$10$UCX431UHSL5y.rSbpaFOQutyeX2APsSnQqcTvgpQuuPYJLwVdPphi', '系统管理员', '13800138000', 'admin@itts.com', 'ADMIN', 1, NOW(), NOW(), 0);
+(1, 'admin', '$2a$10$I115tnj/xbtbXN9GQTyRs..NDtvu9i99vECjfrSJmjTk2SrFQOX4a', '系统管理员', '13800138000', 'admin@itts.com', 'ADMIN', 1, NOW(), NOW(), 0);
 
 -- 示例讲师账号
 INSERT INTO `sys_user` (`id`, `username`, `password`, `real_name`, `phone`, `email`, `role`, `status`, `created_at`, `updated_at`, `deleted`) VALUES
-(2, 'teacher1', '$2b$10$UCX431UHSL5y.rSbpaFOQutyeX2APsSnQqcTvgpQuuPYJLwVdPphi', '张老师', '13800138001', 'zhang@itts.com', 'INSTRUCTOR', 1, NOW(), NOW(), 0),
-(3, 'teacher2', '$2b$10$UCX431UHSL5y.rSbpaFOQutyeX2APsSnQqcTvgpQuuPYJLwVdPphi', '李老师', '13800138002', 'li@itts.com', 'INSTRUCTOR', 1, NOW(), NOW(), 0);
+(2, 'teacher1', '$2a$10$I115tnj/xbtbXN9GQTyRs..NDtvu9i99vECjfrSJmjTk2SrFQOX4a', '张老师', '13800138001', 'zhang@itts.com', 'INSTRUCTOR', 1, NOW(), NOW(), 0),
+(3, 'teacher2', '$2a$10$I115tnj/xbtbXN9GQTyRs..NDtvu9i99vECjfrSJmjTk2SrFQOX4a', '李老师', '13800138002', 'li@itts.com', 'INSTRUCTOR', 1, NOW(), NOW(), 0);
 
 -- 示例学员账号
 INSERT INTO `sys_user` (`id`, `username`, `password`, `real_name`, `phone`, `email`, `role`, `status`, `created_at`, `updated_at`, `deleted`) VALUES
-(4, 'student1', '$2b$10$UCX431UHSL5y.rSbpaFOQutyeX2APsSnQqcTvgpQuuPYJLwVdPphi', '王同学', '13800138003', 'wang@student.com', 'STUDENT', 1, NOW(), NOW(), 0),
-(5, 'student2', '$2b$10$UCX431UHSL5y.rSbpaFOQutyeX2APsSnQqcTvgpQuuPYJLwVdPphi', '赵同学', '13800138004', 'zhao@student.com', 'STUDENT', 1, NOW(), NOW(), 0);
+(4, 'student1', '$2a$10$I115tnj/xbtbXN9GQTyRs..NDtvu9i99vECjfrSJmjTk2SrFQOX4a', '王同学', '13800138003', 'wang@student.com', 'STUDENT', 1, NOW(), NOW(), 0),
+(5, 'student2', '$2a$10$I115tnj/xbtbXN9GQTyRs..NDtvu9i99vECjfrSJmjTk2SrFQOX4a', '赵同学', '13800138004', 'zhao@student.com', 'STUDENT', 1, NOW(), NOW(), 0);
 
 -- ============================================================================
 -- 2. 示例课程数据
