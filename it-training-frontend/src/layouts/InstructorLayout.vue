@@ -1,159 +1,409 @@
 <template>
-  <div class="min-h-screen bg-bg-primary flex">
-    <!-- Sidebar -->
-    <aside
-      class="bg-bg-secondary/70 backdrop-blur-xl border-r border-border-color/60 flex flex-col transition-all duration-300"
-      :class="isCollapse ? 'w-16' : 'w-64'"
-    >
-      <div class="h-16 flex items-center justify-center border-b border-border-color/60">
-        <div class="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-base">
-          IT
-        </div>
-        <span v-if="!isCollapse" class="ml-3 font-bold text-text-primary text-lg">讲师工作台</span>
+  <div :class="['instructor-layout', `instructor-layout--${theme}`]">
+    <!-- ─── Top Navbar ─── -->
+    <header :class="['instructor-navbar', scrolled && 'shadow-sm']">
+      <div class="flex items-center gap-8">
+        <!-- Logo -->
+        <router-link to="/instructor/sessions" class="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+          <div class="instructor-logo">
+            <span class="text-white font-bold text-xs">讲</span>
+          </div>
+          <span class="instructor-brand-text">讲师工作台</span>
+        </router-link>
+
+        <!-- Desktop Nav -->
+        <nav class="hidden lg:flex items-center gap-1">
+          <router-link to="/instructor/sessions"
+            :class="['instructor-nav-link', route.path === '/instructor/sessions' && 'instructor-nav-link--active']">
+            <CalendarRangeIcon class="w-4 h-4" :stroke-width="1.75" />
+            我的班期
+            <div v-if="route.path === '/instructor/sessions'" class="instructor-active-bar"></div>
+          </router-link>
+        </nav>
       </div>
 
-      <nav class="flex-1 py-4 overflow-y-auto">
-        <ul class="space-y-1 px-2">
-          <li v-for="item in menuItems" :key="item.path">
-            <router-link
-              :to="item.path"
-              class="flex items-center px-3 py-2.5 rounded-xl text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/60 transition-all border border-transparent"
-              active-class="bg-primary/10 text-primary border-primary/20"
-            >
-              <component :is="item.icon" class="w-5 h-5 flex-shrink-0" />
-              <span v-if="!isCollapse" class="ml-3 font-medium">{{ item.title }}</span>
-            </router-link>
-          </li>
-        </ul>
-      </nav>
+      <div class="flex items-center gap-3">
+        <ThemeSwitcher />
+        <router-link to="/student/dashboard" class="instructor-back-link">
+          <ArrowLeft class="w-3.5 h-3.5" :stroke-width="1.75" />
+          返回前台
+        </router-link>
+      </div>
+    </header>
 
-      <button
-        type="button"
-        @click="toggleCollapse"
-        class="h-12 flex items-center justify-center border-t border-border-color/60 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/60 transition-colors"
-      >
-        <component :is="isCollapse ? IconChevronsRight : IconChevronsLeft" class="w-5 h-5" />
-      </button>
-    </aside>
+    <!-- ─── Mobile Nav (hamburger) ─── -->
+    <Transition name="instructor-slide">
+      <div v-if="mobileMenuOpen" class="instructor-mobile-menu lg:hidden">
+        <router-link to="/instructor/sessions" @click="mobileMenuOpen = false"
+          :class="['instructor-mobile-link', route.path === '/instructor/sessions' && 'instructor-mobile-link--active']">
+          <CalendarRangeIcon class="w-4 h-4" :stroke-width="1.75" />
+          我的班期
+        </router-link>
+        <div class="instructor-mobile-divider"></div>
+        <router-link to="/student/dashboard" @click="mobileMenuOpen = false" class="instructor-mobile-link">
+          <ArrowLeft class="w-4 h-4" :stroke-width="1.75" />
+          返回前台
+        </router-link>
+      </div>
+    </Transition>
 
-    <!-- Main -->
-    <div class="flex-1 flex flex-col min-w-0">
-      <header class="h-16 bg-bg-secondary/70 backdrop-blur-xl border-b border-border-color/60 shadow-sm flex items-center justify-between px-6 sticky top-0 z-40">
-        <div class="flex items-center text-text-secondary text-sm">
-          <span class="text-text-muted">当前位置：</span>
-          <span class="text-text-primary ml-2 font-medium">{{ currentRouteName }}</span>
-        </div>
+    <!-- Mobile hamburger button (floats at top-right area within navbar on mobile) -->
+    <button @click="mobileMenuOpen = !mobileMenuOpen" class="instructor-hamburger lg:hidden">
+      <Menu class="w-5 h-5" :stroke-width="1.75" />
+    </button>
 
-        <div class="flex items-center gap-4">
-          <ThemeSwitcher />
-
-          <el-dropdown trigger="click" @command="handleCommand">
-            <div class="flex items-center gap-3 cursor-pointer hover:bg-bg-tertiary/60 px-3 py-1.5 rounded-xl transition-colors">
-              <div class="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
-                {{ userInitial }}
-              </div>
-              <div class="hidden md:block text-left">
-                <div class="text-sm font-medium text-text-primary">{{ userStore.realName || userStore.username || '讲师' }}</div>
-                <div class="text-xs text-text-muted">讲师</div>
-              </div>
-              <IconChevronDown class="w-4 h-4 text-text-muted" />
-            </div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="student">学员端</el-dropdown-item>
-                <el-dropdown-item command="logout" divided class="text-error">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
-      </header>
-
-      <main class="flex-1 overflow-y-auto p-6">
-        <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
-      </main>
-    </div>
+    <!-- ─── Content ─── -->
+    <main class="instructor-content">
+      <div class="max-w-7xl mx-auto px-6 lg:px-8 py-6 lg:py-8">
+        <slot />
+      </div>
+    </main>
   </div>
 </template>
 
-<script setup>
-import { computed, ref, h } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useUserStore } from '@/store/user'
-import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useThemeStore } from '@/stores/theme'
+import { useScrolled } from '@/composables/useScrolled'
+import ThemeSwitcher from '@/components/patterns/ThemeSwitcher.vue'
+import { CalendarRange as CalendarRangeIcon, ArrowLeft, Menu } from 'lucide-vue-next'
 
 const route = useRoute()
-const router = useRouter()
-const userStore = useUserStore()
-
-const isCollapse = ref(false)
-
-// 内联 SVG 图标组件
-const IconCalendarDays = {
-  render: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('path', { d: 'M8 2v4' }), h('path', { d: 'M16 2v4' }),
-    h('rect', { width: '18', height: '18', x: '3', y: '4', rx: '2' }),
-    h('path', { d: 'M3 10h18' }),
-    h('path', { d: 'M8 14h.01' }), h('path', { d: 'M12 14h.01' }), h('path', { d: 'M16 14h.01' }),
-    h('path', { d: 'M8 18h.01' }), h('path', { d: 'M12 18h.01' }), h('path', { d: 'M16 18h.01' })
-  ])
-}
-
-const IconChevronDown = {
-  render: () => h('svg', { class: 'w-4 h-4', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('path', { d: 'm6 9 6 6 6-6' })
-  ])
-}
-
-const IconChevronsLeft = {
-  render: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('path', { d: 'm11 17-5-5 5-5' }), h('path', { d: 'm18 17-5-5 5-5' })
-  ])
-}
-
-const IconChevronsRight = {
-  render: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('path', { d: 'm6 17 5-5-5-5' }), h('path', { d: 'm13 17 5-5-5-5' })
-  ])
-}
-
-const menuItems = [{ path: '/instructor/sessions', title: '我的班期', icon: IconCalendarDays }]
-
-const currentRouteName = computed(() => {
-  const item = menuItems.find((i) => i.path === route.path)
-  return item ? item.title : '讲师工作台'
-})
-
-const userInitial = computed(() => {
-  const name = userStore.realName || userStore.username || 'T'
-  return name.charAt(0).toUpperCase()
-})
-
-const toggleCollapse = () => {
-  isCollapse.value = !isCollapse.value
-}
-
-const handleCommand = (command) => {
-  if (command === 'logout') {
-    userStore.logout()
-    router.push('/login')
-  } else if (command === 'student') {
-    router.push('/home')
-  }
-}
+const themeStore = useThemeStore()
+const theme = computed(() => themeStore.theme)
+const { scrolled } = useScrolled()
+const mobileMenuOpen = ref(false)
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
+/* ── Layout ── */
+.instructor-layout {
+  min-height: 100vh;
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+/* ── Navbar ── */
+.instructor-navbar {
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  transition: box-shadow 0.2s;
 }
+
+.instructor-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.instructor-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.instructor-active-bar {
+  position: absolute;
+  bottom: -9px;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.instructor-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s, opacity 0.15s;
+}
+.instructor-back-link:hover { opacity: 0.8; }
+
+/* ── Content ── */
+.instructor-content {
+  flex: 1;
+  min-height: calc(100vh - 3rem);
+}
+
+/* ── Mobile hamburger ── */
+.instructor-hamburger {
+  position: fixed;
+  top: 8px;
+  right: 16px;
+  z-index: 41;
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+/* ── Mobile Menu ── */
+.instructor-mobile-menu {
+  position: fixed;
+  top: 3rem;
+  left: 0;
+  right: 0;
+  z-index: 39;
+  padding: 8px 16px;
+}
+
+.instructor-mobile-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.instructor-mobile-divider {
+  height: 1px;
+  margin: 4px 0;
+}
+
+/* ══════════════════════════════════════════
+   Theme: Light (Notion-like)
+   ══════════════════════════════════════════ */
+.instructor-layout--light {
+  background: #F6F9FC;
+  color: #0A2540;
+}
+.instructor-layout--light .instructor-navbar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #E3E8EE;
+}
+.instructor-layout--light .instructor-logo {
+  background: #059669;
+}
+.instructor-layout--light .instructor-brand-text {
+  color: #0A2540;
+  font-weight: 600;
+  font-size: 14px;
+}
+.instructor-layout--light .instructor-nav-link {
+  color: #425466;
+}
+.instructor-layout--light .instructor-nav-link:hover { color: #0A2540; }
+.instructor-layout--light .instructor-nav-link--active { color: #059669; }
+.instructor-layout--light .instructor-active-bar {
+  background: #059669;
+}
+.instructor-layout--light .instructor-back-link {
+  color: #8898AA;
+}
+.instructor-layout--light .instructor-back-link:hover { color: #059669; }
+.instructor-layout--light .instructor-hamburger {
+  color: #425466;
+  background: transparent;
+}
+.instructor-layout--light .instructor-hamburger:hover { background: #F6F9FC; }
+.instructor-layout--light .instructor-mobile-menu {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E3E8EE;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.instructor-layout--light .instructor-mobile-link { color: #425466; }
+.instructor-layout--light .instructor-mobile-link:hover { background: #F6F9FC; }
+.instructor-layout--light .instructor-mobile-link--active {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.08);
+}
+.instructor-layout--light .instructor-mobile-divider { background: #E3E8EE; }
+
+/* ══════════════════════════════════════════
+   Theme: Dark (Linear-like)
+   ══════════════════════════════════════════ */
+.instructor-layout--dark {
+  background: #08090A;
+  color: #EDEDED;
+}
+.instructor-layout--dark .instructor-navbar {
+  background: rgba(8, 9, 10, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.instructor-layout--dark .instructor-logo {
+  background: #34D399;
+}
+.instructor-layout--dark .instructor-brand-text {
+  color: #EDEDED;
+  font-weight: 600;
+  font-size: 14px;
+}
+.instructor-layout--dark .instructor-nav-link {
+  color: #6B6B6E;
+}
+.instructor-layout--dark .instructor-nav-link:hover { color: #A0A0A5; }
+.instructor-layout--dark .instructor-nav-link--active { color: #34D399; }
+.instructor-layout--dark .instructor-active-bar {
+  background: #34D399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.5), 0 0 20px rgba(52, 211, 153, 0.2);
+}
+.instructor-layout--dark .instructor-back-link {
+  color: #6B6B6E;
+}
+.instructor-layout--dark .instructor-back-link:hover { color: #34D399; }
+.instructor-layout--dark .instructor-hamburger {
+  color: #6B6B6E;
+  background: transparent;
+}
+.instructor-layout--dark .instructor-hamburger:hover { background: rgba(255, 255, 255, 0.04); }
+.instructor-layout--dark .instructor-mobile-menu {
+  background: #161618;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+.instructor-layout--dark .instructor-mobile-link { color: #A0A0A5; }
+.instructor-layout--dark .instructor-mobile-link:hover { background: rgba(255, 255, 255, 0.04); }
+.instructor-layout--dark .instructor-mobile-link--active {
+  color: #34D399;
+  background: rgba(52, 211, 153, 0.08);
+}
+.instructor-layout--dark .instructor-mobile-divider { background: rgba(255, 255, 255, 0.04); }
+
+/* ══════════════════════════════════════════
+   Theme: Warm (Slack-like)
+   ══════════════════════════════════════════ */
+.instructor-layout--warm {
+  background: #FFFBF5;
+  color: #292524;
+}
+.instructor-layout--warm .instructor-navbar {
+  background: rgba(255, 251, 245, 0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #E7E5E4;
+}
+.instructor-layout--warm .instructor-logo {
+  background: #059669;
+  border-radius: 10px;
+}
+.instructor-layout--warm .instructor-brand-text {
+  color: #292524;
+  font-weight: 700;
+  font-size: 14px;
+}
+.instructor-layout--warm .instructor-nav-link {
+  color: #78716C;
+}
+.instructor-layout--warm .instructor-nav-link:hover { color: #292524; }
+.instructor-layout--warm .instructor-nav-link--active { color: #059669; }
+.instructor-layout--warm .instructor-active-bar {
+  background: #059669;
+}
+.instructor-layout--warm .instructor-back-link {
+  color: #78716C;
+}
+.instructor-layout--warm .instructor-back-link:hover { color: #059669; }
+.instructor-layout--warm .instructor-hamburger {
+  color: #78716C;
+  background: transparent;
+}
+.instructor-layout--warm .instructor-hamburger:hover { background: #FEF3C7; }
+.instructor-layout--warm .instructor-mobile-menu {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E7E5E4;
+  box-shadow: 0 4px 12px rgba(120, 80, 20, 0.08);
+}
+.instructor-layout--warm .instructor-mobile-link { color: #78716C; }
+.instructor-layout--warm .instructor-mobile-link:hover { background: #FEF3C7; }
+.instructor-layout--warm .instructor-mobile-link--active {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.08);
+}
+.instructor-layout--warm .instructor-mobile-divider { background: #E7E5E4; }
+
+/* ══════════════════════════════════════════
+   Theme: Pro (Vercel-like)
+   ══════════════════════════════════════════ */
+.instructor-layout--pro {
+  background: #F8FAFC;
+  color: #0F172A;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.instructor-layout--pro .instructor-navbar {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #E2E8F0;
+}
+.instructor-layout--pro .instructor-logo {
+  background: transparent;
+  width: auto;
+  height: auto;
+}
+.instructor-layout--pro .instructor-logo span {
+  color: #059669;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 16px;
+  font-weight: 900;
+}
+.instructor-layout--pro .instructor-brand-text {
+  color: #0F172A;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-weight: 600;
+  font-size: 13px;
+}
+.instructor-layout--pro .instructor-nav-link {
+  color: #64748B;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+}
+.instructor-layout--pro .instructor-nav-link:hover { color: #0F172A; }
+.instructor-layout--pro .instructor-nav-link--active { color: #059669; font-weight: 600; }
+.instructor-layout--pro .instructor-active-bar {
+  background: #059669;
+  height: 1px;
+}
+.instructor-layout--pro .instructor-back-link {
+  color: #64748B;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+}
+.instructor-layout--pro .instructor-back-link:hover { color: #059669; }
+.instructor-layout--pro .instructor-hamburger {
+  color: #64748B;
+  background: transparent;
+}
+.instructor-layout--pro .instructor-hamburger:hover { background: #F1F5F9; }
+.instructor-layout--pro .instructor-mobile-menu {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+.instructor-layout--pro .instructor-mobile-link {
+  color: #64748B;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+}
+.instructor-layout--pro .instructor-mobile-link:hover { background: #F1F5F9; }
+.instructor-layout--pro .instructor-mobile-link--active {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.06);
+}
+.instructor-layout--pro .instructor-mobile-divider { background: #E2E8F0; }
+
+/* ── Transitions ── */
+.instructor-slide-enter-active { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.instructor-slide-leave-active { transition: all 0.15s ease-in; }
+.instructor-slide-enter-from { opacity: 0; transform: translateY(-8px); }
+.instructor-slide-leave-to { opacity: 0; transform: translateY(-4px); }
 </style>
