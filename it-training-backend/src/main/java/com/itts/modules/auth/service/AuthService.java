@@ -33,4 +33,11 @@ public interface AuthService {
      * @return Token响应（包含用户信息）
      */
     TokenResponse getCurrentUser();
+
+    /**
+     * 刷新 Access Token
+     * @param refreshToken Refresh Token
+     * @return 新的 Token 响应
+     */
+    TokenResponse refresh(String refreshToken);
 }

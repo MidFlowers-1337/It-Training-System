@@ -2,6 +2,7 @@ package com.itts.modules.auth.controller;
 
 import com.itts.common.response.R;
 import com.itts.modules.auth.dto.LoginRequest;
+import com.itts.modules.auth.dto.RefreshTokenRequest;
 import com.itts.modules.auth.dto.RegisterRequest;
 import com.itts.modules.auth.dto.TokenResponse;
 import com.itts.modules.auth.service.AuthService;
@@ -51,6 +52,13 @@ public class AuthController {
     @GetMapping("/me")
     public R<TokenResponse> getCurrentUser() {
         TokenResponse response = authService.getCurrentUser();
+        return R.ok(response);
+    }
+
+    @Operation(summary = "刷新 Access Token", description = "使用 Refresh Token 获取新的 Access Token")
+    @PostMapping("/refresh")
+    public R<TokenResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        TokenResponse response = authService.refresh(request.getRefreshToken());
         return R.ok(response);
     }
 }
