@@ -1,8 +1,9 @@
 # IT技能培训智能选课系统 - Docker Compose 配置
-# 版本: 1.0.0
+# 版本: 2.0.0
+# 使用方式: cp .env.example .env && docker-compose up -d
 
 services:
-  # MySQL 数据库（或使用 TiDB）
+  # MySQL 数据库
   mysql:
     image: mysql:8.0
     container_name: it-training-mysql
@@ -17,7 +18,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./docs/04-DB/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # 注意: 数据库迁移由 Flyway 自动执行，无需手动导入 SQL
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -31,7 +32,7 @@ services:
     networks:
       - it-training-network
 
-  # 后端服务
+  # 后端服务（Spring Boot 3 + JDK 17）
   backend:
     build:
       context: ./it-training-backend
@@ -39,17 +40,22 @@ services:
     container_name: it-training-backend
     restart: unless-stopped
     environment:
-      # 数据库配置
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      # Spring Profile（生产环境使用 prod,mysql）
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod,mysql}
+      # 数据库配置（Spring Boot 自动绑定至 spring.datasource.*）
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/it_training?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-itts}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-itts123456}
       # JWT 配置
       JWT_SECRET: ${JWT_SECRET:-your-production-secret-key-must-be-at-least-32-characters}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
-      # AI 配置
+      # CORS 跨域配置
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
+      # AI 配置（可选，不配置则 AI 推荐降级为规则推荐）
       AI_API_KEY: ${AI_API_KEY:-sk-demo}
       AI_BASE_URL: ${AI_BASE_URL:-https://api.deepseek.com}
       AI_MODEL: ${AI_MODEL:-deepseek-chat}
+      AI_RECOMMEND_ENABLED: ${AI_RECOMMEND_ENABLED:-true}
       # 其他配置
       TZ: Asia/Shanghai
     ports:
@@ -66,7 +72,7 @@ services:
     networks:
       - it-training-network
 
-  # 前端服务
+  # 前端服务（Vue 3 + Nginx）
   frontend:
     build:
       context: ./it-training-frontend
@@ -88,10 +94,30 @@ services:
     networks:
       - it-training-network
 
+  # Redis 缓存（可选，用于验证码缓存和速率限制）
+  # 如需启用，取消注释以下配置，并在 .env 中配置 REDIS_HOST=redis
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: it-training-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
+  #   networks:
+  #     - it-training-network
+
 # 数据卷
 volumes:
   mysql_data:
     driver: local
+  # redis_data:
+  #   driver: local
 
 # 网络
 networks:
