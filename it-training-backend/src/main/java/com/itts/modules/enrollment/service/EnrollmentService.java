@@ -31,6 +31,14 @@ public interface EnrollmentService {
     List<EnrollmentResponse> getMyEnrollments();
 
     /**
+     * 分页获取当前用户的报名列表
+     * @param page 页码
+     * @param size 每页大小
+     * @return 报名分页列表
+     */
+    IPage<EnrollmentResponse> getMyEnrollments(int page, int size);
+
+    /**
      * 分页查询报名列表（管理端）
      * @param page 页码
      * @param size 每页大小

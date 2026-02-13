@@ -11,6 +11,7 @@ import com.itts.modules.enrollment.dto.EnrollmentResponse;
 import com.itts.modules.enrollment.entity.Enrollment;
 import com.itts.modules.enrollment.mapper.EnrollmentMapper;
 import com.itts.modules.enrollment.service.EnrollmentService;
+import com.itts.modules.notification.service.SystemNotificationService;
 import com.itts.modules.session.entity.ClassSession;
 import com.itts.modules.session.mapper.ClassSessionMapper;
 import com.itts.common.util.SecurityUtils;
@@ -18,7 +19,6 @@ import com.itts.modules.user.entity.SysUser;
 import com.itts.modules.user.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,9 +39,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final EnrollmentMapper enrollmentMapper;
     private final ClassSessionMapper classSessionMapper;
     private final SysUserMapper sysUserMapper;
+    private final SystemNotificationService systemNotificationService;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public EnrollmentResponse enroll(Long sessionId) {
         // 获取当前用户
         Long userId = SecurityUtils.getCurrentUserId();
@@ -80,26 +81,30 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         try {
             enrollmentMapper.insert(enrollment);
         } catch (DuplicateKeyException e) {
-            // 并发插入导致的唯一约束冲突，回滚名额增量
-            classSessionMapper.decrementEnrollment(sessionId);
+            // 并发插入导致的唯一约束冲突，事务回滚会自动撤销 incrementEnrollment 的变更
             throw new BusinessException(ErrorCode.ENROLLMENT_DUPLICATE);
         }
 
         log.info("报名成功: enrollmentId={}", enrollment.getId());
 
-        // 检查是否满员，如果满员则自动更新状态为已满
-        ClassSession updatedSession = classSessionMapper.selectById(sessionId);
-        if (updatedSession.getCurrentEnrollment() >= updatedSession.getMaxCapacity()) {
-            updatedSession.setStatus(SessionStatus.FULL.getCode());
-            classSessionMapper.updateById(updatedSession);
-            log.info("班期已满员，自动关闭报名: sessionId={}", sessionId);
+        // [Phase 6 #15] 发送报名成功通知
+        try {
+            String courseName = session.getCourseName() != null ? session.getCourseName() : "课程";
+            systemNotificationService.sendNotification(
+                userId,
+                "报名成功",
+                "您已成功报名「" + courseName + "」，祝学习愉快！",
+                "ENROLLMENT"
+            );
+        } catch (Exception e) {
+            log.warn("发送报名通知失败，不影响主流程: {}", e.getMessage());
         }
 
         return convertToResponse(enrollment);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void cancelEnrollment(Long enrollmentId, String reason) {
         Long userId = SecurityUtils.getCurrentUserId();
         log.info("取消报名: userId={}, enrollmentId={}", userId, enrollmentId);
@@ -152,6 +157,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
     @Override
+    public IPage<EnrollmentResponse> getMyEnrollments(int page, int size) {
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        Page<Enrollment> pageParam = new Page<>(page, size);
+        IPage<Enrollment> enrollmentPage = enrollmentMapper.selectUserEnrollmentsPage(pageParam, userId);
+
+        return enrollmentPage.convert(this::convertToResponse);
+    }
+
+    @Override
     public IPage<EnrollmentResponse> listEnrollments(int page, int size, Long userId, Long sessionId, Integer status) {
         Page<Enrollment> pageParam = new Page<>(page, size);
 
@@ -174,54 +189,68 @@ public class EnrollmentServiceImpl implements EnrollmentService {
      * 填充关联信息并转换
      */
     private EnrollmentResponse fillAndConvert(Enrollment enrollment) {
-        EnrollmentResponse response = new EnrollmentResponse();
-        BeanUtils.copyProperties(enrollment, response);
+        EnrollmentResponse.EnrollmentResponseBuilder builder = EnrollmentResponse.builder()
+                .id(enrollment.getId())
+                .userId(enrollment.getUserId())
+                .sessionId(enrollment.getSessionId())
+                .status(enrollment.getStatus())
+                .enrolledAt(enrollment.getEnrolledAt())
+                .canceledAt(enrollment.getCanceledAt())
+                .cancelReason(enrollment.getCancelReason());
 
         // 填充用户信息
         SysUser user = sysUserMapper.selectById(enrollment.getUserId());
         if (user != null) {
-            response.setUserName(user.getUsername());
-            response.setRealName(user.getRealName());
+            builder.userName(user.getUsername())
+                   .realName(user.getRealName());
         }
 
         // 填充班期和课程信息
         ClassSession session = classSessionMapper.selectById(enrollment.getSessionId());
         if (session != null) {
-            response.setSessionCode(session.getSessionCode());
-            response.setCourseName(session.getCourseName());
-            response.setInstructorName(session.getInstructorName());
-            response.setStartDate(session.getStartDate());
-            response.setEndDate(session.getEndDate());
-            response.setSchedule(session.getSchedule());
-
-            // 如果班期没有关联信息，再查询一次
-            if (session.getCourseName() == null) {
-                // 这里简化处理，实际可以再查询课程表
-            }
+            builder.sessionCode(session.getSessionCode())
+                   .courseName(session.getCourseName())
+                   .instructorName(session.getInstructorName())
+                   .startDate(session.getStartDate())
+                   .endDate(session.getEndDate())
+                   .schedule(session.getSchedule());
         }
 
         // 设置状态名称
         EnrollmentStatus enrollStatus = EnrollmentStatus.fromCode(enrollment.getStatus());
-        response.setStatusName(enrollStatus != null ? enrollStatus.getDesc() : "未知");
+        builder.statusName(enrollStatus != null ? enrollStatus.getDesc() : "未知");
 
-        return response;
+        return builder.build();
     }
 
     /**
      * 转换为响应对象（用于已填充关联信息的情况）
      */
     private EnrollmentResponse convertToResponse(Enrollment enrollment) {
-        EnrollmentResponse response = new EnrollmentResponse();
-        BeanUtils.copyProperties(enrollment, response);
-
         // 设置状态名称
         EnrollmentStatus status = EnrollmentStatus.fromCode(enrollment.getStatus());
-        response.setStatusName(status != null ? status.getDesc() : "未知");
 
-        // 设置学员信息别名（用于讲师端）
-        response.setStudentName(enrollment.getRealName());
-        response.setStudentUsername(enrollment.getUserName());
-
-        return response;
+        return EnrollmentResponse.builder()
+                .id(enrollment.getId())
+                .userId(enrollment.getUserId())
+                .sessionId(enrollment.getSessionId())
+                .status(enrollment.getStatus())
+                .statusName(status != null ? status.getDesc() : "未知")
+                .enrolledAt(enrollment.getEnrolledAt())
+                .canceledAt(enrollment.getCanceledAt())
+                .cancelReason(enrollment.getCancelReason())
+                .userName(enrollment.getUserName())
+                .realName(enrollment.getRealName())
+                .sessionCode(enrollment.getSessionCode())
+                .courseName(enrollment.getCourseName())
+                .instructorName(enrollment.getInstructorName())
+                .startDate(enrollment.getStartDate())
+                .endDate(enrollment.getEndDate())
+                .schedule(enrollment.getSchedule())
+                .studentEmail(enrollment.getStudentEmail())
+                .studentPhone(enrollment.getStudentPhone())
+                .studentName(enrollment.getRealName())
+                .studentUsername(enrollment.getUserName())
+                .build();
     }
 }
