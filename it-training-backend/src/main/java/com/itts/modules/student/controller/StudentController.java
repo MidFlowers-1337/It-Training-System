@@ -2,16 +2,16 @@ package com.itts.modules.student.controller;
 
 import com.itts.common.response.R;
 import com.itts.common.util.SecurityUtils;
-import com.itts.modules.learning.service.AchievementService;
-import com.itts.modules.learning.dto.AchievementResponse;
+import com.itts.modules.achievement.service.AchievementService;
+import com.itts.modules.achievement.dto.AchievementResponse;
 import com.itts.modules.student.dto.StudentDashboardResponse;
 import com.itts.modules.student.dto.StudentStatsResponse;
+import com.itts.modules.student.service.StudentDashboardService;
 import com.itts.modules.student.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,13 +27,14 @@ import java.util.List;
 public class StudentController {
 
     private final StudentService studentService;
+    private final StudentDashboardService studentDashboardService;
     private final AchievementService achievementService;
 
     @Operation(summary = "获取学生Dashboard数据")
     @GetMapping("/dashboard")
     public R<StudentDashboardResponse> getDashboard() {
         Long userId = SecurityUtils.getCurrentUserId();
-        StudentDashboardResponse dashboard = studentService.getDashboard(userId);
+        StudentDashboardResponse dashboard = studentDashboardService.getDashboard(userId);
         return R.ok(dashboard);
     }
 
