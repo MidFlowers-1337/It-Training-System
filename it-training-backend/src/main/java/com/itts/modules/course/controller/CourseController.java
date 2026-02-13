@@ -3,17 +3,22 @@ package com.itts.modules.course.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itts.common.response.R;
 import com.itts.common.util.SecurityUtils;
+import com.itts.modules.course.dto.CourseChapterCreateRequest;
 import com.itts.modules.course.dto.CourseChapterResponse;
 import com.itts.modules.course.dto.CourseCreateRequest;
 import com.itts.modules.course.dto.CourseResponse;
 import com.itts.modules.course.dto.CourseUpdateRequest;
+import com.itts.modules.course.dto.CourseChapterUpdateRequest;
 import com.itts.modules.course.service.CourseChapterService;
 import com.itts.modules.course.service.CourseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -34,6 +39,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/courses")
 @RequiredArgsConstructor
+@Validated
 public class CourseController {
 
     private final CourseService courseService;
@@ -67,6 +73,7 @@ public class CourseController {
 
     @Operation(summary = "创建课程")
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public R<CourseResponse> createCourse(@Valid @RequestBody CourseCreateRequest request) {
         CourseResponse course = courseService.createCourse(request);
         return R.ok(course);
@@ -74,6 +81,7 @@ public class CourseController {
 
     @Operation(summary = "更新课程")
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<CourseResponse> updateCourse(@PathVariable Long id, @Valid @RequestBody CourseUpdateRequest request) {
         CourseResponse course = courseService.updateCourse(id, request);
         return R.ok(course);
@@ -81,6 +89,7 @@ public class CourseController {
 
     @Operation(summary = "删除课程")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<Void> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
         return R.ok();
@@ -88,6 +97,7 @@ public class CourseController {
 
     @Operation(summary = "发布课程")
     @PatchMapping("/{id}/publish")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<Void> publishCourse(@PathVariable Long id) {
         courseService.publishCourse(id);
         return R.ok();
@@ -95,6 +105,7 @@ public class CourseController {
 
     @Operation(summary = "下架课程")
     @PatchMapping("/{id}/unpublish")
+    @PreAuthorize("hasRole('ADMIN')")
     public R<Void> unpublishCourse(@PathVariable Long id) {
         courseService.unpublishCourse(id);
         return R.ok();
@@ -127,10 +138,50 @@ public class CourseController {
     @PostMapping("/chapters/{chapterId}/progress")
     public R<Void> updateChapterProgress(
             @PathVariable Long chapterId,
-            @RequestParam Integer watchDuration,
-            @RequestParam Integer lastPosition) {
+            @RequestParam @Min(value = 0, message = "观看时长不能为负数") Integer watchDuration,
+            @RequestParam @Min(value = 0, message = "播放位置不能为负数") Integer lastPosition) {
         Long userId = SecurityUtils.getCurrentUserId();
         courseChapterService.updateChapterProgress(chapterId, userId, watchDuration, lastPosition);
+        return R.ok();
+    }
+
+    // ==================== 章节管理 CRUD（管理员专属） ====================
+
+    @Operation(summary = "创建章节")
+    @PostMapping("/{courseId}/chapters")
+    @PreAuthorize("hasRole('ADMIN')")
+    public R<CourseChapterResponse> createChapter(
+            @PathVariable Long courseId,
+            @Valid @RequestBody CourseChapterCreateRequest request) {
+        CourseChapterResponse chapter = courseChapterService.createChapter(courseId, request);
+        return R.ok(chapter);
+    }
+
+    @Operation(summary = "更新章节")
+    @PutMapping("/chapters/{chapterId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public R<CourseChapterResponse> updateChapter(
+            @PathVariable Long chapterId,
+            @Valid @RequestBody CourseChapterUpdateRequest request) {
+        CourseChapterResponse chapter = courseChapterService.updateChapter(chapterId, request);
+        return R.ok(chapter);
+    }
+
+    @Operation(summary = "删除章节")
+    @DeleteMapping("/chapters/{chapterId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public R<Void> deleteChapter(@PathVariable Long chapterId) {
+        courseChapterService.deleteChapter(chapterId);
+        return R.ok();
+    }
+
+    @Operation(summary = "重新排序章节")
+    @PutMapping("/{courseId}/chapters/reorder")
+    @PreAuthorize("hasRole('ADMIN')")
+    public R<Void> reorderChapters(
+            @PathVariable Long courseId,
+            @RequestBody List<Long> chapterIds) {
+        courseChapterService.reorderChapters(courseId, chapterIds);
         return R.ok();
     }
 }
