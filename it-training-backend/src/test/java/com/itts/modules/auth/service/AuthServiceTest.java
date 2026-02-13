@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -86,7 +87,7 @@ class AuthServiceTest {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
         when(sysUserMapper.selectByUsername("testuser")).thenReturn(testUser);
-        when(jwtTokenProvider.generateToken(authentication)).thenReturn("test-jwt-token");
+        when(jwtTokenProvider.generateToken(authentication, 1L)).thenReturn("test-jwt-token");
         when(jwtTokenProvider.getExpirationMs()).thenReturn(86400000L);
 
         // 执行测试
@@ -103,7 +104,7 @@ class AuthServiceTest {
         // 验证调用
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(sysUserMapper).selectByUsername("testuser");
-        verify(jwtTokenProvider).generateToken(authentication);
+        verify(jwtTokenProvider).generateToken(authentication, 1L);
     }
 
     @Test
@@ -163,7 +164,7 @@ class AuthServiceTest {
         Authentication authentication = mock(Authentication.class);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(jwtTokenProvider.generateToken(authentication)).thenReturn("test-jwt-token");
+        when(jwtTokenProvider.generateToken(authentication, 2L)).thenReturn("test-jwt-token");
         when(jwtTokenProvider.getExpirationMs()).thenReturn(86400000L);
 
         // 执行测试

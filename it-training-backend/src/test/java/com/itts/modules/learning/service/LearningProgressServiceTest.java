@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.itts.common.BaseServiceTest;
 import com.itts.modules.course.entity.Course;
 import com.itts.modules.course.mapper.CourseMapper;
+import com.itts.modules.achievement.service.AchievementService;
+import com.itts.modules.checkin.service.StudyCheckinService;
 import com.itts.modules.learning.dto.LearningProgressResponse;
 import com.itts.modules.learning.dto.UpdateProgressRequest;
 import com.itts.modules.learning.entity.LearningProgress;

@@ -1,14 +1,14 @@
-package com.itts.modules.learning.service.impl;
+package com.itts.modules.checkin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.itts.modules.course.entity.Course;
 import com.itts.modules.course.mapper.CourseMapper;
-import com.itts.modules.learning.dto.AchievementResponse;
-import com.itts.modules.learning.dto.StudyCheckinRequest;
-import com.itts.modules.learning.dto.StudyCheckinResponse;
-import com.itts.modules.learning.entity.StudyCheckin;
-import com.itts.modules.learning.mapper.StudyCheckinMapper;
-import com.itts.modules.learning.service.AchievementService;
+import com.itts.modules.achievement.dto.AchievementResponse;
+import com.itts.modules.checkin.dto.StudyCheckinRequest;
+import com.itts.modules.checkin.dto.StudyCheckinResponse;
+import com.itts.modules.checkin.entity.StudyCheckin;
+import com.itts.modules.checkin.mapper.StudyCheckinMapper;
+import com.itts.modules.achievement.service.AchievementService;
 import com.itts.modules.learning.service.UserLearningStatsService;
 import com.itts.modules.student.entity.UserLearningStreak;
 import com.itts.modules.student.mapper.UserLearningStreakMapper;
