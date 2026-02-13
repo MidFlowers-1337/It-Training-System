@@ -1,605 +1,934 @@
 <template>
-  <PageLayout max-width="lg">
-    <!-- 页面标题 -->
-    <PageHeader title="账号设置" subtitle="安全、通知、隐私与外观偏好" :show-divider="false" />
+  <div>
+    <!-- ================================================================
+         ☀️ LIGHT — iOS Settings：分组列表 + Toggle 开关 + 圆角行
+         ================================================================ -->
+    <template v-if="theme === 'light'">
+      <div class="max-w-2xl mx-auto space-y-5">
+        <h1 class="text-xl font-bold text-[#0A2540]">设置</h1>
 
-    <div class="flex flex-col lg:flex-row gap-8">
-      <!-- 侧边栏 -->
-      <aside class="w-full lg:w-64 flex-shrink-0">
-        <div class="bg-bg-secondary rounded-2xl border border-border-color p-2 lg:sticky lg:top-24">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            type="button"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-            :class="activeTab === tab.key
-              ? 'bg-bg-tertiary text-text-primary'
-              : 'text-text-secondary hover:bg-bg-hover'"
-            @click="activeTab = tab.key"
-          >
-            <component :is="tab.icon" class="w-5 h-5 flex-shrink-0" />
-            <span class="truncate">{{ tab.label }}</span>
+        <!-- Group: Account & Security -->
+        <div class="ios-group">
+          <div class="ios-group-title">账号与安全</div>
+          <div class="ios-rows">
+            <div class="ios-row">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md bg-[#635BFF]/10 flex items-center justify-center"><KeyRound class="w-3.5 h-3.5 text-[#635BFF]" :stroke-width="1.75" /></div>
+                <span class="text-sm text-[#0A2540]">修改密码</span>
+              </div>
+              <button class="text-xs text-[#635BFF] font-medium cursor-pointer hover:underline" @click="showPasswordDialog = true">修改</button>
+            </div>
+            <div class="ios-row">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md bg-emerald-500/10 flex items-center justify-center"><Shield class="w-3.5 h-3.5 text-emerald-600" :stroke-width="1.75" /></div>
+                <span class="text-sm text-[#0A2540]">双重认证</span>
+              </div>
+              <span class="text-xs text-[#8898AA]">暂未开放</span>
+            </div>
+            <div class="ios-row border-none">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md bg-blue-500/10 flex items-center justify-center"><Clock class="w-3.5 h-3.5 text-blue-600" :stroke-width="1.75" /></div>
+                <span class="text-sm text-[#0A2540]">登录日志</span>
+              </div>
+              <span class="text-xs text-[#8898AA]">暂未开放</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group: Notifications -->
+        <div class="ios-group">
+          <div class="ios-group-title">通知</div>
+          <div class="ios-rows">
+            <div class="ios-row">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md bg-red-500/10 flex items-center justify-center"><Bell class="w-3.5 h-3.5 text-red-500" :stroke-width="1.75" /></div>
+                <span class="text-sm text-[#0A2540]">课程提醒</span>
+              </div>
+              <label class="ios-toggle"><input type="checkbox" v-model="settings.courseReminder" @change="saveSetting('courseReminder')" /><span class="ios-toggle-track"></span></label>
+            </div>
+            <div class="ios-row">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md bg-amber-500/10 flex items-center justify-center"><Flame class="w-3.5 h-3.5 text-amber-500" :stroke-width="1.75" /></div>
+                <span class="text-sm text-[#0A2540]">打卡提醒</span>
+              </div>
+              <label class="ios-toggle"><input type="checkbox" v-model="settings.checkinReminder" @change="saveSetting('checkinReminder')" /><span class="ios-toggle-track"></span></label>
+            </div>
+            <div class="ios-row border-none">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md bg-purple-500/10 flex items-center justify-center"><Megaphone class="w-3.5 h-3.5 text-purple-500" :stroke-width="1.75" /></div>
+                <span class="text-sm text-[#0A2540]">系统公告</span>
+              </div>
+              <label class="ios-toggle"><input type="checkbox" v-model="settings.systemNotice" @change="saveSetting('systemNotice')" /><span class="ios-toggle-track"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group: Appearance -->
+        <div class="ios-group">
+          <div class="ios-group-title">外观</div>
+          <div class="ios-rows">
+            <div class="ios-row border-none">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md bg-[#635BFF]/10 flex items-center justify-center"><Palette class="w-3.5 h-3.5 text-[#635BFF]" :stroke-width="1.75" /></div>
+                <span class="text-sm text-[#0A2540]">主题</span>
+              </div>
+              <div class="flex gap-1.5">
+                <button v-for="t in themeOptions" :key="t.key" @click="switchTheme(t.key)"
+                  :class="['px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border',
+                    theme === t.key ? 'bg-[#635BFF] text-white border-[#635BFF]' : 'bg-white text-[#425466] border-[#E3E8EE] hover:border-[#635BFF]']">
+                  {{ t.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group: About & Logout -->
+        <div class="ios-group">
+          <div class="ios-group-title">其他</div>
+          <div class="ios-rows">
+            <div class="ios-row">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md bg-[#0A2540]/5 flex items-center justify-center"><Info class="w-3.5 h-3.5 text-[#425466]" :stroke-width="1.75" /></div>
+                <span class="text-sm text-[#0A2540]">版本</span>
+              </div>
+              <span class="text-xs text-[#8898AA] font-mono">v2.0.0</span>
+            </div>
+            <div class="ios-row border-none">
+              <button class="w-full text-center text-sm text-red-500 font-medium cursor-pointer py-1" @click="doLogout">退出登录</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ================================================================
+         🌙 DARK — Discord Settings：左侧导航 Sidebar + 右侧内容面板
+         ================================================================ -->
+    <template v-else-if="theme === 'dark'">
+      <div class="flex gap-0 max-w-4xl mx-auto min-h-[calc(100vh-10rem)]">
+        <!-- Left Sidebar Navigation -->
+        <div class="w-48 flex-shrink-0 pr-2 space-y-1 pt-2">
+          <div class="text-[10px] text-[#B5BAC1] uppercase font-semibold tracking-wider px-2.5 mb-2">用户设置</div>
+          <button v-for="s in discordSections" :key="s.key"
+            @click="discordActive = s.key"
+            :class="['w-full text-left px-2.5 py-1.5 rounded text-sm transition-all cursor-pointer',
+              discordActive === s.key ? 'bg-white/[0.06] text-[#EDEDED] font-medium' : 'text-[#B5BAC1] hover:bg-white/[0.04] hover:text-[#EDEDED]']">
+            {{ s.label }}
+          </button>
+          <div class="border-t border-white/[0.06] my-2 mx-2"></div>
+          <button class="w-full text-left px-2.5 py-1.5 rounded text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all cursor-pointer" @click="doLogout">
+            退出登录
           </button>
         </div>
-      </aside>
 
-      <!-- 内容区 -->
-      <main class="flex-1 min-w-0 space-y-6">
-        <!-- 账号安全 -->
-        <section v-if="activeTab === 'security'" class="bg-bg-secondary rounded-2xl border border-border-color p-6 md:p-8">
-          <h2 class="text-lg font-semibold tracking-tight text-text-primary mb-5">账号安全</h2>
-
-          <InsetGroup>
-            <InsetItem label="登录密码" clickable @click="showPasswordDialog = true">
-              <template #icon>
-                <IconLock class="w-5 h-5 text-text-muted" />
-              </template>
-            </InsetItem>
-            <InsetItem label="绑定邮箱" :value="securityInfo.emailBound ? securityInfo.email : '未绑定'" clickable @click="showEmailDialog = true">
-              <template #icon>
-                <IconMail class="w-5 h-5 text-text-muted" />
-              </template>
-            </InsetItem>
-            <InsetItem label="绑定手机" :value="securityInfo.phoneBound ? securityInfo.phone : '未绑定'" clickable last @click="showPhoneDialog = true">
-              <template #icon>
-                <IconPhone class="w-5 h-5 text-text-muted" />
-              </template>
-            </InsetItem>
-          </InsetGroup>
-        </section>
-
-        <!-- 通知设置 -->
-        <section v-else-if="activeTab === 'notification'" class="bg-bg-secondary rounded-2xl border border-border-color p-6 md:p-8">
-          <div class="flex items-end justify-between gap-6 mb-5">
-            <div>
-              <h2 class="text-lg font-semibold tracking-tight text-text-primary">通知设置</h2>
-              <p class="mt-1 text-sm text-text-muted">控制你收到的通知类型</p>
-            </div>
-            <Button variant="primary" size="sm" @click="saveNotificationSettings">保存</Button>
-          </div>
-
-          <InsetGroup>
-            <InsetItem label="系统通知">
-              <template #icon>
-                <IconBell class="w-5 h-5 text-text-muted" />
-              </template>
-              <Switch v-model="notificationSettings.system" />
-            </InsetItem>
-            <InsetItem label="课程通知">
-              <template #icon>
-                <IconBook class="w-5 h-5 text-text-muted" />
-              </template>
-              <Switch v-model="notificationSettings.course" />
-            </InsetItem>
-            <InsetItem label="成就通知">
-              <template #icon>
-                <IconTrophy class="w-5 h-5 text-text-muted" />
-              </template>
-              <Switch v-model="notificationSettings.achievement" />
-            </InsetItem>
-            <InsetItem label="营销通知" last>
-              <template #icon>
-                <IconMegaphone class="w-5 h-5 text-text-muted" />
-              </template>
-              <Switch v-model="notificationSettings.marketing" />
-            </InsetItem>
-          </InsetGroup>
-        </section>
-
-        <!-- 隐私设置 -->
-        <section v-else-if="activeTab === 'privacy'" class="bg-bg-secondary rounded-2xl border border-border-color p-6 md:p-8">
-          <div class="flex items-end justify-between gap-6 mb-5">
-            <div>
-              <h2 class="text-lg font-semibold tracking-tight text-text-primary">隐私设置</h2>
-              <p class="mt-1 text-sm text-text-muted">控制哪些信息对他人可见</p>
-            </div>
-            <Button variant="primary" size="sm" @click="savePrivacySettings">保存</Button>
-          </div>
-
-          <InsetGroup>
-            <InsetItem label="公开学习数据">
-              <Switch v-model="privacySettings.showLearningData" />
-            </InsetItem>
-            <InsetItem label="公开成就">
-              <Switch v-model="privacySettings.showAchievements" />
-            </InsetItem>
-            <InsetItem label="公开个人资料" last>
-              <Switch v-model="privacySettings.showProfile" />
-            </InsetItem>
-          </InsetGroup>
-        </section>
-
-        <!-- 外观设置 -->
-        <section v-else-if="activeTab === 'appearance'" class="bg-bg-secondary rounded-2xl border border-border-color p-6 md:p-8">
-          <div class="flex items-end justify-between gap-6 mb-5">
-            <div>
-              <h2 class="text-lg font-semibold tracking-tight text-text-primary">外观设置</h2>
-              <p class="mt-1 text-sm text-text-muted">个性化你的使用体验</p>
-            </div>
-          </div>
-
-          <InsetGroup title="主题模式">
-            <InsetItem
-              v-for="themeOption in themeOptions"
-              :key="themeOption.value"
-              :label="themeOption.label"
-              clickable
-              :last="themeOption.value === 'dark'"
-              @click="setTheme(themeOption.value)"
-            >
-              <template #icon>
-                <component :is="themeOption.icon" class="w-5 h-5 text-text-muted" />
-              </template>
-              <div
-                v-if="currentTheme === themeOption.value"
-                class="w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-              >
-                <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+        <!-- Right Content Panel -->
+        <div class="flex-1 pl-6 border-l border-white/[0.06]">
+          <!-- Password -->
+          <div v-if="discordActive === 'password'" class="discord-settings-card">
+            <h3 class="text-base font-semibold text-[#EDEDED] mb-1">密码和身份验证</h3>
+            <p class="text-sm text-[#B5BAC1] mb-5">更改你的密码以确保账户安全</p>
+            <form @submit.prevent="changePw" class="space-y-4 max-w-sm">
+              <div>
+                <label class="block text-xs text-[#B5BAC1] uppercase font-semibold tracking-wider mb-1.5">当前密码</label>
+                <input v-model="pw.oldPassword" type="password" class="discord-input w-full" placeholder="输入当前密码" />
               </div>
-            </InsetItem>
-          </InsetGroup>
-        </section>
-
-        <!-- 危险操作 -->
-        <section v-else class="bg-bg-secondary rounded-2xl border border-border-color p-6 md:p-8">
-          <div class="mb-5">
-            <h2 class="text-lg font-semibold tracking-tight text-text-primary">危险操作</h2>
-            <p class="mt-1 text-sm text-text-muted">以下操作不可逆，请谨慎操作</p>
+              <div>
+                <label class="block text-xs text-[#B5BAC1] uppercase font-semibold tracking-wider mb-1.5">新密码</label>
+                <input v-model="pw.newPassword" type="password" class="discord-input w-full" placeholder="至少 6 位" />
+              </div>
+              <div class="flex gap-2 pt-1">
+                <button type="submit" class="discord-btn-primary" :disabled="pwLoading">{{ pwLoading ? '修改中...' : '确认更改' }}</button>
+                <button type="button" class="discord-btn-ghost" @click="pw = { oldPassword: '', newPassword: '' }">取消</button>
+              </div>
+            </form>
           </div>
 
-          <div class="p-4 rounded-xl bg-warning/10 border border-warning/20 mb-5">
-            <p class="text-sm text-warning font-medium">⚠️ 警告：以下操作不可逆，请谨慎操作</p>
+          <!-- Notifications -->
+          <div v-else-if="discordActive === 'notifications'" class="discord-settings-card">
+            <h3 class="text-base font-semibold text-[#EDEDED] mb-1">通知设置</h3>
+            <p class="text-sm text-[#B5BAC1] mb-5">自定义你想收到的通知类型</p>
+            <div class="space-y-0">
+              <div class="discord-setting-row">
+                <div><div class="text-sm text-[#EDEDED]">课程提醒</div><div class="text-xs text-[#B5BAC1] mt-0.5">新课程发布或课程更新时通知</div></div>
+                <label class="discord-toggle"><input type="checkbox" v-model="settings.courseReminder" @change="saveSetting('courseReminder')" /><span class="discord-toggle-track"></span></label>
+              </div>
+              <div class="discord-setting-row">
+                <div><div class="text-sm text-[#EDEDED]">打卡提醒</div><div class="text-xs text-[#B5BAC1] mt-0.5">每日学习打卡提醒</div></div>
+                <label class="discord-toggle"><input type="checkbox" v-model="settings.checkinReminder" @change="saveSetting('checkinReminder')" /><span class="discord-toggle-track"></span></label>
+              </div>
+              <div class="discord-setting-row border-none">
+                <div><div class="text-sm text-[#EDEDED]">系统公告</div><div class="text-xs text-[#B5BAC1] mt-0.5">平台重要公告和维护通知</div></div>
+                <label class="discord-toggle"><input type="checkbox" v-model="settings.systemNotice" @change="saveSetting('systemNotice')" /><span class="discord-toggle-track"></span></label>
+              </div>
+            </div>
           </div>
 
-          <InsetGroup>
-            <InsetItem label="清除学习数据" clickable @click="handleClearData">
-              <template #icon>
-                <IconTrash class="w-5 h-5 text-text-muted" />
-              </template>
-            </InsetItem>
-            <InsetItem label="注销账号" clickable last @click="showDeleteDialog = true">
-              <template #icon>
-                <IconX class="w-5 h-5 text-error" />
-              </template>
-            </InsetItem>
-          </InsetGroup>
-        </section>
-      </main>
-    </div>
-
-    <!-- 修改密码对话框 -->
-    <Modal v-model="showPasswordDialog" title="修改密码">
-      <FormLayout>
-        <FormItem label="当前密码" required :error="passwordErrors.current">
-          <Input
-            v-model="passwordForm.currentPassword"
-            type="password"
-            placeholder="请输入当前密码"
-            :error="!!passwordErrors.current"
-          />
-        </FormItem>
-        <FormItem label="新密码" required :error="passwordErrors.new">
-          <Input
-            v-model="passwordForm.newPassword"
-            type="password"
-            placeholder="6-20 位字符"
-            :error="!!passwordErrors.new"
-          />
-        </FormItem>
-        <FormItem label="确认密码" required :error="passwordErrors.confirm">
-          <Input
-            v-model="passwordForm.confirmPassword"
-            type="password"
-            placeholder="再次输入新密码"
-            :error="!!passwordErrors.confirm"
-          />
-        </FormItem>
-      </FormLayout>
-      <template #footer>
-        <Button variant="secondary" @click="showPasswordDialog = false">取消</Button>
-        <Button variant="primary" :loading="saving" @click="handleChangePassword">确认修改</Button>
-      </template>
-    </Modal>
-
-    <!-- 绑定邮箱对话框 -->
-    <Modal v-model="showEmailDialog" title="绑定邮箱">
-      <FormLayout>
-        <FormItem label="邮箱" :error="emailError">
-          <Input v-model="emailForm.email" placeholder="请输入邮箱地址" :error="!!emailError" />
-        </FormItem>
-        <FormItem label="验证码">
-          <div class="flex gap-2">
-            <Input v-model="emailForm.code" placeholder="请输入验证码" class="flex-1" />
-            <Button
-              variant="secondary"
-              :disabled="emailCountdown > 0"
-              @click="handleSendEmailCode"
-            >
-              {{ emailCountdown > 0 ? `${emailCountdown}s` : '发送验证码' }}
-            </Button>
+          <!-- Appearance -->
+          <div v-else-if="discordActive === 'appearance'" class="discord-settings-card">
+            <h3 class="text-base font-semibold text-[#EDEDED] mb-1">外观</h3>
+            <p class="text-sm text-[#B5BAC1] mb-5">自定义你的界面外观</p>
+            <div class="text-xs text-[#B5BAC1] uppercase font-semibold tracking-wider mb-3">主题</div>
+            <div class="grid grid-cols-2 gap-3">
+              <button v-for="t in themeOptions" :key="t.key" @click="switchTheme(t.key)"
+                :class="['p-4 rounded-lg border text-left transition-all cursor-pointer group',
+                  theme === t.key
+                    ? 'border-[#5865F2] bg-[#5865F2]/10'
+                    : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]']">
+                <div class="flex items-center gap-2 mb-1">
+                  <div :class="['w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                    theme === t.key ? 'border-[#5865F2]' : 'border-[#4E5058]']">
+                    <div v-if="theme === t.key" class="w-2 h-2 rounded-full bg-[#5865F2]"></div>
+                  </div>
+                  <span :class="['text-sm font-medium', theme === t.key ? 'text-[#EDEDED]' : 'text-[#B5BAC1]']">{{ t.label }}</span>
+                </div>
+                <p class="text-[11px] text-[#B5BAC1] ml-6">{{ t.desc }}</p>
+              </button>
+            </div>
           </div>
-        </FormItem>
-      </FormLayout>
-      <template #footer>
-        <Button variant="secondary" @click="showEmailDialog = false">取消</Button>
-        <Button variant="primary" :loading="saving" @click="handleBindEmail">确认绑定</Button>
-      </template>
-    </Modal>
 
-    <!-- 绑定手机对话框 -->
-    <Modal v-model="showPhoneDialog" title="绑定手机">
-      <FormLayout>
-        <FormItem label="手机号" :error="phoneError">
-          <Input v-model="phoneForm.phone" placeholder="请输入手机号" :error="!!phoneError" />
-        </FormItem>
-        <FormItem label="验证码">
-          <div class="flex gap-2">
-            <Input v-model="phoneForm.code" placeholder="请输入验证码" class="flex-1" />
-            <Button
-              variant="secondary"
-              :disabled="phoneCountdown > 0"
-              @click="handleSendPhoneCode"
-            >
-              {{ phoneCountdown > 0 ? `${phoneCountdown}s` : '发送验证码' }}
-            </Button>
+          <!-- About -->
+          <div v-else-if="discordActive === 'about'" class="discord-settings-card">
+            <h3 class="text-base font-semibold text-[#EDEDED] mb-1">关于</h3>
+            <p class="text-sm text-[#B5BAC1] mb-5">IT 培训系统</p>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                <span class="text-sm text-[#B5BAC1]">版本</span>
+                <code class="text-xs text-[#EDEDED] bg-white/[0.04] px-2 py-0.5 rounded">2.0.0</code>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                <span class="text-sm text-[#B5BAC1]">客户端</span>
+                <code class="text-xs text-[#EDEDED] bg-white/[0.04] px-2 py-0.5 rounded">Web</code>
+              </div>
+              <div class="flex items-center justify-between py-2">
+                <span class="text-sm text-[#B5BAC1]">技术栈</span>
+                <code class="text-xs text-[#EDEDED] bg-white/[0.04] px-2 py-0.5 rounded">Vue 3 + TypeScript</code>
+              </div>
+            </div>
           </div>
-        </FormItem>
-      </FormLayout>
-      <template #footer>
-        <Button variant="secondary" @click="showPhoneDialog = false">取消</Button>
-        <Button variant="primary" :loading="saving" @click="handleBindPhone">确认绑定</Button>
-      </template>
-    </Modal>
-
-    <!-- 注销账号对话框 -->
-    <Modal v-model="showDeleteDialog" title="注销账号">
-      <div class="p-4 rounded-xl bg-error/10 border border-error/20 mb-4">
-        <p class="text-sm text-error font-medium">⚠️ 警告：此操作不可逆！</p>
-        <p class="mt-2 text-sm text-text-secondary">
-          注销账号后，以下数据将被永久删除：
-        </p>
-        <ul class="mt-2 text-sm text-text-secondary list-disc pl-5 space-y-1">
-          <li>个人资料和账号信息</li>
-          <li>所有学习进度和记录</li>
-          <li>获得的成就和积分</li>
-          <li>报名的课程信息</li>
-        </ul>
+        </div>
       </div>
-      <FormLayout>
-        <FormItem label="输入密码" :error="deleteError">
-          <Input
-            v-model="deleteForm.password"
-            type="password"
-            placeholder="请输入密码确认注销"
-            :error="!!deleteError"
-          />
-        </FormItem>
-        <FormItem label="确认注销">
-          <Input v-model="deleteForm.confirm" placeholder="请输入「确认注销」以继续" />
-        </FormItem>
-      </FormLayout>
-      <template #footer>
-        <Button variant="secondary" @click="showDeleteDialog = false">取消</Button>
-        <Button
-          variant="primary"
-          class="!bg-error hover:!bg-error/90"
-          :loading="saving"
-          :disabled="deleteForm.confirm !== '确认注销'"
-          @click="handleDeleteAccount"
-        >
-          确认注销
-        </Button>
-      </template>
-    </Modal>
-  </PageLayout>
+    </template>
+
+    <!-- ================================================================
+         🌅 WARM — macOS System Preferences：图标网格 + 点击展开详情
+         ================================================================ -->
+    <template v-else-if="theme === 'warm'">
+      <div class="max-w-2xl mx-auto space-y-5">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-lg">⚙️</span>
+          <h1 class="text-xl font-extrabold text-[#292524]">系统偏好设置</h1>
+        </div>
+
+        <!-- Icon Grid (macOS Preferences style) -->
+        <div v-if="!macPref" class="mac-pref-grid">
+          <button v-for="p in macPrefPanels" :key="p.key" @click="macPref = p.key"
+            class="mac-pref-icon group">
+            <div :class="['w-14 h-14 rounded-2xl flex items-center justify-center mb-2 transition-all group-hover:scale-105', p.bgClass]">
+              <span class="text-2xl">{{ p.emoji }}</span>
+            </div>
+            <span class="text-[11px] font-bold text-[#292524]">{{ p.label }}</span>
+          </button>
+        </div>
+
+        <!-- Expanded Detail Panel -->
+        <template v-if="macPref">
+          <!-- Back Button -->
+          <button @click="macPref = ''" class="inline-flex items-center gap-1 text-sm font-bold text-[#D97706] cursor-pointer hover:underline mb-2">
+            <ChevronLeft class="w-4 h-4" :stroke-width="2" /> 返回全部设置
+          </button>
+
+          <!-- Password Panel -->
+          <div v-if="macPref === 'password'" class="mac-detail-card">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#D97706] to-[#B45309] flex items-center justify-center">
+                <span class="text-2xl">🔑</span>
+              </div>
+              <div>
+                <h3 class="text-base font-extrabold text-[#292524]">密码</h3>
+                <p class="text-xs text-[#78716C]">管理你的登录密码</p>
+              </div>
+            </div>
+            <form @submit.prevent="changePw" class="space-y-4">
+              <div><label class="mac-label">当前密码</label><input v-model="pw.oldPassword" type="password" class="mac-input" placeholder="请输入当前密码" /></div>
+              <div><label class="mac-label">新密码</label><input v-model="pw.newPassword" type="password" class="mac-input" placeholder="至少 6 位" /></div>
+              <button type="submit" class="mac-btn" :disabled="pwLoading">{{ pwLoading ? '修改中...' : '确认修改' }}</button>
+            </form>
+          </div>
+
+          <!-- Notifications Panel -->
+          <div v-if="macPref === 'notifications'" class="mac-detail-card">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center">
+                <span class="text-2xl">🔔</span>
+              </div>
+              <div>
+                <h3 class="text-base font-extrabold text-[#292524]">通知</h3>
+                <p class="text-xs text-[#78716C]">管理通知偏好</p>
+              </div>
+            </div>
+            <div class="space-y-0">
+              <div class="mac-setting-row">
+                <div><div class="text-sm font-bold text-[#292524]">课程提醒</div><div class="text-xs text-[#78716C]">新课程发布时通知</div></div>
+                <label class="mac-toggle"><input type="checkbox" v-model="settings.courseReminder" @change="saveSetting('courseReminder')" /><span class="mac-toggle-track"></span></label>
+              </div>
+              <div class="mac-setting-row">
+                <div><div class="text-sm font-bold text-[#292524]">打卡提醒</div><div class="text-xs text-[#78716C]">每日学习提醒</div></div>
+                <label class="mac-toggle"><input type="checkbox" v-model="settings.checkinReminder" @change="saveSetting('checkinReminder')" /><span class="mac-toggle-track"></span></label>
+              </div>
+              <div class="mac-setting-row border-none">
+                <div><div class="text-sm font-bold text-[#292524]">系统公告</div><div class="text-xs text-[#78716C]">平台公告和维护通知</div></div>
+                <label class="mac-toggle"><input type="checkbox" v-model="settings.systemNotice" @change="saveSetting('systemNotice')" /><span class="mac-toggle-track"></span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Appearance Panel -->
+          <div v-if="macPref === 'appearance'" class="mac-detail-card">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                <span class="text-2xl">🎨</span>
+              </div>
+              <div>
+                <h3 class="text-base font-extrabold text-[#292524]">外观</h3>
+                <p class="text-xs text-[#78716C]">选择你喜欢的界面风格</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <button v-for="t in themeOptions" :key="t.key" @click="switchTheme(t.key)"
+                :class="['p-4 rounded-2xl border-2 text-center transition-all cursor-pointer',
+                  theme === t.key
+                    ? 'border-[#D97706] bg-[#D97706]/5 shadow-[0_3px_0_#D97706]'
+                    : 'border-[#E7E5E4] bg-white hover:border-[#D97706]/30']">
+                <div class="text-2xl mb-2">{{ t.emoji }}</div>
+                <div class="text-sm font-extrabold text-[#292524]">{{ t.label }}</div>
+                <div class="text-[10px] text-[#78716C] mt-1">{{ t.desc }}</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- About Panel -->
+          <div v-if="macPref === 'about'" class="mac-detail-card">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
+                <span class="text-2xl">ℹ️</span>
+              </div>
+              <div>
+                <h3 class="text-base font-extrabold text-[#292524]">关于</h3>
+                <p class="text-xs text-[#78716C]">系统信息</p>
+              </div>
+            </div>
+            <div class="space-y-0">
+              <div class="mac-info-row"><span class="mac-info-key">系统名称</span><span class="mac-info-val">IT 培训系统</span></div>
+              <div class="mac-info-row"><span class="mac-info-key">版本号</span><span class="mac-info-val">2.0.0</span></div>
+              <div class="mac-info-row border-none"><span class="mac-info-key">技术栈</span><span class="mac-info-val">Vue 3 + TypeScript</span></div>
+            </div>
+          </div>
+
+          <!-- Logout Panel -->
+          <div v-if="macPref === 'logout'" class="mac-detail-card border-red-200">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center">
+                <span class="text-2xl">🚪</span>
+              </div>
+              <div>
+                <h3 class="text-base font-extrabold text-red-600">退出登录</h3>
+                <p class="text-xs text-[#78716C]">登出当前账号</p>
+              </div>
+            </div>
+            <p class="text-sm text-[#78716C] mb-4">退出后需要重新登录才能使用系统。</p>
+            <button @click="doLogout" class="px-6 py-2.5 rounded-2xl bg-red-600 text-white text-sm font-extrabold cursor-pointer hover:bg-red-700 transition-colors shadow-[0_3px_0_#B91C1C]">
+              确认退出
+            </button>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <!-- ================================================================
+         ❄️ PRO — VS Code Settings：搜索框 + 设置树 + inline 控件
+         ================================================================ -->
+    <template v-else>
+      <div class="max-w-4xl mx-auto space-y-3">
+        <!-- Search Bar -->
+        <div class="vsc-search">
+          <Search class="w-3.5 h-3.5 text-[#94A3B8] flex-shrink-0" :stroke-width="1.75" />
+          <input v-model="vscSearch" type="text" placeholder="Search settings..." class="flex-1 bg-transparent text-xs font-mono text-[#0F172A] outline-none placeholder-[#94A3B8]" />
+          <code v-if="vscSearch" class="text-[9px] text-[#94A3B8]">{{ filteredVscSettings.length }} results</code>
+        </div>
+
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-1 text-[10px] font-mono text-[#94A3B8]">
+          <span>User Settings</span>
+          <ChevronRight class="w-3 h-3" :stroke-width="1.5" />
+          <span class="text-[#0F172A]">{{ vscActiveLabel }}</span>
+        </div>
+
+        <div class="flex gap-4">
+          <!-- Settings Tree (left sidebar) -->
+          <div class="w-40 flex-shrink-0 space-y-0.5">
+            <button v-for="s in vscSections" :key="s.key" @click="vscActive = s.key"
+              :class="['w-full text-left px-2 py-1.5 rounded text-[11px] font-mono transition-all cursor-pointer',
+                vscActive === s.key ? 'bg-[#0284C7]/10 text-[#0284C7] font-semibold' : 'text-[#64748B] hover:bg-[#F1F5F9]']">
+              {{ s.label }}
+            </button>
+          </div>
+
+          <!-- Settings Content -->
+          <div class="flex-1 space-y-0">
+            <!-- Security Settings -->
+            <template v-if="vscActive === 'security'">
+              <div class="vsc-setting-item" v-if="matchSearch('password')">
+                <div class="vsc-setting-header">
+                  <code class="vsc-setting-id">security.password</code>
+                </div>
+                <p class="vsc-setting-desc">更改你的登录密码，建议定期更换以确保安全。</p>
+                <div class="mt-2">
+                  <button @click="showPasswordDialog = true" class="vsc-btn">Change Password</button>
+                </div>
+              </div>
+              <div class="vsc-setting-item" v-if="matchSearch('2fa')">
+                <div class="vsc-setting-header">
+                  <code class="vsc-setting-id">security.twoFactorAuth</code>
+                  <code class="vsc-setting-tag">coming soon</code>
+                </div>
+                <p class="vsc-setting-desc">启用双因素认证以增强账户安全性。</p>
+              </div>
+            </template>
+
+            <!-- Notification Settings -->
+            <template v-if="vscActive === 'notifications'">
+              <div class="vsc-setting-item" v-if="matchSearch('course reminder')">
+                <div class="vsc-setting-header">
+                  <code class="vsc-setting-id">notifications.courseReminder</code>
+                </div>
+                <p class="vsc-setting-desc">新课程发布或课程更新时发送通知。</p>
+                <div class="mt-2">
+                  <label class="vsc-checkbox"><input type="checkbox" v-model="settings.courseReminder" @change="saveSetting('courseReminder')" /><span>Enable course notifications</span></label>
+                </div>
+              </div>
+              <div class="vsc-setting-item" v-if="matchSearch('checkin reminder')">
+                <div class="vsc-setting-header">
+                  <code class="vsc-setting-id">notifications.checkinReminder</code>
+                </div>
+                <p class="vsc-setting-desc">每日学习打卡提醒，帮助养成学习习惯。</p>
+                <div class="mt-2">
+                  <label class="vsc-checkbox"><input type="checkbox" v-model="settings.checkinReminder" @change="saveSetting('checkinReminder')" /><span>Enable daily checkin reminder</span></label>
+                </div>
+              </div>
+              <div class="vsc-setting-item" v-if="matchSearch('system notice')">
+                <div class="vsc-setting-header">
+                  <code class="vsc-setting-id">notifications.systemNotice</code>
+                </div>
+                <p class="vsc-setting-desc">平台重要公告和维护通知。</p>
+                <div class="mt-2">
+                  <label class="vsc-checkbox"><input type="checkbox" v-model="settings.systemNotice" @change="saveSetting('systemNotice')" /><span>Enable system announcements</span></label>
+                </div>
+              </div>
+            </template>
+
+            <!-- Appearance Settings -->
+            <template v-if="vscActive === 'appearance'">
+              <div class="vsc-setting-item" v-if="matchSearch('color theme')">
+                <div class="vsc-setting-header">
+                  <code class="vsc-setting-id">workbench.colorTheme</code>
+                </div>
+                <p class="vsc-setting-desc">控制工作台中使用的颜色主题。</p>
+                <div class="mt-2">
+                  <select v-model="currentThemeKey" @change="switchTheme(currentThemeKey)"
+                    class="vsc-select">
+                    <option v-for="t in themeOptions" :key="t.key" :value="t.key">{{ t.label }} — {{ t.desc }}</option>
+                  </select>
+                </div>
+              </div>
+            </template>
+
+            <!-- About -->
+            <template v-if="vscActive === 'about'">
+              <div class="vsc-setting-item" v-if="matchSearch('version')">
+                <div class="vsc-setting-header">
+                  <code class="vsc-setting-id">about.version</code>
+                </div>
+                <div class="mt-1 space-y-1">
+                  <div class="flex gap-8">
+                    <code class="text-[10px] text-[#94A3B8]">version</code>
+                    <code class="text-[10px] text-[#0F172A]">2.0.0</code>
+                  </div>
+                  <div class="flex gap-8">
+                    <code class="text-[10px] text-[#94A3B8]">client</code>
+                    <code class="text-[10px] text-[#0F172A]">Web Browser</code>
+                  </div>
+                  <div class="flex gap-8">
+                    <code class="text-[10px] text-[#94A3B8]">stack</code>
+                    <code class="text-[10px] text-[#0F172A]">Vue 3 + TypeScript</code>
+                  </div>
+                </div>
+              </div>
+              <div class="vsc-setting-item">
+                <div class="vsc-setting-header">
+                  <code class="vsc-setting-id">session.logout</code>
+                </div>
+                <p class="vsc-setting-desc">结束当前会话并退出登录。</p>
+                <div class="mt-2">
+                  <button @click="doLogout" class="vsc-btn-danger">Logout</button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ======== Shared Password Dialog (theme-neutral) ======== -->
+    <Teleport to="body">
+      <div v-if="showPasswordDialog" class="modal-overlay" @click.self="showPasswordDialog = false">
+        <div class="modal-card">
+          <h3 class="modal-title">修改密码</h3>
+          <form @submit.prevent="changePw" class="space-y-4 mt-4">
+            <div><label class="modal-label">当前密码</label><input v-model="pw.oldPassword" type="password" required class="modal-input" placeholder="请输入当前密码" /></div>
+            <div><label class="modal-label">新密码</label><input v-model="pw.newPassword" type="password" required class="modal-input" placeholder="至少 6 位" /></div>
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" class="modal-cancel" @click="showPasswordDialog = false">取消</button>
+              <button type="submit" class="modal-confirm" :disabled="pwLoading">{{ pwLoading ? '修改中...' : '确认修改' }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, type Component } from 'vue';
-import { useRouter } from 'vue-router';
-import { useUserStore } from '@/store/user';
-import { useTheme } from '@/design-system';
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { useThemeStore } from '@/stores/theme'
+import { profileApi } from '@/api/profile'
+import { toast } from '@/composables/useToast'
+import type { ThemeName } from '@/design-system/tokens/colors'
 import {
-  PageLayout,
-  PageHeader,
-  InsetGroup,
-  InsetItem,
-  Switch,
-  Modal,
-  FormLayout,
-  FormItem,
-  Input,
-  Button,
-} from '@/design-system';
-import {
-  changePassword,
-  getSecurityInfo,
-  bindEmail,
-  bindPhone,
-  sendEmailCode,
-  sendPhoneCode,
-  deleteAccount,
-  clearLearningData,
-} from '@/api/user';
+  KeyRound, Shield, Clock, Bell, Flame, Megaphone, Palette, Info,
+  ChevronLeft, ChevronRight, Search,
+} from 'lucide-vue-next'
 
-// 图标组件
-const IconLock = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>` };
-const IconMail = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>` };
-const IconPhone = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>` };
-const IconBell = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>` };
-const IconBook = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>` };
-const IconTrophy = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>` };
-const IconMegaphone = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 18-5v12L3 13v-2z" /><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" /></svg>` };
-const IconSun = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>` };
-const IconMoon = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>` };
-const IconMonitor = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><path d="M8 21h8" /><path d="M12 17v4" /></svg>` };
-const IconTrash = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>` };
-const IconX = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></svg>` };
+const router = useRouter()
+const us = useUserStore()
+const themeStore = useThemeStore()
+const theme = computed(() => themeStore.theme)
 
-// 类型定义
-interface Tab {
-  key: string;
-  label: string;
-  icon: Component;
+/* ── Theme Options ── */
+const themeOptions: { key: string; label: string; emoji: string; desc: string }[] = [
+  { key: 'light', label: '浅色', emoji: '☀️', desc: '清爽明亮的界面' },
+  { key: 'dark', label: '深色', emoji: '🌙', desc: '护眼暗色模式' },
+  { key: 'warm', label: '暖色', emoji: '🌅', desc: '温馨活力风格' },
+  { key: 'pro', label: '专业', emoji: '❄️', desc: '简洁专业风格' },
+]
+const currentThemeKey = ref(theme.value)
+
+function switchTheme(key: string) {
+  currentThemeKey.value = key as typeof currentThemeKey.value
+  themeStore.applyTheme(key as ThemeName)
 }
 
-interface ThemeOption {
-  value: 'light' | 'dark' | 'system';
-  label: string;
-  icon: Component;
+/* ── Password ── */
+const pw = ref({ oldPassword: '', newPassword: '' })
+const pwLoading = ref(false)
+const showPasswordDialog = ref(false)
+
+async function changePw() {
+  if (!pw.value.oldPassword || !pw.value.newPassword) { toast.warning('请填写完整'); return }
+  if (pw.value.newPassword.length < 6) { toast.warning('密码至少 6 位'); return }
+  pwLoading.value = true
+  try {
+    await profileApi.changePassword(pw.value)
+    toast.success('密码修改成功')
+    pw.value = { oldPassword: '', newPassword: '' }
+    showPasswordDialog.value = false
+  } catch (e: any) {
+    toast.error(e.message || '修改失败')
+  } finally {
+    pwLoading.value = false
+  }
 }
 
-const router = useRouter();
-const userStore = useUserStore();
-const { theme: currentTheme, setTheme } = useTheme();
+/* ── Notification Settings (local) ── */
+const settings = ref({
+  courseReminder: true,
+  checkinReminder: true,
+  systemNotice: true,
+})
 
-// Tab 配置
-const tabs: Tab[] = [
-  { key: 'security', label: '账号安全', icon: IconLock },
-  { key: 'notification', label: '通知设置', icon: IconBell },
-  { key: 'privacy', label: '隐私设置', icon: IconMonitor },
-  { key: 'appearance', label: '外观设置', icon: IconSun },
-  { key: 'danger', label: '危险操作', icon: IconTrash },
-];
-
-// 主题选项
-const themeOptions: ThemeOption[] = [
-  { value: 'light', label: '浅色模式', icon: IconSun },
-  { value: 'system', label: '跟随系统', icon: IconMonitor },
-  { value: 'dark', label: '深色模式', icon: IconMoon },
-];
-
-// 状态
-const activeTab = ref('security');
-const saving = ref(false);
-const securityInfo = ref<Record<string, any>>({});
-
-// 对话框状态
-const showPasswordDialog = ref(false);
-const showEmailDialog = ref(false);
-const showPhoneDialog = ref(false);
-const showDeleteDialog = ref(false);
-
-// 倒计时
-const emailCountdown = ref(0);
-const phoneCountdown = ref(0);
-
-// 表单数据
-const passwordForm = reactive({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: '',
-});
-
-const passwordErrors = reactive({
-  current: '',
-  new: '',
-  confirm: '',
-});
-
-const emailForm = reactive({ email: '', code: '' });
-const emailError = ref('');
-
-const phoneForm = reactive({ phone: '', code: '' });
-const phoneError = ref('');
-
-const deleteForm = reactive({ password: '', confirm: '' });
-const deleteError = ref('');
-
-const notificationSettings = reactive({
-  system: true,
-  course: true,
-  achievement: true,
-  marketing: false,
-});
-
-const privacySettings = reactive({
-  showLearningData: true,
-  showAchievements: true,
-  showProfile: true,
-});
-
-// 方法
-const fetchSecurityInfo = async () => {
+function saveSetting(_key: string) {
+  // Save locally — no backend endpoint yet
   try {
-    const res = await getSecurityInfo();
-    securityInfo.value = res.data || {};
-  } catch (error) {
-    console.error('获取安全信息失败:', error);
+    localStorage.setItem('it-training-settings', JSON.stringify(settings.value))
+    toast.success('设置已保存')
+  } catch {
+    // silently fail
   }
-};
+}
 
-const handleChangePassword = async () => {
-  // 重置错误
-  passwordErrors.current = '';
-  passwordErrors.new = '';
-  passwordErrors.confirm = '';
+// Load from localStorage
+try {
+  const saved = localStorage.getItem('it-training-settings')
+  if (saved) Object.assign(settings.value, JSON.parse(saved))
+} catch { /* ignore */ }
 
-  // 验证
-  if (!passwordForm.currentPassword) {
-    passwordErrors.current = '请输入当前密码';
-    return;
-  }
-  if (!passwordForm.newPassword) {
-    passwordErrors.new = '请输入新密码';
-    return;
-  }
-  if (passwordForm.newPassword.length < 6 || passwordForm.newPassword.length > 20) {
-    passwordErrors.new = '密码长度应为 6-20 位';
-    return;
-  }
-  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    passwordErrors.confirm = '两次输入的密码不一致';
-    return;
-  }
+/* ── Discord Sidebar Sections (Dark) ── */
+const discordActive = ref('password')
+const discordSections = [
+  { key: 'password', label: '密码与认证' },
+  { key: 'notifications', label: '通知' },
+  { key: 'appearance', label: '外观' },
+  { key: 'about', label: '关于' },
+]
 
-  saving.value = true;
-  try {
-    await changePassword(passwordForm);
-    showPasswordDialog.value = false;
-    passwordForm.currentPassword = '';
-    passwordForm.newPassword = '';
-    passwordForm.confirmPassword = '';
-    userStore.logout();
-    router.push('/login');
-  } catch (error: any) {
-    passwordErrors.current = error?.message || '修改失败';
-  } finally {
-    saving.value = false;
-  }
-};
+/* ── macOS Preference Panels (Warm) ── */
+const macPref = ref('')
+const macPrefPanels = [
+  { key: 'password', label: '密码', emoji: '🔑', bgClass: 'bg-gradient-to-br from-[#D97706] to-[#B45309]' },
+  { key: 'notifications', label: '通知', emoji: '🔔', bgClass: 'bg-gradient-to-br from-red-400 to-red-600' },
+  { key: 'appearance', label: '外观', emoji: '🎨', bgClass: 'bg-gradient-to-br from-indigo-400 to-purple-500' },
+  { key: 'about', label: '关于', emoji: 'ℹ️', bgClass: 'bg-gradient-to-br from-gray-400 to-gray-600' },
+  { key: 'logout', label: '退出', emoji: '🚪', bgClass: 'bg-gradient-to-br from-red-500 to-red-700' },
+]
 
-const handleSendEmailCode = async () => {
-  if (!emailForm.email) {
-    emailError.value = '请输入邮箱';
-    return;
-  }
-  try {
-    await sendEmailCode(emailForm.email);
-    emailCountdown.value = 60;
-    const timer = setInterval(() => {
-      emailCountdown.value--;
-      if (emailCountdown.value <= 0) clearInterval(timer);
-    }, 1000);
-  } catch (error) {
-    emailError.value = '发送失败';
-  }
-};
+/* ── VS Code Settings Tree (Pro) ── */
+const vscActive = ref('security')
+const vscSections = [
+  { key: 'security', label: 'Security' },
+  { key: 'notifications', label: 'Notifications' },
+  { key: 'appearance', label: 'Appearance' },
+  { key: 'about', label: 'About' },
+]
+const vscActiveLabel = computed(() => vscSections.find(s => s.key === vscActive.value)?.label || '')
+const vscSearch = ref('')
 
-const handleBindEmail = async () => {
-  if (!emailForm.email || !emailForm.code) {
-    emailError.value = '请填写完整信息';
-    return;
-  }
-  saving.value = true;
-  try {
-    await bindEmail(emailForm.email, emailForm.code);
-    showEmailDialog.value = false;
-    emailForm.email = '';
-    emailForm.code = '';
-    fetchSecurityInfo();
-  } catch (error) {
-    emailError.value = '绑定失败';
-  } finally {
-    saving.value = false;
-  }
-};
+const filteredVscSettings = computed(() => {
+  if (!vscSearch.value) return []
+  const q = vscSearch.value.toLowerCase()
+  const all = [
+    'password', '2fa', 'course reminder', 'checkin reminder', 'system notice', 'color theme', 'version',
+  ]
+  return all.filter(s => s.includes(q))
+})
 
-const handleSendPhoneCode = async () => {
-  if (!phoneForm.phone) {
-    phoneError.value = '请输入手机号';
-    return;
-  }
-  try {
-    await sendPhoneCode(phoneForm.phone);
-    phoneCountdown.value = 60;
-    const timer = setInterval(() => {
-      phoneCountdown.value--;
-      if (phoneCountdown.value <= 0) clearInterval(timer);
-    }, 1000);
-  } catch (error) {
-    phoneError.value = '发送失败';
-  }
-};
+function matchSearch(keyword: string) {
+  if (!vscSearch.value) return true
+  return keyword.toLowerCase().includes(vscSearch.value.toLowerCase())
+}
 
-const handleBindPhone = async () => {
-  if (!phoneForm.phone || !phoneForm.code) {
-    phoneError.value = '请填写完整信息';
-    return;
-  }
-  saving.value = true;
-  try {
-    await bindPhone(phoneForm.phone, phoneForm.code);
-    showPhoneDialog.value = false;
-    phoneForm.phone = '';
-    phoneForm.code = '';
-    fetchSecurityInfo();
-  } catch (error) {
-    phoneError.value = '绑定失败';
-  } finally {
-    saving.value = false;
-  }
-};
-
-const saveNotificationSettings = () => {
-  localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
-  console.info('通知设置已保存');
-};
-
-const savePrivacySettings = () => {
-  localStorage.setItem('privacySettings', JSON.stringify(privacySettings));
-  console.info('隐私设置已保存');
-};
-
-const handleClearData = async () => {
-  const password = prompt('此操作将清除所有学习数据，请输入密码确认：');
-  if (!password) return;
-
-  saving.value = true;
-  try {
-    await clearLearningData(password);
-    console.info('学习数据已清除');
-  } catch (error: any) {
-    console.error(error?.message || '清除失败');
-  } finally {
-    saving.value = false;
-  }
-};
-
-const handleDeleteAccount = async () => {
-  if (!deleteForm.password) {
-    deleteError.value = '请输入密码';
-    return;
-  }
-  if (deleteForm.confirm !== '确认注销') {
-    deleteError.value = '请输入「确认注销」以继续';
-    return;
-  }
-
-  saving.value = true;
-  try {
-    await deleteAccount(deleteForm.password);
-    userStore.logout();
-    router.push('/login');
-  } catch (error: any) {
-    deleteError.value = error?.message || '注销失败';
-  } finally {
-    saving.value = false;
-  }
-};
-
-const loadLocalSettings = () => {
-  const notification = localStorage.getItem('notificationSettings');
-  if (notification) Object.assign(notificationSettings, JSON.parse(notification));
-
-  const privacy = localStorage.getItem('privacySettings');
-  if (privacy) Object.assign(privacySettings, JSON.parse(privacy));
-};
-
-onMounted(() => {
-  fetchSecurityInfo();
-  loadLocalSettings();
-});
+/* ── Logout ── */
+function doLogout() {
+  us.logout()
+  router.push('/login')
+  toast.success('已退出登录')
+}
 </script>
+
+<style scoped>
+/* ======== iOS Settings (Light) ======== */
+.ios-group {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #E3E8EE;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+.ios-group-title {
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8898AA;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: #F6F9FC;
+  border-bottom: 1px solid #E3E8EE;
+}
+.ios-rows {
+  padding: 0 20px;
+}
+.ios-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #F0F3F7;
+}
+
+/* iOS Toggle */
+.ios-toggle {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+.ios-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.ios-toggle-track {
+  display: block;
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: #CBD5E1;
+  transition: background 0.2s;
+  position: relative;
+}
+.ios-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  transition: transform 0.2s;
+}
+.ios-toggle input:checked + .ios-toggle-track {
+  background: #635BFF;
+}
+.ios-toggle input:checked + .ios-toggle-track::after {
+  transform: translateX(18px);
+}
+
+/* ======== Discord Settings (Dark) ======== */
+.discord-settings-card {
+  padding: 24px 0;
+}
+.discord-input {
+  padding: 10px 12px; border-radius: 4px; font-size: 14px;
+  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+  color: #EDEDED; outline: none; transition: border-color 0.15s;
+}
+.discord-input::placeholder { color: #6B6B6E; }
+.discord-input:focus { border-color: #5865F2; }
+.discord-btn-primary {
+  padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 600;
+  color: #fff; background: #5865F2; border: none; cursor: pointer; transition: all 0.15s;
+}
+.discord-btn-primary:hover { background: #4752C4; }
+.discord-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.discord-btn-ghost {
+  padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 500;
+  color: #B5BAC1; background: transparent; border: none; cursor: pointer;
+}
+.discord-btn-ghost:hover { text-decoration: underline; }
+.discord-setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Discord Toggle */
+.discord-toggle {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+.discord-toggle input {
+  position: absolute; opacity: 0; width: 0; height: 0;
+}
+.discord-toggle-track {
+  display: block;
+  width: 40px; height: 22px; border-radius: 11px;
+  background: #4E5058; transition: background 0.2s;
+  position: relative;
+}
+.discord-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 8px;
+  background: #EDEDED;
+  transition: transform 0.2s;
+}
+.discord-toggle input:checked + .discord-toggle-track {
+  background: #23A55A;
+}
+.discord-toggle input:checked + .discord-toggle-track::after {
+  transform: translateX(18px);
+}
+
+/* ======== macOS Preferences (Warm) ======== */
+.mac-pref-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px;
+  background: #FFFBF5;
+  border: 2px solid #E7E5E4;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 #E7E5E4;
+}
+.mac-pref-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  border: none;
+}
+.mac-pref-icon:hover {
+  background: rgba(217,119,6,0.05);
+}
+.mac-detail-card {
+  padding: 24px;
+  background: #FFFBF5;
+  border: 2px solid #E7E5E4;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 #E7E5E4;
+}
+.mac-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #292524;
+  margin-bottom: 6px;
+}
+.mac-input {
+  width: 100%; padding: 10px 14px; border-radius: 12px;
+  border: 2px solid #E7E5E4; background: #fff;
+  color: #292524; font-size: 14px; outline: none;
+}
+.mac-input:focus { border-color: #D97706; }
+.mac-btn {
+  padding: 10px 24px; border-radius: 12px; font-size: 14px; font-weight: 700;
+  color: #fff; background: #D97706; border: none; cursor: pointer;
+  box-shadow: 0 3px 0 #B45309;
+}
+.mac-btn:hover { filter: brightness(1.05); }
+.mac-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.mac-setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; border-bottom: 1px solid #E7E5E4;
+}
+.mac-info-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid #E7E5E4;
+}
+.mac-info-key { font-size: 13px; color: #78716C; font-weight: 600; }
+.mac-info-val { font-size: 14px; color: #292524; font-weight: 700; }
+
+/* macOS Toggle */
+.mac-toggle {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+.mac-toggle input {
+  position: absolute; opacity: 0; width: 0; height: 0;
+}
+.mac-toggle-track {
+  display: block;
+  width: 42px; height: 24px; border-radius: 12px;
+  background: #D6D3D1; transition: background 0.2s;
+  position: relative;
+}
+.mac-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  transition: transform 0.2s;
+}
+.mac-toggle input:checked + .mac-toggle-track {
+  background: #D97706;
+}
+.mac-toggle input:checked + .mac-toggle-track::after {
+  transform: translateX(18px);
+}
+
+/* ======== VS Code Settings (Pro) ======== */
+.vsc-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  background: #F8FAFC;
+  transition: border-color 0.15s;
+}
+.vsc-search:focus-within {
+  border-color: #0284C7;
+}
+.vsc-setting-item {
+  padding: 14px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+.vsc-setting-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.vsc-setting-id {
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  color: #0284C7;
+  font-weight: 600;
+}
+.vsc-setting-tag {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: #94A3B8;
+  background: #F1F5F9;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.vsc-setting-desc {
+  font-size: 12px;
+  color: #64748B;
+  line-height: 1.5;
+}
+.vsc-btn {
+  padding: 4px 12px; border-radius: 3px; font-size: 11px; font-weight: 500;
+  color: #fff; background: #0F172A; border: none; cursor: pointer;
+  font-family: ui-monospace, monospace;
+}
+.vsc-btn:hover { background: #1E293B; }
+.vsc-btn-danger {
+  padding: 4px 12px; border-radius: 3px; font-size: 11px; font-weight: 500;
+  color: rgb(220,38,38); background: transparent; border: 1px solid rgba(220,38,38,0.3);
+  cursor: pointer; font-family: ui-monospace, monospace; transition: all 0.15s;
+}
+.vsc-btn-danger:hover { background: rgba(220,38,38,0.05); }
+.vsc-select {
+  padding: 4px 8px; border-radius: 3px; font-size: 11px;
+  border: 1px solid #E2E8F0; background: #fff; color: #0F172A;
+  font-family: ui-monospace, monospace; outline: none; cursor: pointer;
+}
+.vsc-select:focus { border-color: #0284C7; }
+.vsc-checkbox {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: #0F172A; cursor: pointer;
+  font-family: ui-monospace, monospace;
+}
+.vsc-checkbox input {
+  width: 14px; height: 14px;
+  accent-color: #0284C7;
+  cursor: pointer;
+}
+
+/* ======== Shared Modal ======== */
+.modal-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); animation: ovl 0.15s ease; }
+.modal-card { background: rgb(var(--color-surface)); border-radius: 12px; padding: 28px; width: 100%; max-width: 420px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); animation: mci 0.2s cubic-bezier(0.16,1,0.3,1); }
+.modal-title { font-size: 16px; font-weight: 600; color: rgb(var(--color-text-primary)); }
+.modal-label { display: block; font-size: 13px; font-weight: 500; color: rgb(var(--color-text-secondary)); margin-bottom: 6px; }
+.modal-input { width: 100%; padding: 10px 12px; border-radius: 6px; font-size: 14px; border: 1px solid rgb(var(--color-border)); background: rgb(var(--color-surface)); color: rgb(var(--color-text-primary)); outline: none; transition: all 0.15s; }
+.modal-input:focus { border-color: rgb(var(--color-primary)); box-shadow: 0 0 0 3px rgb(var(--color-primary) / 0.1); }
+.modal-cancel { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; color: rgb(var(--color-text-secondary)); background: transparent; border: 1px solid rgb(var(--color-border)); cursor: pointer; }
+.modal-confirm { padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; color: #fff; background: rgb(var(--color-primary)); border: none; cursor: pointer; }
+.modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+@keyframes ovl { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mci { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: none; } }
+</style>

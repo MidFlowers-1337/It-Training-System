@@ -1,1035 +1,642 @@
 <template>
-  <div class="course-detail-page">
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-container">
-      <div class="loading-spinner"></div>
+  <div>
+    <!-- Skeleton Loading -->
+    <div v-if="!course" class="animate-pulse">
+      <!-- Hero skeleton -->
+      <div class="rounded-xl h-56 mb-6" :class="theme === 'dark' ? 'bg-white/[0.04]' : theme === 'warm' ? 'bg-[#F5F0EB]' : 'bg-[#F0F3F7]'" />
+      <!-- Stats row -->
+      <div class="flex gap-4 mb-6">
+        <div v-for="n in 3" :key="n" class="flex-1 h-16 rounded-lg" :class="theme === 'dark' ? 'bg-white/[0.04]' : theme === 'warm' ? 'bg-[#F5F0EB]' : 'bg-[#F0F3F7]'" />
+      </div>
+      <!-- Content blocks -->
+      <div class="grid lg:grid-cols-5 gap-4">
+        <div class="lg:col-span-3 space-y-3">
+          <div class="h-40 rounded-lg" :class="theme === 'dark' ? 'bg-white/[0.04]' : theme === 'warm' ? 'bg-[#F5F0EB]' : 'bg-[#F0F3F7]'" />
+          <div class="h-60 rounded-lg" :class="theme === 'dark' ? 'bg-white/[0.04]' : theme === 'warm' ? 'bg-[#F5F0EB]' : 'bg-[#F0F3F7]'" />
+        </div>
+        <div class="lg:col-span-2">
+          <div class="h-72 rounded-lg" :class="theme === 'dark' ? 'bg-white/[0.04]' : theme === 'warm' ? 'bg-[#F5F0EB]' : 'bg-[#F0F3F7]'" />
+        </div>
+      </div>
     </div>
 
-    <template v-else-if="course.id">
-      <!-- Hero Section (沉浸式顶部) -->
-      <section class="course-hero">
-        <!-- Background -->
-        <div class="hero-bg">
-          <img
-            v-if="course.coverImage"
-            :src="course.coverImage"
-            :alt="course.name"
-            class="hero-bg-image"
-          />
-          <div v-else class="hero-bg-placeholder">
-            <component :is="getCategoryIcon(course.category)" class="hero-bg-icon" />
-          </div>
-          <div class="hero-overlay"></div>
-        </div>
-
-        <!-- Content -->
-        <div class="hero-content">
-          <!-- Back Button -->
-          <button type="button" class="back-btn" @click="$router.back()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            返回列表
+    <!-- ================================================================
+         ☀️ LIGHT — Apple Product Page：全宽 Hero + 快捷统计 + 特性网格
+         ================================================================ -->
+    <template v-else-if="theme === 'light'">
+      <div class="space-y-8">
+        <!-- Hero (full-width gradient) -->
+        <div class="relative -mx-6 -mt-6 px-6 pt-16 pb-10 bg-gradient-to-br flex flex-col items-center text-center"
+             :class="getCategoryStyle(course.category).gradient">
+          <!-- Back -->
+          <button @click="$router.back()" class="absolute top-4 left-6 text-white/70 hover:text-white transition inline-flex items-center gap-1 text-sm cursor-pointer">
+            <ArrowLeft class="w-4 h-4" :stroke-width="2" /> 返回
           </button>
-
-          <!-- Meta Tags -->
-          <div class="course-meta">
-            <span class="meta-tag category-tag">
-              {{ course.categoryName || getCategoryName(course.category) }}
+          <!-- Icon -->
+          <component :is="getCategoryStyle(course.category).icon" class="w-16 h-16 text-white/30 mb-4" :stroke-width="1" />
+          <h1 class="text-3xl font-bold text-white mb-2 max-w-2xl">{{ course.title }}</h1>
+          <p class="text-base text-white/80 max-w-xl mb-5 leading-relaxed">{{ course.description || '暂无描述' }}</p>
+          <!-- Tags -->
+          <div class="flex flex-wrap items-center justify-center gap-2 mb-6">
+            <span v-if="course.category" class="px-3 py-1 rounded-full bg-white/20 backdrop-blur text-white text-xs font-medium">
+              {{ course.category }}
             </span>
-            <span class="meta-tag" :class="`difficulty-${course.difficulty}`">
-              {{ course.difficultyName || getDifficultyName(course.difficulty) }}
+            <span v-if="course.level" class="px-3 py-1 rounded-full bg-white/20 backdrop-blur text-white text-xs font-medium">
+              {{ course.level }}
+            </span>
+            <span class="px-3 py-1 rounded-full bg-white/20 backdrop-blur text-white text-xs font-medium flex items-center gap-1">
+              <User class="w-3 h-3" :stroke-width="2" /> {{ course.instructor || '讲师' }}
             </span>
           </div>
-
-          <!-- Title -->
-          <h1 class="course-title">{{ course.name }}</h1>
-
-          <!-- Description -->
-          <p class="course-desc">{{ course.description }}</p>
-
-          <!-- Stats -->
-          <div class="course-stats">
-            <div class="stat">
-              <span class="stat-value">{{ course.durationHours || 0 }}</span>
-              <span class="stat-label">课时</span>
-            </div>
-            <div class="stat">
-              <span class="stat-value">{{ course.enrollmentCount || 0 }}</span>
-              <span class="stat-label">学员</span>
-            </div>
-            <div class="stat">
-              <span class="stat-value">{{ sessions.length }}</span>
-              <span class="stat-label">班期</span>
-            </div>
-          </div>
-
-          <!-- Skill Tags -->
-          <div v-if="skillTags.length" class="skill-tags">
-            <span v-for="tag in skillTags" :key="tag" class="skill-tag">{{ tag }}</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Tab Navigation -->
-      <div class="tab-container">
-        <nav class="tab-nav">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            :class="['tab-btn', { active: activeTab === tab.id }]"
-            @click="activeTab = tab.id"
-          >
-            {{ tab.name }}
+          <button @click="enroll" :disabled="enrolling"
+            class="px-8 py-3 rounded-full bg-white text-[#0A2540] text-sm font-semibold
+                   shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)]
+                   transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+            <GraduationCap class="w-4 h-4" :stroke-width="2" />
+            {{ enrolling ? '报名中...' : '立即报名' }}
           </button>
-          <div
-            class="tab-indicator"
-            :style="{ transform: `translateX(${tabs.findIndex(t => t.id === activeTab) * 100}%)` }"
-          ></div>
-        </nav>
-      </div>
-
-      <!-- Tab Content -->
-      <div class="content-container">
-        <div class="content-layout">
-          <!-- Main Content -->
-          <main class="main-content">
-            <!-- Overview Tab -->
-            <div v-show="activeTab === 'overview'" class="tab-panel">
-              <div class="section-card">
-                <h2 class="section-title">课程介绍</h2>
-                <div v-if="course.content" class="prose-content" v-html="course.content"></div>
-                <div v-else class="empty-content">
-                  <span class="empty-emoji">📄</span>
-                  <p class="empty-text">课程介绍正在完善中</p>
-                </div>
-              </div>
-
-              <!-- Instructor Card -->
-              <div v-if="course.instructorName" class="section-card instructor-card">
-                <h2 class="section-title">讲师信息</h2>
-                <div class="instructor-info">
-                  <div class="instructor-avatar">
-                    {{ course.instructorName?.charAt(0) || 'T' }}
-                  </div>
-                  <div class="instructor-details">
-                    <h3 class="instructor-name">{{ course.instructorName }}</h3>
-                    <p class="instructor-role">资深讲师</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Outline Tab -->
-            <div v-show="activeTab === 'outline'" class="tab-panel">
-              <div class="section-card">
-                <h2 class="section-title">课程大纲</h2>
-                <div v-if="course.content" class="prose-content" v-html="course.content"></div>
-                <div v-else class="empty-content">
-                  <span class="empty-emoji">📚</span>
-                  <p class="empty-text">课程大纲正在完善中</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sessions Tab -->
-            <div v-show="activeTab === 'sessions'" class="tab-panel">
-              <div class="section-card">
-                <h2 class="section-title">开班信息</h2>
-                <div v-if="sessions.length === 0" class="empty-content">
-                  <span class="empty-emoji">📅</span>
-                  <p class="empty-text">暂无可报名班期</p>
-                </div>
-                <div v-else class="sessions-list">
-                  <div
-                    v-for="session in sessions"
-                    :key="session.id"
-                    class="session-item"
-                    :class="{ disabled: session.remainingQuota <= 0 }"
-                  >
-                    <div class="session-info">
-                      <h4 class="session-code">{{ session.sessionCode }}</h4>
-                      <div class="session-details">
-                        <span class="session-detail">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                          </svg>
-                          {{ session.startDate }} 开课
-                        </span>
-                        <span v-if="session.schedule" class="session-detail">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M12 6v6l4 2" />
-                          </svg>
-                          {{ session.schedule }}
-                        </span>
-                      </div>
-                    </div>
-                    <div class="session-action">
-                      <span
-                        class="quota-badge"
-                        :class="session.remainingQuota < 10 ? 'warning' : 'normal'"
-                      >
-                        剩 {{ session.remainingQuota }} 名额
-                      </span>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        :disabled="session.remainingQuota <= 0"
-                        @click="openEnrollModal(session)"
-                      >
-                        {{ session.remainingQuota > 0 ? '立即报名' : '已满员' }}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </main>
-
-          <!-- Sidebar -->
-          <aside class="sidebar">
-            <div class="sidebar-card">
-              <h3 class="sidebar-title">选择班期报名</h3>
-              <p class="sidebar-subtitle">选择合适的开课时间与学习安排</p>
-
-              <div v-if="sessions.length === 0" class="sidebar-empty">
-                <span class="empty-emoji">📅</span>
-                <p class="empty-text">暂无可报名班期</p>
-              </div>
-
-              <div v-else class="sidebar-sessions">
-                <div
-                  v-for="session in sessions.slice(0, 3)"
-                  :key="session.id"
-                  class="sidebar-session"
-                  :class="{ disabled: session.remainingQuota <= 0 }"
-                >
-                  <div class="session-header">
-                    <span class="session-code">{{ session.sessionCode }}</span>
-                    <span
-                      class="quota-badge"
-                      :class="session.remainingQuota < 10 ? 'warning' : 'normal'"
-                    >
-                      剩 {{ session.remainingQuota }}
-                    </span>
-                  </div>
-                  <div class="session-date">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    {{ session.startDate }}
-                  </div>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    class="session-btn"
-                    :disabled="session.remainingQuota <= 0"
-                    @click="openEnrollModal(session)"
-                  >
-                    {{ session.remainingQuota > 0 ? '报名' : '已满' }}
-                  </Button>
-                </div>
-
-                <button
-                  v-if="sessions.length > 3"
-                  class="view-all-btn"
-                  @click="activeTab = 'sessions'"
-                >
-                  查看全部 {{ sessions.length }} 个班期
-                </button>
-              </div>
-            </div>
-          </aside>
         </div>
-      </div>
 
-      <!-- Fixed Bottom CTA (Mobile) -->
-      <div class="fixed-cta">
-        <div class="cta-content">
-          <div class="cta-info">
-            <span class="cta-label">{{ sessions.length }} 个班期可选</span>
+        <!-- Quick Stats (3 columns) -->
+        <div class="flex items-center justify-center divide-x divide-[#E3E8EE] py-4">
+          <div class="px-10 text-center">
+            <div class="text-3xl font-bold text-[#0A2540]">{{ chapters.length }}</div>
+            <div class="text-xs text-[#8898AA] mt-1">章节</div>
           </div>
-          <Button
-            variant="primary"
-            size="lg"
-            :disabled="sessions.length === 0"
-            @click="activeTab = 'sessions'"
-          >
-            查看班期
-          </Button>
+          <div class="px-10 text-center">
+            <div class="text-3xl font-bold text-[#0A2540]">{{ course.durationHours || '—' }}</div>
+            <div class="text-xs text-[#8898AA] mt-1">学时</div>
+          </div>
+          <div class="px-10 text-center">
+            <div class="text-3xl font-bold text-[#0A2540]">{{ course.enrollCount || 0 }}</div>
+            <div class="text-xs text-[#8898AA] mt-1">学员</div>
+          </div>
+        </div>
+
+        <!-- Feature Grid (2x2) -->
+        <div class="grid grid-cols-2 gap-4">
+          <div v-for="feat in courseFeatures" :key="feat.title"
+               class="p-5 rounded-2xl transition-all hover:-translate-y-0.5"
+               :class="feat.bg">
+            <component :is="feat.icon" class="w-6 h-6 mb-2" :class="feat.iconColor" :stroke-width="1.75" />
+            <h4 class="text-sm font-semibold text-[#0A2540] mb-1">{{ feat.title }}</h4>
+            <p class="text-xs text-[#425466] leading-relaxed">{{ feat.desc }}</p>
+          </div>
+        </div>
+
+        <!-- Chapters (Accordion style) -->
+        <div class="bg-white rounded-xl border border-[#E3E8EE] overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <div class="px-5 py-4 border-b border-[#E3E8EE]">
+            <h3 class="text-base font-semibold text-[#0A2540]">课程章节</h3>
+          </div>
+          <div v-if="chapters.length" class="divide-y divide-[#F0F3F7]">
+            <div v-for="(ch, i) in chapters" :key="ch.id"
+                 class="flex items-center gap-4 px-5 py-3.5 hover:bg-[#F6F9FC] transition-colors">
+              <div class="w-8 h-8 rounded-lg bg-[#635BFF]/10 flex items-center justify-center text-xs font-semibold text-[#635BFF]">
+                {{ i + 1 }}
+              </div>
+              <span class="flex-1 text-sm text-[#0A2540] font-medium truncate">{{ ch.title }}</span>
+              <span v-if="ch.duration" class="text-xs text-[#8898AA] flex items-center gap-1">
+                <Clock class="w-3 h-3" :stroke-width="2" /> {{ ch.duration }}min
+              </span>
+            </div>
+          </div>
+          <div v-else class="text-center py-8 text-sm text-[#8898AA]">暂无章节信息</div>
+        </div>
+
+        <!-- Similar Courses -->
+        <div v-if="similarCourses.length">
+          <div class="flex items-center gap-2 mb-4">
+            <Sparkles class="w-5 h-5 text-[#635BFF]" :stroke-width="1.75" />
+            <h3 class="text-base font-semibold text-[#0A2540]">相似课程</h3>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div v-for="sc in similarCourses" :key="sc.id || sc.courseId"
+                 class="bg-white rounded-2xl border border-[#E3E8EE] overflow-hidden cursor-pointer
+                        shadow-[0_2px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)]
+                        hover:-translate-y-1 transition-all"
+                 @click="goDetail(sc)">
+              <div class="h-24 bg-gradient-to-br flex items-center justify-center"
+                   :class="getCategoryStyle(sc.category).gradient">
+                <component :is="getCategoryStyle(sc.category).icon" class="w-8 h-8 text-white/80" :stroke-width="1.25" />
+              </div>
+              <div class="p-3">
+                <h4 class="text-sm font-semibold text-[#0A2540] truncate">{{ sc.title || sc.courseName }}</h4>
+                <span v-if="sc.similarity" class="text-xs text-[#8898AA]">匹配 {{ Math.round((sc.similarity || 0) * 100) }}%</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </template>
 
-    <!-- Not Found -->
-    <div v-else class="not-found">
-      <span class="not-found-emoji">⚠️</span>
-      <h2 class="not-found-title">课程不存在</h2>
-      <p class="not-found-desc">该课程可能已被删除或不存在。</p>
-      <Button variant="secondary" @click="$router.push('/courses')">
-        返回课程列表
-      </Button>
-    </div>
+    <!-- ================================================================
+         🌙 DARK — Steam Game Page：媒体区 + 双栏布局
+         ================================================================ -->
+    <template v-else-if="theme === 'dark'">
+      <div>
+        <!-- Back -->
+        <button @click="$router.back()" class="inline-flex items-center gap-1.5 text-sm text-[#6B6B6E] hover:text-[#EDEDED] transition-colors mb-4 cursor-pointer">
+          <ArrowLeft class="w-4 h-4" :stroke-width="1.75" /> 返回列表
+        </button>
 
-    <!-- Enroll Confirm Modal -->
-    <EnrollConfirmModal
-      v-model="enrollModalVisible"
-      :session="selectedSession"
-      @success="loadSessions"
-    />
+        <!-- Top Media Area -->
+        <div class="relative rounded-xl overflow-hidden mb-5">
+          <div class="h-56 bg-gradient-to-br flex items-center justify-center"
+               :class="getCategoryStyle(course.category).gradient">
+            <component :is="getCategoryStyle(course.category).icon" class="w-20 h-20 text-white/20" :stroke-width="1" />
+          </div>
+          <!-- Overlay -->
+          <div class="absolute inset-0 bg-gradient-to-t from-[#08090A] via-[#08090A]/60 to-transparent" />
+          <div class="absolute bottom-0 inset-x-0 p-6">
+            <h1 class="text-2xl font-bold text-[#EDEDED] mb-1">{{ course.title }}</h1>
+            <div class="flex items-center gap-3 text-sm text-gray-400">
+              <span v-if="course.category" class="px-2 py-0.5 rounded-md bg-white/[0.06] text-xs font-medium">{{ course.category }}</span>
+              <span v-if="course.level" class="px-2 py-0.5 rounded-md bg-white/[0.06] text-xs font-medium">{{ course.level }}</span>
+            </div>
+          </div>
+          <!-- Rating Badge (top right) -->
+          <div class="absolute top-4 right-4 text-center">
+            <div class="text-3xl font-bold text-[#EDEDED] drop-shadow-[0_0_20px_rgba(129,140,248,0.5)]">
+              {{ (course.rating || 4.5).toFixed(1) }}
+            </div>
+            <div class="flex items-center gap-0.5 justify-center mt-0.5">
+              <Star v-for="n in 5" :key="n" class="w-3 h-3" :class="n <= Math.round(course.rating || 4.5) ? 'text-amber-400 fill-amber-400' : 'text-gray-600'" :stroke-width="0" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-Column Layout -->
+        <div class="grid lg:grid-cols-5 gap-5">
+          <!-- Left (3 cols) — Description + Chapters -->
+          <div class="lg:col-span-3 space-y-5">
+            <!-- Description -->
+            <div class="steam-card p-5">
+              <h3 class="text-sm font-semibold text-[#EDEDED] mb-3">关于此课程</h3>
+              <p class="text-sm text-gray-400 leading-relaxed">{{ course.description || '暂无描述' }}</p>
+              <!-- Tags -->
+              <div class="flex flex-wrap gap-2 mt-4">
+                <span class="steam-tag">{{ course.category || '未分类' }}</span>
+                <span class="steam-tag">{{ course.level || '全等级' }}</span>
+                <span class="steam-tag">{{ chapters.length }} 章节</span>
+                <span class="steam-tag">{{ course.durationHours || '—' }}h 学时</span>
+              </div>
+            </div>
+
+            <!-- Chapters (Table style) -->
+            <div class="steam-card overflow-hidden">
+              <div class="px-5 py-3 border-b border-white/[0.04]">
+                <span class="text-sm font-semibold text-[#EDEDED]">课程章节</span>
+              </div>
+              <div v-if="chapters.length">
+                <div v-for="(ch, i) in chapters" :key="ch.id"
+                     class="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors"
+                     :class="i % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.015]'">
+                  <span class="text-xs font-mono text-gray-600 w-6">{{ String(i + 1).padStart(2, '0') }}</span>
+                  <span class="flex-1 text-sm text-[#EDEDED] truncate">{{ ch.title }}</span>
+                  <span v-if="ch.duration" class="text-xs text-gray-600 font-mono">{{ ch.duration }}min</span>
+                </div>
+              </div>
+              <div v-else class="text-center py-8 text-sm text-gray-600">暂无章节信息</div>
+            </div>
+          </div>
+
+          <!-- Right (2 cols) — Action Panel (Sticky) -->
+          <div class="lg:col-span-2">
+            <div class="steam-card p-5 lg:sticky lg:top-20 space-y-4">
+              <button @click="enroll" :disabled="enrolling"
+                class="w-full py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-[#818CF8] to-[#6366F1] text-white
+                       hover:shadow-[0_0_24px_rgba(129,140,248,0.3)] transition-all
+                       disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-2">
+                <GraduationCap class="w-4 h-4" :stroke-width="2" />
+                {{ enrolling ? '报名中...' : '开始学习' }}
+              </button>
+
+              <div class="space-y-3 pt-2">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-500">讲师</span>
+                  <span class="text-[#EDEDED] font-medium">{{ course.instructor || '未知' }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-500">难度</span>
+                  <span class="text-[#EDEDED] font-medium">{{ course.level || '全等级' }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-500">章节数</span>
+                  <span class="text-[#EDEDED] font-mono">{{ chapters.length }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-500">学时</span>
+                  <span class="text-[#EDEDED] font-mono">{{ course.durationHours || '—' }}h</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-500">学员数</span>
+                  <span class="text-[#EDEDED] font-mono">{{ course.enrollCount || 0 }}</span>
+                </div>
+              </div>
+
+              <!-- Category badge -->
+              <div class="pt-3 border-t border-white/[0.04]">
+                <span class="text-[10px] text-gray-600 uppercase tracking-wider">分类标签</span>
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                  <span class="steam-tag">{{ course.category || '未分类' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Similar Courses -->
+        <div v-if="similarCourses.length" class="mt-6">
+          <div class="flex items-center gap-2 mb-4">
+            <Sparkles class="w-4 h-4 text-[#818CF8]" :stroke-width="1.75" />
+            <h3 class="text-sm font-semibold text-[#EDEDED]">更多推荐</h3>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div v-for="sc in similarCourses" :key="sc.id || sc.courseId"
+                 class="steam-card overflow-hidden cursor-pointer group"
+                 @click="goDetail(sc)">
+              <div class="h-20 bg-gradient-to-br flex items-center justify-center"
+                   :class="getCategoryStyle(sc.category).gradient">
+                <component :is="getCategoryStyle(sc.category).icon" class="w-6 h-6 text-white/80" :stroke-width="1.25" />
+              </div>
+              <div class="p-3">
+                <h4 class="text-sm font-medium text-[#EDEDED] truncate">{{ sc.title || sc.courseName }}</h4>
+                <span v-if="sc.similarity" class="text-xs text-gray-600 font-mono">{{ Math.round((sc.similarity || 0) * 100) }}% match</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ================================================================
+         🌅 WARM — Medium Article：窄栏居中 + 阅读体验
+         ================================================================ -->
+    <template v-else-if="theme === 'warm'">
+      <div class="max-w-[680px] mx-auto">
+        <!-- Back -->
+        <button @click="$router.back()" class="inline-flex items-center gap-1.5 text-sm text-[#78716C] hover:text-[#292524] transition-colors mb-6 cursor-pointer">
+          <ArrowLeft class="w-4 h-4" :stroke-width="1.75" /> 返回
+        </button>
+
+        <!-- Title (Serif style) -->
+        <h1 class="text-3xl font-extrabold text-[#292524] leading-tight mb-2" style="font-family: Georgia, 'Noto Serif SC', serif;">
+          {{ course.title }}
+        </h1>
+        <p class="text-lg text-[#78716C] mb-5 leading-relaxed">{{ course.description || '暂无描述' }}</p>
+
+        <!-- Meta Row -->
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-full bg-[#D97706]/10 flex items-center justify-center">
+            <User class="w-5 h-5 text-[#D97706]" :stroke-width="1.75" />
+          </div>
+          <div>
+            <div class="text-sm font-bold text-[#292524]">{{ course.instructor || '讲师' }}</div>
+            <div class="text-xs text-[#A8A29E]">{{ course.durationHours || '—' }}h · {{ chapters.length }} 章节 · {{ course.enrollCount || 0 }} 人学习</div>
+          </div>
+          <div class="ml-auto flex items-center gap-2">
+            <span v-if="course.category"
+                  class="px-3 py-1 rounded-full text-xs font-bold"
+                  :class="[getCategoryStyle(course.category).bgClass, getCategoryStyle(course.category).textClass]">
+              {{ course.category }}
+            </span>
+            <span v-if="course.level" class="px-3 py-1 rounded-full bg-[#F5F5F4] text-[#78716C] text-xs font-bold">
+              {{ course.level }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-[#E7E5E4] mb-8" />
+
+        <!-- Description (Article body style) -->
+        <div class="prose-warm mb-8">
+          <div class="border-l-3 border-[#D97706] pl-4 py-1 mb-6">
+            <p class="text-sm text-[#78716C] italic leading-relaxed">{{ course.description || '这门课程将带你从零开始，系统学习相关技能。' }}</p>
+          </div>
+        </div>
+
+        <!-- Chapters (Ordered list style) -->
+        <div class="mb-8">
+          <h2 class="text-xl font-extrabold text-[#292524] mb-4" style="font-family: Georgia, 'Noto Serif SC', serif;">
+            课程章节
+          </h2>
+          <div v-if="chapters.length" class="space-y-3">
+            <div v-for="(ch, i) in chapters" :key="ch.id"
+                 class="flex items-start gap-4 py-2">
+              <span class="text-2xl font-bold text-[#D97706]/30 leading-none w-8 flex-shrink-0">{{ i + 1 }}</span>
+              <div class="flex-1 pt-0.5">
+                <h4 class="text-sm font-bold text-[#292524]">{{ ch.title }}</h4>
+                <span v-if="ch.duration" class="text-xs text-[#A8A29E]">{{ ch.duration }} 分钟</span>
+              </div>
+            </div>
+          </div>
+          <p v-else class="text-sm text-[#A8A29E]">暂无章节信息</p>
+        </div>
+
+        <!-- Sticky Bottom CTA -->
+        <div class="sticky bottom-0 py-4 bg-gradient-to-t from-[#FFFBF5] via-[#FFFBF5] to-transparent">
+          <div class="flex items-center gap-3 p-4 bg-white rounded-2xl border-2 border-[#E5E7EB] shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+            <button @click="enroll" :disabled="enrolling"
+              class="flex-1 py-3 rounded-2xl bg-[#D97706] text-white text-sm font-bold
+                     shadow-[0_4px_0_#B45309] hover:brightness-105
+                     active:translate-y-[2px] active:shadow-[0_2px_0_#B45309]
+                     transition-all inline-flex items-center justify-center gap-2
+                     disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+              <GraduationCap class="w-4 h-4" :stroke-width="2" />
+              {{ enrolling ? '报名中...' : '开始学习' }}
+            </button>
+            <button class="w-12 h-12 rounded-2xl border-2 border-[#E7E5E4] flex items-center justify-center hover:bg-[#FEF3C7] transition-colors cursor-pointer">
+              <Heart class="w-5 h-5 text-[#D97706]" :stroke-width="2" />
+            </button>
+            <button class="w-12 h-12 rounded-2xl border-2 border-[#E7E5E4] flex items-center justify-center hover:bg-[#FEF3C7] transition-colors cursor-pointer">
+              <Share2 class="w-5 h-5 text-[#78716C]" :stroke-width="2" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Similar Courses -->
+        <div v-if="similarCourses.length" class="mt-8 pb-4">
+          <h2 class="text-xl font-extrabold text-[#292524] mb-4" style="font-family: Georgia, 'Noto Serif SC', serif;">
+            📚 相关推荐
+          </h2>
+          <div class="space-y-3">
+            <div v-for="sc in similarCourses" :key="sc.id || sc.courseId"
+                 class="flex items-center gap-4 p-3 rounded-xl border border-[#E7E5E4] hover:bg-[#FFF8ED] transition-colors cursor-pointer"
+                 @click="goDetail(sc)">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0"
+                   :class="getCategoryStyle(sc.category).gradient">
+                <component :is="getCategoryStyle(sc.category).icon" class="w-5 h-5 text-white/80" :stroke-width="1.5" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-bold text-[#292524] truncate">{{ sc.title || sc.courseName }}</h4>
+                <span v-if="sc.category" class="text-xs" :class="getCategoryStyle(sc.category).textClass">{{ sc.category }}</span>
+              </div>
+              <span v-if="sc.similarity" class="text-xs text-[#A8A29E] flex-shrink-0">{{ Math.round((sc.similarity || 0) * 100) }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ================================================================
+         ❄️ PRO — npm Package Page：包名 + 徽章 + 双栏 README
+         ================================================================ -->
+    <template v-else>
+      <div>
+        <!-- Back -->
+        <button @click="$router.back()" class="inline-flex items-center gap-1 text-xs text-[#64748B] hover:text-[#0F172A] transition-colors cursor-pointer font-mono mb-4">
+          <ArrowLeft class="w-3.5 h-3.5" :stroke-width="1.75" /> back
+        </button>
+
+        <!-- Package Title Row -->
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h1 class="text-xl font-semibold text-[#0F172A] font-mono tracking-tight">
+              @itts/{{ (course.category || 'course').toLowerCase().replace(/\s+/g, '-') }}
+            </h1>
+            <span class="text-xs text-[#64748B] font-mono">{{ course.title }}</span>
+          </div>
+          <div class="text-right">
+            <code class="text-xs text-[#64748B] font-mono">v1.0.0</code>
+          </div>
+        </div>
+
+        <!-- Badge Row -->
+        <div class="flex flex-wrap gap-1.5 mb-5">
+          <span v-if="course.level" class="npm-badge bg-[#0284C7]/10 text-[#0284C7]">{{ course.level }}</span>
+          <span v-if="course.category" class="npm-badge bg-emerald-500/10 text-emerald-600">{{ course.category }}</span>
+          <span class="npm-badge bg-amber-500/10 text-amber-600">★ {{ (course.rating || 4.5).toFixed(1) }}</span>
+          <span class="npm-badge bg-[#E2E8F0] text-[#64748B]">{{ chapters.length }} chapters</span>
+          <span class="npm-badge bg-[#E2E8F0] text-[#64748B]">{{ course.durationHours || '—' }}h</span>
+          <span class="npm-badge bg-[#E2E8F0] text-[#64748B]">{{ course.enrollCount || 0 }} users</span>
+        </div>
+
+        <!-- 2-Column Layout -->
+        <div class="grid lg:grid-cols-10 gap-6">
+          <!-- Left (7 cols) — README -->
+          <div class="lg:col-span-7 space-y-5">
+            <!-- Install Command -->
+            <div class="npm-code-block">
+              <div class="flex items-center justify-between">
+                <code class="text-sm text-emerald-400">$ enroll --course "{{ course.title }}"</code>
+                <button class="text-xs text-[#64748B] hover:text-[#0F172A] transition cursor-pointer font-mono">copy</button>
+              </div>
+            </div>
+
+            <!-- README Content -->
+            <div class="npm-card">
+              <h2 class="npm-heading">## 课程简介</h2>
+              <p class="text-sm text-[#64748B] leading-relaxed mt-2 mb-6">{{ course.description || '暂无描述' }}</p>
+
+              <h2 class="npm-heading">## 章节目录 (API)</h2>
+              <div v-if="chapters.length" class="mt-3 space-y-0">
+                <div v-for="(ch, i) in chapters" :key="ch.id"
+                     class="flex items-center gap-3 py-2 border-b border-[#F1F5F9] last:border-0">
+                  <code class="text-xs font-mono text-[#64748B] w-6 text-right">{{ i + 1 }}.</code>
+                  <span class="text-sm text-[#0F172A] flex-1 truncate">{{ ch.title }}</span>
+                  <code v-if="ch.duration" class="text-xs font-mono text-[#94A3B8]">{{ ch.duration }}min</code>
+                </div>
+              </div>
+              <p v-else class="text-xs text-[#94A3B8] mt-2 font-mono">// No chapters available</p>
+            </div>
+
+            <!-- Similar (Dependencies) -->
+            <div v-if="similarCourses.length" class="npm-card">
+              <h2 class="npm-heading">## Related Packages</h2>
+              <div class="mt-3 space-y-1">
+                <div v-for="sc in similarCourses" :key="sc.id || sc.courseId"
+                     class="flex items-center gap-3 py-1.5 hover:bg-[#F8FAFC] -mx-4 px-4 rounded cursor-pointer transition-colors"
+                     @click="goDetail(sc)">
+                  <code class="text-xs text-[#0284C7] font-mono">{{ sc.title || sc.courseName }}</code>
+                  <span v-if="sc.similarity" class="text-[10px] text-[#94A3B8] font-mono ml-auto">~{{ Math.round((sc.similarity || 0) * 100) }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right (3 cols) — Metadata Sidebar -->
+          <div class="lg:col-span-3">
+            <div class="npm-card lg:sticky lg:top-20 space-y-4">
+              <!-- Enroll -->
+              <button @click="enroll" :disabled="enrolling"
+                class="w-full py-2 rounded-md text-xs font-semibold bg-[#0F172A] text-white
+                       hover:bg-[#1E293B] transition-all cursor-pointer
+                       disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5">
+                <GraduationCap class="w-3.5 h-3.5" :stroke-width="2" />
+                {{ enrolling ? 'enrolling...' : 'Enroll' }}
+              </button>
+
+              <div class="space-y-3 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-[#94A3B8] font-mono">instructor</span>
+                  <span class="text-[#0F172A] font-medium">{{ course.instructor || 'unknown' }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[#94A3B8] font-mono">difficulty</span>
+                  <code class="text-[#0284C7] bg-[#0284C7]/5 px-1.5 py-0.5 rounded">{{ course.level || 'all' }}</code>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[#94A3B8] font-mono">chapters</span>
+                  <span class="text-[#0F172A] font-mono">{{ chapters.length }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[#94A3B8] font-mono">duration</span>
+                  <span class="text-[#0F172A] font-mono">{{ course.durationHours || '—' }}h</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[#94A3B8] font-mono">weekly users</span>
+                  <span class="text-[#0F172A] font-mono">{{ course.enrollCount || 0 }}</span>
+                </div>
+              </div>
+
+              <div class="pt-3 border-t border-[#E2E8F0]">
+                <span class="text-[10px] text-[#94A3B8] font-mono uppercase tracking-wider">category</span>
+                <div class="mt-1.5">
+                  <span class="npm-badge bg-[#E2E8F0] text-[#64748B]">{{ course.category || '未分类' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { Button } from '@/design-system'
-import { getCourseById } from '@/api/course'
-import { getEnrollableSessions } from '@/api/session'
-import { getCategoryName, getDifficultyName } from '@/utils/courseMapping'
-import { getCategoryIcon } from '@/utils/categoryIcons'
-import { EnrollConfirmModal } from './course-detail'
-
-interface Course {
-  id?: number
-  name?: string
-  description?: string
-  content?: string
-  category?: string
-  categoryName?: string
-  difficulty?: number
-  difficultyName?: string
-  durationHours?: number
-  enrollmentCount?: number
-  instructorName?: string
-  coverImage?: string
-  tags?: string
-}
-
-interface Session {
-  id: number
-  sessionCode: string
-  startDate: string
-  schedule?: string
-  remainingQuota: number
-}
+import { ref, onMounted, computed } from 'vue'
+import { useHead } from '@unhead/vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useThemeStore } from '@/stores/theme'
+import { courseApi } from '@/api/course'
+import { enrollmentApi } from '@/api/enrollment'
+import { recommendApi } from '@/api/recommend'
+import { getCategoryStyle } from '@/utils/categoryColors'
+import { toast } from '@/composables/useToast'
+import {
+  ArrowLeft, User, Users, GraduationCap, ListOrdered, Sparkles,
+  Clock, Star, Heart, Share2,
+  Target, TrendingUp, BookOpen, Zap,
+} from 'lucide-vue-next'
 
 const route = useRoute()
+const router = useRouter()
+const themeStore = useThemeStore()
+const theme = computed(() => themeStore.theme)
+const courseId = computed(() => Number(route.params.id))
 
-// State
-const course = ref<Course>({})
-const sessions = ref<Session[]>([])
-const loading = ref(false)
-const enrollModalVisible = ref(false)
-const selectedSession = ref<Session | null>(null)
-const activeTab = ref('overview')
+const course = ref<any>(null)
 
-// Tabs
-const tabs = [
-  { id: 'overview', name: '课程详情' },
-  { id: 'outline', name: '课程大纲' },
-  { id: 'sessions', name: '开班信息' },
+useHead({ title: computed(() => course.value ? `${course.value.title} — IT 智能培训系统` : '课程详情 — IT 智能培训系统') })
+const chapters = ref<any[]>([])
+const similarCourses = ref<any[]>([])
+const similarLoading = ref(false)
+const enrolling = ref(false)
+
+/* Light: Feature grid data */
+const courseFeatures = [
+  { icon: Sparkles, title: 'AI 智能推荐', desc: '根据你的学习进度智能调整内容', bg: 'bg-blue-50', iconColor: 'text-blue-500' },
+  { icon: Target, title: '目标驱动', desc: '设定学习目标，跟踪完成进度', bg: 'bg-purple-50', iconColor: 'text-purple-500' },
+  { icon: TrendingUp, title: '持续成长', desc: '数据化追踪你的学习曲线', bg: 'bg-emerald-50', iconColor: 'text-emerald-500' },
+  { icon: Zap, title: '高效学习', desc: '精心设计的章节结构，循序渐进', bg: 'bg-amber-50', iconColor: 'text-amber-500' },
 ]
 
-// Computed
-const skillTags = computed(() => {
-  if (!course.value.tags) return []
-  return course.value.tags.split(',').filter((t) => t.trim())
-})
-
-// API calls
-const loadCourse = async () => {
-  loading.value = true
+async function enroll() {
+  enrolling.value = true
   try {
-    const res = await getCourseById(route.params.id as string)
-    course.value = res.data
-    await loadSessions()
-  } catch (error) {
-    console.error('加载课程详情失败:', error)
+    await enrollmentApi.enroll({ courseId: courseId.value })
+    toast.success('报名成功！')
+  } catch (e: any) {
+    toast.error(e.message || '报名失败')
   } finally {
-    loading.value = false
+    enrolling.value = false
   }
 }
 
-const loadSessions = async () => {
+function goDetail(sc: any) {
+  const id = sc.id || sc.courseId
+  if (id) router.push(`/student/courses/${id}`)
+}
+
+onMounted(async () => {
+  const id = courseId.value
   try {
-    const res = await getEnrollableSessions(route.params.id as string)
-    sessions.value = res.data || []
-  } catch (error) {
-    console.error('加载班期失败:', error)
+    const [info, chList] = await Promise.all([
+      courseApi.getById(id),
+      courseApi.getChapters(id).catch(() => []),
+    ])
+    course.value = info
+    chapters.value = (chList as any) || []
+  } catch {
+    toast.error('加载课程失败')
   }
-}
-
-const openEnrollModal = (session: Session) => {
-  if (session.remainingQuota <= 0) return
-  selectedSession.value = session
-  enrollModalVisible.value = true
-}
-
-onMounted(() => {
-  loadCourse()
+  similarLoading.value = true
+  try {
+    const res: any = await recommendApi.similarCourses(id)
+    similarCourses.value = Array.isArray(res) ? res : (res?.records || res?.data || [])
+  } catch {
+    similarCourses.value = []
+  } finally {
+    similarLoading.value = false
+  }
 })
 </script>
 
 <style scoped>
-/* ========================================
-   Apple 风格课程详情页
-   ======================================== */
-
-.course-detail-page {
-  min-height: 100vh;
-  background: var(--bg-primary);
-  padding-bottom: 100px;
+/* ======== DARK — Steam ======== */
+.steam-card {
+  background: #111113;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.steam-card:hover {
+  border-color: rgba(129,140,248,0.15);
+  box-shadow: 0 0 20px rgba(129,140,248,0.05);
+}
+.steam-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
 }
 
-/* ===== Loading ===== */
-.loading-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
+/* ======== WARM — Medium ======== */
+.border-l-3 {
+  border-left-width: 3px;
 }
 
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 2px solid var(--border-color);
-  border-top-color: var(--primary-color);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ===== Hero Section ===== */
-.course-hero {
-  position: relative;
-  min-height: 480px;
-  display: flex;
-  align-items: flex-end;
-  padding: 48px 0;
-}
-
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.hero-bg-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.hero-bg-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--primary-color) 0%, #5856d6 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hero-bg-icon {
-  width: 120px;
-  height: 120px;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.2) 0%,
-    rgba(0, 0, 0, 0.6) 100%
-  );
-}
-
-.hero-content {
-  position: relative;
-  z-index: 1;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 var(--page-padding-x, 48px);
-  color: white;
-}
-
-/* Back Button */
-.back-btn {
+/* ======== PRO — npm ======== */
+.npm-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  margin-bottom: 24px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-/* Meta Tags */
-.course-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.meta-tag {
-  padding: 5px 12px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.difficulty-1 { background: rgba(52, 199, 89, 0.3); }
-.difficulty-2 { background: rgba(0, 122, 255, 0.3); }
-.difficulty-3 { background: rgba(255, 149, 0, 0.3); }
-.difficulty-4 { background: rgba(255, 59, 48, 0.3); }
-
-/* Title */
-.course-title {
-  font-size: clamp(28px, 5vw, 44px);
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
-}
-
-/* Description */
-.course-desc {
-  font-size: 16px;
-  line-height: 1.6;
-  opacity: 0.9;
-  max-width: 600px;
-  margin-bottom: 24px;
-}
-
-/* Stats */
-.course-stats {
-  display: flex;
-  gap: 40px;
-  margin-bottom: 20px;
-}
-
-.stat {
-  text-align: center;
-}
-
-.stat-value {
-  display: block;
-  font-size: 28px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.stat-label {
-  font-size: 13px;
-  opacity: 0.8;
-}
-
-/* Skill Tags */
-.skill-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.skill-tag {
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.15);
+  padding: 2px 8px;
   border-radius: 4px;
-  font-size: 12px;
-}
-
-/* ===== Tab Navigation ===== */
-.tab-container {
-  background: var(--bg-secondary);
-  border-bottom: 0.5px solid var(--border-color);
-  position: sticky;
-  top: 48px;
-  z-index: 100;
-}
-
-.tab-nav {
-  position: relative;
-  display: flex;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 var(--page-padding-x, 48px);
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 16px 0;
-  background: none;
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: color 0.2s ease;
-  text-align: center;
-}
-
-.tab-btn:hover {
-  color: var(--text-primary);
-}
-
-.tab-btn.active {
-  color: var(--primary-color);
-}
-
-.tab-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  width: calc(100% / 3);
-  background: var(--primary-color);
-  transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1.0);
-}
-
-/* ===== Content Container ===== */
-.content-container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 48px var(--page-padding-x, 48px);
-}
-
-.content-layout {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 48px;
-  align-items: start;
-}
-
-@media (max-width: 1024px) {
-  .content-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    display: none;
-  }
-}
-
-/* ===== Main Content ===== */
-.main-content {
-  min-width: 0;
-}
-
-.tab-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.section-card {
-  background: var(--bg-card);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.04),
-    0 2px 4px rgba(0, 0, 0, 0.04);
-  border: 0.5px solid rgba(0, 0, 0, 0.05);
-}
-
-.section-title {
-  font-size: 17px;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 16px;
 }
-
-.prose-content {
+.npm-card {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+}
+.npm-code-block {
+  padding: 14px 16px;
+  background: #0F172A;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+.npm-heading {
   font-size: 15px;
-  line-height: 1.7;
-  color: var(--text-secondary);
-}
-
-.prose-content :deep(h1),
-.prose-content :deep(h2),
-.prose-content :deep(h3) {
-  color: var(--text-primary);
-  margin-top: 24px;
-  margin-bottom: 12px;
-}
-
-.prose-content :deep(p) {
-  margin-bottom: 12px;
-}
-
-.prose-content :deep(ul),
-.prose-content :deep(ol) {
-  padding-left: 20px;
-  margin-bottom: 12px;
-}
-
-.empty-content {
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.empty-emoji {
-  font-size: 48px;
-  display: block;
-  margin-bottom: 12px;
-}
-
-.empty-text {
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-/* Instructor Card */
-.instructor-card {
-  background: var(--bg-secondary);
-}
-
-.instructor-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.instructor-avatar {
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary-color);
-  color: white;
-  border-radius: 50%;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.instructor-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.instructor-role {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-/* Sessions List */
-.sessions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.session-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px;
-  background: var(--bg-tertiary);
-  border-radius: 12px;
-  transition: background-color 0.2s ease;
-}
-
-.session-item:hover {
-  background: var(--bg-secondary);
-}
-
-.session-item.disabled {
-  opacity: 0.6;
-}
-
-.session-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.session-code {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-
-.session-details {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.session-detail {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.session-action {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.quota-badge {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-.quota-badge.normal {
-  color: var(--success);
-  background: rgba(52, 199, 89, 0.1);
-}
-
-.quota-badge.warning {
-  color: var(--warning);
-  background: rgba(255, 149, 0, 0.1);
-}
-
-/* ===== Sidebar ===== */
-.sidebar {
-  position: sticky;
-  top: 120px;
-}
-
-.sidebar-card {
-  background: var(--bg-card);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.04),
-    0 2px 4px rgba(0, 0, 0, 0.04),
-    0 4px 8px rgba(0, 0, 0, 0.04);
-  border: 0.5px solid rgba(0, 0, 0, 0.05);
-}
-
-.sidebar-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.sidebar-subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.sidebar-empty {
-  text-align: center;
-  padding: 32px 0;
-}
-
-.sidebar-sessions {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.sidebar-session {
-  padding: 16px;
-  background: var(--bg-tertiary);
-  border-radius: 12px;
-}
-
-.sidebar-session.disabled {
-  opacity: 0.6;
-}
-
-.session-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.session-date {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-}
-
-.session-btn {
-  width: 100%;
-}
-
-.view-all-btn {
-  width: 100%;
-  padding: 12px;
-  background: none;
-  border: 1px dashed var(--border-color);
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--primary-color);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.view-all-btn:hover {
-  background: var(--bg-tertiary);
-}
-
-/* ===== Fixed Bottom CTA ===== */
-.fixed-cta {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--bg-card);
-  border-top: 0.5px solid var(--border-color);
-  padding: 16px var(--page-padding-x, 24px);
-  z-index: 100;
-  backdrop-filter: saturate(180%) blur(20px);
-}
-
-@media (max-width: 1024px) {
-  .fixed-cta {
-    display: block;
-  }
-
-  .course-detail-page {
-    padding-bottom: 120px;
-  }
-}
-
-.cta-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.cta-label {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-/* ===== Not Found ===== */
-.not-found {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  text-align: center;
-  padding: 48px 24px;
-}
-
-.not-found-emoji {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.not-found-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.not-found-desc {
-  font-size: 15px;
-  color: var(--text-secondary);
-  margin-bottom: 24px;
-}
-
-/* ===== Responsive ===== */
-@media (max-width: 768px) {
-  .course-hero {
-    min-height: 400px;
-    padding: 32px 0;
-  }
-
-  .hero-content {
-    padding: 0 24px;
-  }
-
-  .course-title {
-    font-size: 28px;
-  }
-
-  .course-stats {
-    gap: 24px;
-  }
-
-  .stat-value {
-    font-size: 24px;
-  }
-
-  .tab-nav {
-    padding: 0 24px;
-  }
-
-  .content-container {
-    padding: 32px 24px;
-  }
-
-  .section-card {
-    padding: 20px;
-  }
-}
-
-/* ===== Dark Mode ===== */
-[data-theme="dark"] .section-card {
-  background: var(--bg-secondary);
-  border-color: rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .sidebar-card {
-  background: var(--bg-secondary);
-  border-color: rgba(255, 255, 255, 0.05);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.2),
-    0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-[data-theme="dark"] .session-item:hover {
-  background: var(--bg-tertiary);
-}
-
-[data-theme="dark"] .fixed-cta {
-  background: rgba(29, 29, 31, 0.72);
-  border-top-color: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="dark"] .tab-container {
-  background: rgba(29, 29, 31, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
+  font-weight: 700;
+  color: #0F172A;
+  font-family: ui-monospace, SFMono-Regular, monospace;
 }
 </style>

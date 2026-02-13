@@ -1,750 +1,736 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-8">
-    <!-- Loading Overlay -->
-    <div v-if="loading" class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary/80 backdrop-blur-sm">
-      <div class="flex flex-col items-center gap-3">
-        <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-        <span class="text-sm text-text-secondary">加载中...</span>
-      </div>
-    </div>
-
-    <!-- Hero -->
-    <section class="relative overflow-hidden rounded-3xl border border-border-color/60 bg-bg-secondary/70 backdrop-blur-xl shadow-sm p-7 md:p-10">
-      <div class="absolute inset-0 pointer-events-none" style="background: var(--gradient-hero)"></div>
-      <div class="relative flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-        <div>
-          <p class="inline-flex items-center gap-2 text-sm text-text-secondary">
-            <!-- BarChart3 Icon -->
-            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            学习报告
-          </p>
-          <h1 class="mt-3 text-3xl md:text-5xl font-semibold tracking-tight text-text-primary">数据驱动成长</h1>
-          <p class="mt-2 text-sm md:text-base text-text-secondary">可视化你的学习轨迹与关键指标。</p>
-        </div>
-
-        <div class="flex flex-col sm:flex-row gap-3">
-          <!-- Report Type Selector -->
-          <div class="inline-flex rounded-xl bg-bg-tertiary/60 border border-border-color/60 p-1">
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-              :class="reportType === 'weekly' ? 'bg-bg-primary text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'"
-              @click="reportType = 'weekly'"
-            >
-              周报
-            </button>
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-              :class="reportType === 'monthly' ? 'bg-bg-primary text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'"
-              @click="reportType = 'monthly'"
-            >
-              月报
-            </button>
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-              :class="reportType === 'yearly' ? 'bg-bg-primary text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'"
-              @click="reportType = 'yearly'"
-            >
-              年报
-            </button>
-          </div>
-
-          <!-- Date Selector -->
-          <Select
-            v-if="reportType === 'weekly'"
-            v-model="selectedWeekValue"
-            :options="weekOptions"
-            placeholder="选择周"
-            class="w-full sm:w-44"
-            @update:modelValue="loadReport"
-          />
-          <Select
-            v-else-if="reportType === 'monthly'"
-            v-model="selectedMonthValue"
-            :options="monthOptions"
-            placeholder="选择月份"
-            class="w-full sm:w-40"
-            @update:modelValue="loadReport"
-          />
-          <Select
-            v-else
-            v-model="selectedYearValue"
-            :options="yearOptions"
-            placeholder="选择年份"
-            class="w-full sm:w-32"
-            @update:modelValue="loadReport"
-          />
-        </div>
-      </div>
-    </section>
-
-    <template v-if="report">
-      <!-- KPI -->
-      <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
-        <div class="card p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <!-- Clock Icon -->
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span v-if="report.studyTimeChangePercent !== null" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-bg-tertiary/60 border border-border-color/60">
-              <!-- ArrowUp/ArrowDown Icon -->
-              <svg v-if="report.studyTimeChangePercent >= 0" class="w-4 h-4 mr-1 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-              </svg>
-              <svg v-else class="w-4 h-4 mr-1 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              {{ Math.abs(report.studyTimeChangePercent) }}%
-            </span>
-          </div>
-          <p class="mt-4 text-xs text-text-muted">学习时长</p>
-          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">
-            {{ formatMinutes(report.totalStudyMinutes) }}
-          </p>
-        </div>
-
-        <div class="card p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <!-- CalendarDays Icon -->
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <span v-if="report.studyDaysChange !== null" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-bg-tertiary/60 border border-border-color/60">
-              <svg v-if="report.studyDaysChange >= 0" class="w-4 h-4 mr-1 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-              </svg>
-              <svg v-else class="w-4 h-4 mr-1 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              {{ Math.abs(report.studyDaysChange) }}
-            </span>
-          </div>
-          <p class="mt-4 text-xs text-text-muted">学习天数</p>
-          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.studyDays || 0 }}</p>
-        </div>
-
-        <div class="card p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <!-- CheckCircle Icon -->
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span v-if="report.completedCoursesChange !== null" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-bg-tertiary/60 border border-border-color/60">
-              <svg v-if="report.completedCoursesChange >= 0" class="w-4 h-4 mr-1 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-              </svg>
-              <svg v-else class="w-4 h-4 mr-1 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              {{ Math.abs(report.completedCoursesChange) }}
-            </span>
-          </div>
-          <p class="mt-4 text-xs text-text-muted">完成课程</p>
-          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.completedCourses || 0 }}</p>
-        </div>
-
-        <div class="card p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <!-- Award Icon -->
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
-            </div>
-          </div>
-          <p class="mt-4 text-xs text-text-muted">获得成就</p>
-          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.earnedAchievements || 0 }}</p>
-        </div>
-
-        <div class="card p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <!-- Flame Icon -->
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
-              </svg>
-            </div>
-          </div>
-          <p class="mt-4 text-xs text-text-muted">连续打卡</p>
-          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.streakDays || 0 }}</p>
-        </div>
-
-        <div class="card p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <!-- Gauge Icon -->
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-          </div>
-          <p class="mt-4 text-xs text-text-muted">日均分钟</p>
-          <p class="mt-1 text-2xl font-semibold tracking-tight text-text-primary">{{ report.avgDailyMinutes || 0 }}</p>
-        </div>
-      </section>
-
-      <!-- Charts -->
-      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="card p-6">
-          <div class="flex items-end justify-between gap-6">
-            <div>
-              <h2 class="text-lg font-semibold tracking-tight text-text-primary">学习趋势</h2>
-              <p class="mt-1 text-sm text-text-muted">每日学习分钟与打卡状态</p>
-            </div>
-          </div>
-          <div ref="trendChartRef" class="h-80 w-full mt-4"></div>
-        </div>
-
-        <div class="card p-6">
-          <div class="flex items-end justify-between gap-6">
-            <div>
-              <h2 class="text-lg font-semibold tracking-tight text-text-primary">类别分布</h2>
-              <p class="mt-1 text-sm text-text-muted">你把时间花在了哪些方向</p>
-            </div>
-          </div>
-          <div ref="categoryChartRef" class="h-80 w-full mt-4"></div>
-
-          <div v-if="report.categoryDistribution?.length" class="mt-4 space-y-2">
-            <div
-              v-for="(item, index) in report.categoryDistribution"
-              :key="item.categoryName"
-              class="flex items-center gap-3"
-            >
-              <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: categorySwatches[index % categorySwatches.length] }"></span>
-              <span class="flex-1 font-medium text-sm text-text-primary">{{ item.categoryName }}</span>
-              <span class="text-sm text-text-secondary">{{ formatMinutes(item.minutes) }}</span>
-              <span class="text-sm font-semibold text-text-primary w-12 text-right">{{ item.percent }}%</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Courses -->
-      <section class="card p-6">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-5">
+  <div>
+    <!-- ================================================================
+         ☀️ LIGHT — Stripe Analytics：趋势统计卡 + 平滑面积图 + 数据表格
+         ================================================================ -->
+    <template v-if="theme === 'light'">
+      <div class="space-y-5">
+        <!-- Header with Tabs -->
+        <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-lg font-semibold tracking-tight text-text-primary">课程进度</h2>
-            <p class="mt-1 text-sm text-text-muted">进行中与已完成课程概览</p>
+            <h1 class="text-xl font-bold text-[#0A2540]">学习报告</h1>
+            <p class="text-sm text-[#425466] mt-0.5">追踪你的学习表现</p>
           </div>
-          <div class="inline-flex rounded-xl bg-bg-tertiary/60 border border-border-color/60 p-1">
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-              :class="activeTab === 'inProgress' ? 'bg-bg-primary text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'"
-              @click="activeTab = 'inProgress'"
-            >
-              进行中
-            </button>
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-              :class="activeTab === 'completed' ? 'bg-bg-primary text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'"
-              @click="activeTab = 'completed'"
-            >
-              已完成
+          <div class="flex bg-[#F6F9FC] rounded-lg p-0.5">
+            <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)"
+              :class="['px-4 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer',
+                tab === t.key ? 'bg-white text-[#0A2540] shadow-sm' : 'text-[#8898AA] hover:text-[#425466]']">
+              {{ t.label }}
             </button>
           </div>
         </div>
 
-        <div v-if="activeTab === 'inProgress'">
-          <div v-if="report.inProgressCourses?.length" class="space-y-3">
-            <div v-for="course in report.inProgressCourses" :key="course.courseId" class="card p-4">
-              <div class="flex items-start justify-between gap-6">
-                <div class="min-w-0">
-                  <p class="font-semibold text-text-primary truncate">{{ course.courseName }}</p>
-                  <p class="mt-1 text-sm text-text-muted truncate">{{ course.category }}</p>
-                </div>
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-bg-tertiary/60 border border-border-color/60">{{ course.progressPercent }}%</span>
-              </div>
-              <div class="mt-3">
-                <div class="h-2 rounded-full bg-bg-tertiary/70 overflow-hidden">
-                  <div class="h-full bg-primary/80 rounded-full transition-all" :style="{ width: course.progressPercent + '%' }"></div>
-                </div>
-                <p class="mt-2 text-xs text-text-muted">已学习 {{ formatMinutes(course.studyMinutes) }}</p>
-              </div>
-            </div>
+        <template v-if="loading">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div v-for="i in 4" :key="i" class="stripe-card h-24 animate-pulse bg-[#F6F9FC]"></div>
           </div>
-          <EmptyState v-else emoji="📚" title="暂无进行中的课程" description="从课程中心选择一门课程开始学习。" />
-        </div>
+          <div class="stripe-card h-64 animate-pulse bg-[#F6F9FC]"></div>
+        </template>
 
-        <div v-else>
-          <div v-if="report.completedCourseList?.length" class="space-y-3">
-            <div v-for="course in report.completedCourseList" :key="course.courseId" class="card p-4">
-              <div class="flex items-start justify-between gap-6">
-                <div class="min-w-0">
-                  <p class="font-semibold text-text-primary truncate">{{ course.courseName }}</p>
-                  <p class="mt-1 text-xs text-text-muted">完成时间：{{ course.lastStudyDate || '—' }}</p>
-                </div>
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success/10 text-success border border-success/20">已完成</span>
+        <template v-else-if="rpt">
+          <!-- 4 Stat Cards with Trend Arrow -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div v-for="(s, i) in stripeStats" :key="i" class="stripe-card">
+              <div class="text-xs text-[#8898AA] uppercase tracking-wider font-medium">{{ s.label }}</div>
+              <div class="flex items-end gap-2 mt-1">
+                <span class="text-2xl font-bold text-[#0A2540]">{{ s.value }}</span>
+                <span v-if="s.unit" class="text-sm text-[#8898AA] mb-0.5">{{ s.unit }}</span>
               </div>
-              <p class="mt-2 text-sm text-text-secondary">学习时长：{{ formatMinutes(course.studyMinutes) }}</p>
+              <div class="flex items-center gap-1 mt-1.5">
+                <component :is="s.trendUp ? TrendingUp : TrendingDown"
+                  :class="['w-3 h-3', s.trendUp ? 'text-emerald-500' : 'text-red-400']" :stroke-width="2" />
+                <span :class="['text-xs font-medium', s.trendUp ? 'text-emerald-500' : 'text-red-400']">
+                  {{ s.trendText }}
+                </span>
+                <span class="text-xs text-[#CBD5E1]">vs 上期</span>
+              </div>
             </div>
           </div>
-          <EmptyState v-else emoji="✅" title="本期暂无完成的课程" description="持续学习，很快就会看到成果。" />
-        </div>
-      </section>
 
-      <!-- Achievements & Suggestions -->
-      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="card p-6">
-          <div class="flex items-center justify-between gap-6">
-            <h2 class="text-lg font-semibold tracking-tight text-text-primary">新获得成就</h2>
-          </div>
-          <div v-if="report.newAchievements?.length" class="mt-4 space-y-3">
-            <div v-for="achievement in report.newAchievements" :key="achievement.id" class="card p-4">
-              <div class="flex items-start justify-between gap-6">
-                <div class="min-w-0">
-                  <p class="font-semibold text-text-primary truncate">{{ achievement.name }}</p>
-                  <p class="mt-1 text-sm text-text-secondary">{{ achievement.description }}</p>
-                </div>
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-bg-tertiary/60 border border-border-color/60">+{{ achievement.points || 0 }}</span>
-              </div>
+          <!-- Area Chart -->
+          <div class="stripe-card">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-[#0A2540]">
+                <TrendingUp class="w-4 h-4 text-[#635BFF] inline mr-1.5 -mt-0.5" :stroke-width="1.75" />
+                学习趋势
+              </h3>
+              <span class="text-xs text-[#8898AA]">{{ tabLabel }}学习时长分布</span>
             </div>
+            <div ref="chartRef" class="w-full h-72"></div>
           </div>
-          <EmptyState v-else emoji="🏆" title="本期暂无新成就" description="继续保持，成就会不断解锁。" />
-        </div>
 
-        <div class="card p-6">
-          <div class="flex items-center justify-between gap-6">
-            <h2 class="text-lg font-semibold tracking-tight text-text-primary">学习建议</h2>
-          </div>
-          <div v-if="report.suggestions?.length" class="mt-4 space-y-3">
-            <div v-for="(suggestion, index) in report.suggestions" :key="index" class="rounded-2xl border border-border-color/60 bg-bg-secondary/60 p-4">
-              <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
-                  <!-- Lightbulb Icon -->
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
+          <!-- Data Table -->
+          <div class="stripe-card overflow-hidden">
+            <h3 class="text-sm font-semibold text-[#0A2540] mb-3">详细数据</h3>
+            <div class="border border-[#E3E8EE] rounded-lg overflow-hidden">
+              <div class="flex items-center gap-4 px-4 py-2.5 bg-[#F6F9FC] text-[10px] font-semibold text-[#8898AA] uppercase tracking-wider border-b border-[#E3E8EE]">
+                <span class="flex-1">日期</span>
+                <span class="w-20 text-right">学习时长</span>
+                <span class="w-16 text-right">课程</span>
+                <span class="w-16 text-center">打卡</span>
+              </div>
+              <div class="divide-y divide-[#F0F3F7] max-h-[240px] overflow-y-auto">
+                <div v-for="d in dailyData" :key="d.date"
+                  class="flex items-center gap-4 px-4 py-2.5 hover:bg-[#F6F9FC]/50 transition-colors">
+                  <span class="flex-1 text-sm text-[#0A2540]">{{ formatShortDate(d.date) }}</span>
+                  <span class="w-20 text-right text-sm font-medium text-[#635BFF]">{{ d.hours || d.studyHours || 0 }}h</span>
+                  <span class="w-16 text-right text-sm text-[#425466]">{{ d.courses || 0 }}</span>
+                  <div class="w-16 text-center">
+                    <span v-if="d.checkins" class="text-xs text-emerald-600 font-semibold">✓</span>
+                    <span v-else class="text-xs text-[#CBD5E1]">—</span>
+                  </div>
                 </div>
-                <p class="text-sm text-text-secondary leading-relaxed">{{ suggestion }}</p>
               </div>
             </div>
           </div>
-          <EmptyState v-else emoji="💡" title="暂无建议" description="当前学习节奏良好，继续保持。" />
+        </template>
+
+        <div v-else class="text-center py-16">
+          <BarChart3 class="w-12 h-12 text-[#8898AA]/40 mx-auto mb-3" :stroke-width="1" />
+          <p class="text-sm text-[#8898AA]">暂无报告数据</p>
         </div>
-      </section>
+      </div>
     </template>
 
-    <EmptyState
-      v-else-if="!loading"
-      emoji="📊"
-      title="暂无报告数据"
-      description="选择时间范围后会生成学习报告。"
-    />
-
-    <!-- Toast -->
-    <Teleport to="body">
-      <Transition name="toast">
-        <div
-          v-if="toast.visible"
-          class="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-sm font-medium shadow-lg"
-          :class="toastClass"
-        >
-          {{ toast.message }}
+    <!-- ================================================================
+         🌙 DARK — Raycast Analytics：紧凑统计 + 渐变柱状图 + 发光
+         ================================================================ -->
+    <template v-else-if="theme === 'dark'">
+      <div class="space-y-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold text-[#EDEDED]">学习报告</h1>
+            <span class="text-[10px] font-mono text-[#6B6B6E] bg-white/[0.04] px-2 py-0.5 rounded">{{ tabLabel }}</span>
+          </div>
+          <div class="flex gap-1">
+            <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)"
+              :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer',
+                tab === t.key ? 'bg-[#818CF8] text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]' : 'text-[#6B6B6E] hover:bg-white/[0.04]']">
+              {{ t.label }}
+            </button>
+          </div>
         </div>
-      </Transition>
-    </Teleport>
+
+        <template v-if="loading">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div v-for="i in 4" :key="i" class="raycast-card h-24 animate-pulse"></div>
+          </div>
+          <div class="raycast-card h-64 animate-pulse"></div>
+        </template>
+
+        <template v-else-if="rpt">
+          <!-- 4 Stat Cards with mini bar -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div v-for="(s, i) in raycastStats" :key="i" class="raycast-card group">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] text-[#6B6B6E] uppercase tracking-wider font-semibold">{{ s.label }}</span>
+                <component :is="s.icon" class="w-3.5 h-3.5 text-[#6B6B6E] group-hover:text-[#818CF8] transition-colors" :stroke-width="1.75" />
+              </div>
+              <div class="text-2xl font-bold raycast-gradient-text">{{ s.value }}{{ s.unit }}</div>
+              <div class="mt-2 h-1 bg-white/[0.04] rounded-full overflow-hidden">
+                <div class="h-full rounded-full bg-gradient-to-r from-[#818CF8] to-[#06B6D4] transition-all"
+                     :style="{ width: s.barWidth + '%' }"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Chart: Gradient Bar -->
+          <div class="raycast-card">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-[#EDEDED]">学习活动</h3>
+              <span class="text-[10px] font-mono text-[#6B6B6E]">{{ dailyData.length }} data points</span>
+            </div>
+            <div ref="chartRef" class="w-full h-72"></div>
+          </div>
+
+          <!-- Compact Summary Row -->
+          <div class="flex gap-3">
+            <div class="flex-1 raycast-card !py-3">
+              <div class="flex items-center gap-2">
+                <Calendar class="w-4 h-4 text-[#818CF8]" :stroke-width="1.75" />
+                <span class="text-xs text-[#6B6B6E]">最活跃日</span>
+                <span class="text-xs font-medium text-[#EDEDED] ml-auto font-mono">{{ mostActiveDay }}</span>
+              </div>
+            </div>
+            <div class="flex-1 raycast-card !py-3">
+              <div class="flex items-center gap-2">
+                <Clock class="w-4 h-4 text-[#06B6D4]" :stroke-width="1.75" />
+                <span class="text-xs text-[#6B6B6E]">日均学习</span>
+                <span class="text-xs font-medium text-[#EDEDED] ml-auto font-mono">{{ avgHoursPerDay }}h</span>
+              </div>
+            </div>
+            <div class="flex-1 raycast-card !py-3">
+              <div class="flex items-center gap-2">
+                <Zap class="w-4 h-4 text-[#F59E0B]" :stroke-width="1.75" />
+                <span class="text-xs text-[#6B6B6E]">峰值时长</span>
+                <span class="text-xs font-medium text-[#EDEDED] ml-auto font-mono">{{ peakHours }}h</span>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <div v-else class="text-center py-16 text-sm text-[#6B6B6E]">暂无报告数据</div>
+      </div>
+    </template>
+
+    <!-- ================================================================
+         🌅 WARM — Notion Blocks：文字总结 + 进度环 + 柱状图 + 里程碑
+         ================================================================ -->
+    <template v-else-if="theme === 'warm'">
+      <div class="space-y-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+          <h1 class="text-xl font-extrabold text-[#292524]">📊 学习报告</h1>
+          <div class="flex gap-1.5">
+            <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)"
+              :class="['px-4 py-2 rounded-full text-sm font-bold border-2 cursor-pointer transition-all',
+                tab === t.key ? 'bg-[#292524] text-white border-[#292524]' : 'bg-white text-[#292524] border-[#E7E5E4] hover:bg-[#F5F5F4]']">
+              {{ t.label }}
+            </button>
+          </div>
+        </div>
+
+        <template v-if="loading">
+          <div class="notion-summary-card h-32 animate-pulse bg-[#FEF3C7]"></div>
+        </template>
+
+        <template v-else-if="rpt">
+          <!-- Big Text Summary Block -->
+          <div class="notion-summary-card">
+            <div class="text-3xl mb-2">{{ summaryEmoji }}</div>
+            <p class="text-lg font-extrabold text-[#292524] leading-relaxed">{{ summaryText }}</p>
+            <p class="text-sm text-[#78716C] mt-2">{{ summarySubText }}</p>
+          </div>
+
+          <!-- 2 Column: Progress Ring + Stat Blocks -->
+          <div class="grid lg:grid-cols-2 gap-4">
+            <!-- SVG Progress Ring -->
+            <div class="notion-card text-center py-8">
+              <h3 class="text-sm font-extrabold text-[#292524] mb-4">📈 学习完成度</h3>
+              <div class="relative w-40 h-40 mx-auto">
+                <svg class="w-40 h-40 -rotate-90" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#E7E5E4" stroke-width="8" />
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="url(#warmGrad)" stroke-width="8"
+                    stroke-linecap="round"
+                    :stroke-dasharray="ringCircumference"
+                    :stroke-dashoffset="ringOffset" />
+                  <defs>
+                    <linearGradient id="warmGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#58CC02" />
+                      <stop offset="100%" stop-color="#FFC800" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div>
+                    <div class="text-3xl font-extrabold text-[#292524]">{{ ringProgress }}%</div>
+                    <div class="text-[10px] text-[#A8A29E] font-bold">完成度</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4 Stat Blocks (Notion style) -->
+            <div class="grid grid-cols-2 gap-3">
+              <div v-for="(s, i) in warmStats" :key="i" class="notion-stat-block">
+                <span class="text-2xl">{{ s.emoji }}</span>
+                <div class="text-2xl font-extrabold" :class="s.color">{{ s.value }}</div>
+                <div class="text-xs font-bold text-[#78716C]">{{ s.label }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bar Chart -->
+          <div class="notion-card">
+            <h3 class="text-sm font-extrabold text-[#292524] mb-4">📅 每日学习时长</h3>
+            <div ref="chartRef" class="w-full h-56"></div>
+          </div>
+
+          <!-- Milestone Hint -->
+          <div class="notion-hint-card">
+            <span class="text-lg mr-2">{{ milestoneEmoji }}</span>
+            <span class="text-sm font-bold text-[#292524]">{{ milestoneText }}</span>
+          </div>
+        </template>
+
+        <div v-else class="text-center py-16">
+          <p class="text-3xl mb-2">📊</p>
+          <p class="text-sm text-[#78716C]">暂无学习报告</p>
+        </div>
+      </div>
+    </template>
+
+    <!-- ================================================================
+         ❄️ PRO — Grafana：多面板仪表盘 + 时间序列 + 饼图 + 表格 + 日活
+         ================================================================ -->
+    <template v-else>
+      <div class="space-y-3">
+        <!-- Dashboard Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-semibold text-[#0F172A] uppercase tracking-wider">Learning Report</span>
+            <code class="text-[10px] font-mono text-[#94A3B8] bg-[#F1F5F9] px-1.5 py-0.5 rounded">dashboard</code>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex gap-0.5">
+              <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)"
+                :class="['px-2.5 py-1 rounded text-[10px] font-mono cursor-pointer transition-all',
+                  tab === t.key ? 'bg-[#0F172A] text-white' : 'text-[#64748B] hover:bg-[#F1F5F9]']">
+                {{ t.labelEn }}
+              </button>
+            </div>
+            <div class="h-4 border-l border-[#E2E8F0]"></div>
+            <span class="text-[10px] font-mono text-[#94A3B8]">last updated: now</span>
+          </div>
+        </div>
+
+        <template v-if="loading">
+          <div class="grid grid-cols-4 gap-3">
+            <div v-for="i in 4" :key="i" class="grafana-metric h-14 animate-pulse bg-[#F8FAFC]"></div>
+          </div>
+          <div class="grid lg:grid-cols-2 gap-3">
+            <div v-for="i in 4" :key="i" class="grafana-panel h-52 animate-pulse bg-[#F8FAFC]"></div>
+          </div>
+        </template>
+
+        <template v-else-if="rpt">
+          <!-- Top Metrics Row (Grafana green) -->
+          <div class="grid grid-cols-4 gap-3">
+            <div v-for="(s, i) in grafanaStats" :key="i" class="grafana-metric">
+              <div class="text-[9px] font-mono text-[#94A3B8] uppercase tracking-wider">{{ s.label }}</div>
+              <div class="text-xl font-mono font-semibold text-[#22C55E]">{{ s.value }}</div>
+            </div>
+          </div>
+
+          <!-- Panel Grid 2×2 -->
+          <div class="grid lg:grid-cols-2 gap-3">
+            <!-- Panel 1: Time Series -->
+            <div class="grafana-panel">
+              <div class="grafana-panel-header">
+                <span>Time Series — Study Hours</span>
+                <span class="text-[#22C55E]">{{ rpt.totalStudyHours || 0 }}h total</span>
+              </div>
+              <div ref="chartRef" class="w-full h-52 p-2"></div>
+            </div>
+
+            <!-- Panel 2: Distribution Donut -->
+            <div class="grafana-panel">
+              <div class="grafana-panel-header">
+                <span>Distribution — Study Metrics</span>
+                <span class="text-[#94A3B8]">4 series</span>
+              </div>
+              <div ref="chartRef2" class="w-full h-52 p-2"></div>
+            </div>
+
+            <!-- Panel 3: Data Table -->
+            <div class="grafana-panel">
+              <div class="grafana-panel-header">
+                <span>Table — Daily Breakdown</span>
+                <span class="text-[#94A3B8]">{{ dailyData.length }} rows</span>
+              </div>
+              <div class="p-2 max-h-52 overflow-y-auto">
+                <div class="flex items-center gap-2 text-[9px] font-mono text-[#94A3B8] uppercase tracking-wider pb-1.5 border-b border-[#E2E8F0]">
+                  <span class="flex-1">date</span>
+                  <span class="w-16 text-right">hours</span>
+                  <span class="w-14 text-right">courses</span>
+                  <span class="w-14 text-center">checkin</span>
+                </div>
+                <div v-for="d in dailyData" :key="d.date"
+                  class="flex items-center gap-2 py-1.5 border-b border-[#F1F5F9] last:border-0 hover:bg-[#F8FAFC] transition-colors">
+                  <span class="flex-1 text-[11px] font-mono text-[#0F172A]">{{ d.date || d.day || '—' }}</span>
+                  <span class="w-16 text-right text-[11px] font-mono text-[#22C55E] font-semibold">{{ d.hours || d.studyHours || 0 }}</span>
+                  <span class="w-14 text-right text-[11px] font-mono text-[#64748B]">{{ d.courses || 0 }}</span>
+                  <span class="w-14 text-center text-[11px] font-mono" :class="d.checkins ? 'text-[#22C55E]' : 'text-[#CBD5E1]'">
+                    {{ d.checkins ? '●' : '○' }}
+                  </span>
+                </div>
+                <div v-if="!dailyData.length" class="py-4 text-center text-[10px] font-mono text-[#94A3B8]">no data</div>
+              </div>
+            </div>
+
+            <!-- Panel 4: Daily Activity Bar -->
+            <div class="grafana-panel">
+              <div class="grafana-panel-header">
+                <span>Bar Chart — Daily Activity</span>
+                <span class="text-[#94A3B8]">avg: {{ avgHoursPerDay }}h</span>
+              </div>
+              <div ref="chartRef3" class="w-full h-52 p-2"></div>
+            </div>
+          </div>
+        </template>
+
+        <div v-else class="text-center py-12 text-[#94A3B8] text-xs font-mono">// no report data available</div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue';
-import { Select, EmptyState } from '@/design-system';
-import { getWeeklyReport, getMonthlyReport, getYearlyReport } from '@/api/learning';
-import * as echarts from 'echarts';
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { useThemeStore } from '@/stores/theme'
+import { reportApi } from '@/api/report'
+import { useECharts } from '@/composables/useECharts'
+import {
+  BarChart3, TrendingUp, TrendingDown, Clock, Calendar,
+  BookOpen, Flame, Award, Zap,
+} from 'lucide-vue-next'
 
-// Types
-interface Report {
-  totalStudyMinutes?: number;
-  studyTimeChangePercent?: number | null;
-  studyDays?: number;
-  studyDaysChange?: number | null;
-  completedCourses?: number;
-  completedCoursesChange?: number | null;
-  earnedAchievements?: number;
-  streakDays?: number;
-  avgDailyMinutes?: number;
-  dailyStudyTrend?: Array<{
-    date: string;
-    minutes: number;
-    checkedIn: boolean;
-  }>;
-  categoryDistribution?: Array<{
-    categoryName: string;
-    minutes: number;
-    percent: number;
-  }>;
-  inProgressCourses?: Array<{
-    courseId: number;
-    courseName: string;
-    category: string;
-    progressPercent: number;
-    studyMinutes: number;
-  }>;
-  completedCourseList?: Array<{
-    courseId: number;
-    courseName: string;
-    lastStudyDate: string;
-    studyMinutes: number;
-  }>;
-  newAchievements?: Array<{
-    id: number;
-    name: string;
-    description: string;
-    points: number;
-  }>;
-  suggestions?: string[];
+const themeStore = useThemeStore()
+const theme = computed(() => themeStore.theme)
+
+/* ── Tab System ── */
+const tab = ref('w')
+const tabs = [
+  { key: 'w', label: '周报', labelEn: 'weekly' },
+  { key: 'm', label: '月报', labelEn: 'monthly' },
+  { key: 'y', label: '年报', labelEn: 'yearly' },
+]
+const tabLabel = computed(() => tabs.find(t => t.key === tab.value)?.label || '')
+
+/* ── Core Data ── */
+const rpt = ref<any>(null)
+const loading = ref(false)
+
+/* ── Charts (3 refs for Grafana multi-panel) ── */
+const chartRef = ref<HTMLElement | null>(null)
+const chartRef2 = ref<HTMLElement | null>(null)
+const chartRef3 = ref<HTMLElement | null>(null)
+const { setOption } = useECharts(chartRef)
+const { setOption: setOption2 } = useECharts(chartRef2)
+const { setOption: setOption3 } = useECharts(chartRef3)
+
+/* ── Derived Data ── */
+const dailyData = computed<any[]>(() => rpt.value?.dailyStats || [])
+
+/* ── Stripe Stats (Light) ── */
+const stripeStats = computed(() => {
+  if (!rpt.value) return []
+  const r = rpt.value
+  const total = r.totalStudyHours || 0
+  const prev = r.prevTotalStudyHours || Math.max(total * 0.8, 1)
+  const trend = prev > 0 ? Math.round(((total - prev) / prev) * 100) : 0
+  return [
+    { value: total, unit: 'h', label: '学习时长', trendUp: trend >= 0, trendText: Math.abs(trend) + '%' },
+    { value: r.completedCourses || 0, unit: '', label: '完成课程', trendUp: true, trendText: '+' + (r.completedCourses || 0) },
+    { value: r.checkinDays || 0, unit: '天', label: '打卡天数', trendUp: true, trendText: (r.checkinDays || 0) + '天' },
+    { value: r.achievementCount || 0, unit: '', label: '获得成就', trendUp: true, trendText: '+' + (r.achievementCount || 0) },
+  ]
+})
+
+/* ── Raycast Stats (Dark) ── */
+const raycastStats = computed(() => {
+  if (!rpt.value) return []
+  const r = rpt.value
+  const maxH = Math.max(r.totalStudyHours || 1, 20)
+  return [
+    { value: r.totalStudyHours || 0, unit: 'h', label: '学习时长', icon: Clock, barWidth: Math.min(((r.totalStudyHours || 0) / maxH) * 100, 100) },
+    { value: r.completedCourses || 0, unit: '', label: '完成课程', icon: BookOpen, barWidth: Math.min(((r.completedCourses || 0) / 10) * 100, 100) },
+    { value: r.checkinDays || 0, unit: '天', label: '打卡天数', icon: Flame, barWidth: Math.min(((r.checkinDays || 0) / 7) * 100, 100) },
+    { value: r.achievementCount || 0, unit: '', label: '获得成就', icon: Award, barWidth: Math.min(((r.achievementCount || 0) / 10) * 100, 100) },
+  ]
+})
+
+const mostActiveDay = computed(() => {
+  if (!dailyData.value.length) return '—'
+  const max = dailyData.value.reduce((a: any, b: any) => ((b.hours || b.studyHours || 0) > (a.hours || a.studyHours || 0) ? b : a))
+  return max.date || max.day || '—'
+})
+
+const avgHoursPerDay = computed(() => {
+  if (!dailyData.value.length) return '0'
+  const total = dailyData.value.reduce((s: number, d: any) => s + (d.hours || d.studyHours || 0), 0)
+  return (total / dailyData.value.length).toFixed(1)
+})
+
+const peakHours = computed(() => {
+  if (!dailyData.value.length) return '0'
+  return Math.max(...dailyData.value.map((d: any) => d.hours || d.studyHours || 0)).toFixed(1)
+})
+
+/* ── Notion Stats (Warm) ── */
+const warmStats = computed(() => {
+  if (!rpt.value) return []
+  const r = rpt.value
+  return [
+    { emoji: '⏰', value: (r.totalStudyHours || 0) + 'h', label: '学习时长', color: 'text-[#D97706]' },
+    { emoji: '📚', value: r.completedCourses || 0, label: '完成课程', color: 'text-[#58CC02]' },
+    { emoji: '🔥', value: (r.checkinDays || 0) + '天', label: '打卡天数', color: 'text-[#FF9600]' },
+    { emoji: '🏆', value: r.achievementCount || 0, label: '获得成就', color: 'text-[#7C3AED]' },
+  ]
+})
+
+const ringCircumference = 2 * Math.PI * 52
+const ringProgress = computed(() => {
+  if (!rpt.value) return 0
+  const total = rpt.value.totalStudyHours || 0
+  const goal = tab.value === 'w' ? 14 : tab.value === 'm' ? 60 : 300
+  return Math.min(Math.round((total / goal) * 100), 100)
+})
+const ringOffset = computed(() => ringCircumference * (1 - ringProgress.value / 100))
+
+const summaryEmoji = computed(() => {
+  const p = ringProgress.value
+  if (p >= 100) return '🎉'
+  if (p >= 70) return '💪'
+  if (p >= 40) return '📈'
+  return '🌱'
+})
+const summaryText = computed(() => {
+  if (!rpt.value) return ''
+  const r = rpt.value
+  const period = tab.value === 'w' ? '本周' : tab.value === 'm' ? '本月' : '今年'
+  return `${period}你学习了 ${r.totalStudyHours || 0} 小时，完成了 ${r.completedCourses || 0} 门课程！`
+})
+const summarySubText = computed(() => {
+  if (!rpt.value) return ''
+  const r = rpt.value
+  return `累计打卡 ${r.checkinDays || 0} 天，获得 ${r.achievementCount || 0} 个成就`
+})
+const milestoneEmoji = computed(() => {
+  const h = rpt.value?.totalStudyHours || 0
+  if (h >= 50) return '🏆'
+  if (h >= 20) return '🎯'
+  if (h >= 10) return '🌟'
+  return '💡'
+})
+const milestoneText = computed(() => {
+  const h = rpt.value?.totalStudyHours || 0
+  if (h >= 50) return '太棒了！学习时长已突破 50 小时，你是学习大师！'
+  if (h >= 20) return `再学 ${50 - h} 小时就能成为学习大师！加油！`
+  if (h >= 10) return `已完成 ${h} 小时，距离 20 小时里程碑还需 ${20 - h} 小时`
+  return '开始积累吧！学满 10 小时解锁第一个里程碑'
+})
+
+/* ── Grafana Stats (Pro) ── */
+const grafanaStats = computed(() => {
+  if (!rpt.value) return []
+  const r = rpt.value
+  return [
+    { value: (r.totalStudyHours || 0) + 'h', label: 'study_hours' },
+    { value: r.completedCourses || 0, label: 'courses' },
+    { value: r.checkinDays || 0, label: 'checkins' },
+    { value: r.achievementCount || 0, label: 'achievements' },
+  ]
+})
+
+/* ── Chart Building (theme-specific) ── */
+function buildCharts() {
+  if (!rpt.value?.dailyStats) return
+  const days = dailyData.value.map((d: any) => {
+    const dt = d.date || d.day || ''
+    return dt.length >= 10 ? dt.slice(5) : dt
+  })
+  const hours = dailyData.value.map((d: any) => d.hours || d.studyHours || 0)
+
+  const t = theme.value
+  if (t === 'light') {
+    setOption({
+      grid: { left: '3%', right: '4%', top: '8%', bottom: '3%', containLabel: true },
+      xAxis: { type: 'category', data: days, boundaryGap: false,
+        axisLine: { lineStyle: { color: '#E3E8EE' } }, axisLabel: { color: '#8898AA', fontSize: 10 }, axisTick: { show: false } },
+      yAxis: { type: 'value', name: '小时',
+        axisLine: { show: false }, splitLine: { lineStyle: { color: '#F0F3F7', type: 'dashed' } }, axisLabel: { color: '#8898AA', fontSize: 10 } },
+      series: [{ type: 'line', data: hours, smooth: true,
+        lineStyle: { width: 2.5, color: '#635BFF' }, itemStyle: { color: '#635BFF' },
+        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: 'rgba(99,91,255,0.15)' }, { offset: 1, color: 'rgba(99,91,255,0)' }] } },
+        symbolSize: 4, symbol: 'circle' }],
+      tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#E3E8EE', textStyle: { color: '#0A2540', fontSize: 12 } },
+    }, false)
+  } else if (t === 'dark') {
+    setOption({
+      grid: { left: '3%', right: '4%', top: '8%', bottom: '3%', containLabel: true },
+      xAxis: { type: 'category', data: days,
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }, axisLabel: { color: '#6B6B6E', fontSize: 10 }, axisTick: { show: false } },
+      yAxis: { type: 'value',
+        axisLine: { show: false }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)', type: 'dashed' } }, axisLabel: { color: '#6B6B6E', fontSize: 10 } },
+      series: [{ type: 'bar', data: hours, barWidth: '60%',
+        itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: '#818CF8' }, { offset: 1, color: '#06B6D4' }] },
+          borderRadius: [4, 4, 0, 0] } }],
+      tooltip: { trigger: 'axis', backgroundColor: '#1E1E1E', borderColor: 'rgba(255,255,255,0.1)', textStyle: { color: '#EDEDED', fontSize: 12 } },
+    }, false)
+  } else if (t === 'warm') {
+    setOption({
+      grid: { left: '3%', right: '4%', top: '8%', bottom: '3%', containLabel: true },
+      xAxis: { type: 'category', data: days,
+        axisLine: { lineStyle: { color: '#E7E5E4' } }, axisLabel: { color: '#A8A29E', fontSize: 10 }, axisTick: { show: false } },
+      yAxis: { type: 'value',
+        axisLine: { show: false }, splitLine: { lineStyle: { color: '#E7E5E4', type: 'dashed' } }, axisLabel: { color: '#A8A29E', fontSize: 10 } },
+      series: [{ type: 'bar', data: hours, barWidth: '50%',
+        itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: '#FFC800' }, { offset: 1, color: '#FF9600' }] },
+          borderRadius: [8, 8, 0, 0] } }],
+      tooltip: { trigger: 'axis', backgroundColor: '#FFFBF5', borderColor: '#E7E5E4', textStyle: { color: '#292524', fontSize: 12 } },
+    }, false)
+  } else {
+    // Grafana: Panel 1 — Time Series (green line)
+    setOption({
+      grid: { left: '3%', right: '4%', top: '8%', bottom: '3%', containLabel: true },
+      xAxis: { type: 'category', data: days,
+        axisLine: { lineStyle: { color: '#E2E8F0' } }, axisLabel: { color: '#94A3B8', fontSize: 9, fontFamily: 'monospace' }, axisTick: { show: false } },
+      yAxis: { type: 'value',
+        axisLine: { show: false }, splitLine: { lineStyle: { color: '#F1F5F9', type: 'dashed' } }, axisLabel: { color: '#94A3B8', fontSize: 9, fontFamily: 'monospace' } },
+      series: [{ type: 'line', data: hours, smooth: false,
+        lineStyle: { width: 1.5, color: '#22C55E' }, itemStyle: { color: '#22C55E' },
+        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: 'rgba(34,197,94,0.1)' }, { offset: 1, color: 'rgba(34,197,94,0)' }] } },
+        symbolSize: 3, symbol: 'circle' }],
+      tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#E2E8F0', textStyle: { color: '#0F172A', fontSize: 11, fontFamily: 'monospace' } },
+    }, false)
+
+    // Panel 2 — Distribution Donut
+    const r = rpt.value
+    const pieData = [
+      { value: r.totalStudyHours || 0, name: 'Study', itemStyle: { color: '#22C55E' } },
+      { value: r.completedCourses || 0, name: 'Courses', itemStyle: { color: '#0284C7' } },
+      { value: r.checkinDays || 0, name: 'Checkins', itemStyle: { color: '#EAB308' } },
+      { value: r.achievementCount || 0, name: 'Awards', itemStyle: { color: '#A855F7' } },
+    ].filter(d => d.value > 0)
+    setOption2({
+      series: [{ type: 'pie', radius: ['45%', '70%'], center: ['50%', '50%'], data: pieData,
+        label: { show: true, color: '#64748B', fontSize: 10, fontFamily: 'monospace' },
+        emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.1)' } } }],
+      tooltip: { trigger: 'item', backgroundColor: '#fff', borderColor: '#E2E8F0',
+        textStyle: { color: '#0F172A', fontSize: 11, fontFamily: 'monospace' }, formatter: '{b}: {c} ({d}%)' },
+    }, false)
+
+    // Panel 4 — Daily Activity Bar (green)
+    setOption3({
+      grid: { left: '3%', right: '4%', top: '8%', bottom: '3%', containLabel: true },
+      xAxis: { type: 'category', data: days,
+        axisLine: { lineStyle: { color: '#E2E8F0' } }, axisLabel: { color: '#94A3B8', fontSize: 9, fontFamily: 'monospace' }, axisTick: { show: false } },
+      yAxis: { type: 'value',
+        axisLine: { show: false }, splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#94A3B8', fontSize: 9, fontFamily: 'monospace' } },
+      series: [{ type: 'bar', data: hours, barWidth: '50%',
+        itemStyle: { color: '#22C55E', borderRadius: [2, 2, 0, 0] } }],
+      tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#E2E8F0', textStyle: { color: '#0F172A', fontSize: 11, fontFamily: 'monospace' } },
+    }, false)
+  }
 }
 
-interface SelectOption {
-  label: string;
-  value: string;
+/* ── Format ── */
+function formatShortDate(d: string) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', weekday: 'short' })
 }
 
-// State
-const loading = ref(false);
-const reportType = ref<'weekly' | 'monthly' | 'yearly'>('weekly');
-const report = ref<Report | null>(null);
-const activeTab = ref<'inProgress' | 'completed'>('inProgress');
+/* ── Loading ── */
+async function switchTab(key: string) {
+  tab.value = key
+  await load()
+}
 
-// Date selection values
-const selectedWeekValue = ref('');
-const selectedMonthValue = ref('');
-const selectedYearValue = ref('');
-
-// Chart refs
-const trendChartRef = ref<HTMLElement | null>(null);
-const categoryChartRef = ref<HTMLElement | null>(null);
-let trendChart: echarts.ECharts | null = null;
-let categoryChart: echarts.ECharts | null = null;
-let themeObserver: MutationObserver | null = null;
-
-// Toast
-const toast = ref({ visible: false, message: '', type: 'success' as 'success' | 'warning' | 'error' | 'info' });
-const toastClass = computed(() => {
-  const classes: Record<string, string> = {
-    success: 'bg-success text-white',
-    warning: 'bg-warning text-white',
-    error: 'bg-error text-white',
-    info: 'bg-info text-white',
-  };
-  return classes[toast.value.type] || classes.success;
-});
-
-const showToast = (message: string, type: 'success' | 'warning' | 'error' | 'info' = 'success') => {
-  toast.value = { visible: true, message, type };
-  setTimeout(() => {
-    toast.value.visible = false;
-  }, 3000);
-};
-
-// Generate date options
-const weekOptions = computed<SelectOption[]>(() => {
-  const options: SelectOption[] = [];
-  const now = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i * 7);
-    const monday = getMonday(d);
-    const weekNum = getWeekNumber(new Date(monday));
-    options.push({
-      label: `${new Date(monday).getFullYear()} 第 ${weekNum} 周`,
-      value: monday,
-    });
-  }
-  return options;
-});
-
-const monthOptions = computed<SelectOption[]>(() => {
-  const options: SelectOption[] = [];
-  const now = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    options.push({
-      label: `${d.getFullYear()}年${d.getMonth() + 1}月`,
-      value,
-    });
-  }
-  return options;
-});
-
-const yearOptions = computed<SelectOption[]>(() => {
-  const options: SelectOption[] = [];
-  const currentYear = new Date().getFullYear();
-  for (let i = 0; i < 5; i++) {
-    const year = currentYear - i;
-    options.push({
-      label: `${year}年`,
-      value: String(year),
-    });
-  }
-  return options;
-});
-
-// Theme colors
-const categorySwatches = ref<string[]>([]);
-
-const normalizeRgb = (value: string, fallback: string): string => {
-  const cleaned = (value || '').trim();
-  if (!cleaned) return fallback;
-  return cleaned.replace(/\s+/g, ' ');
-};
-
-const rgba = (rgb: string, alpha: number): string => `rgba(${rgb.replace(/\s+/g, ',')}, ${alpha})`;
-
-const getThemeColors = () => {
-  const style = getComputedStyle(document.documentElement);
-  const primaryRgb = normalizeRgb(style.getPropertyValue('--primary-color-rgb'), '37 99 235');
-  const primaryLightRgb = normalizeRgb(style.getPropertyValue('--primary-light-rgb'), '59 130 246');
-  const infoRgb = normalizeRgb(style.getPropertyValue('--info-color-rgb'), primaryRgb);
-  const successRgb = normalizeRgb(style.getPropertyValue('--success-color-rgb'), '5 150 105');
-  const warningRgb = normalizeRgb(style.getPropertyValue('--warning-color-rgb'), '217 119 6');
-  const errorRgb = normalizeRgb(style.getPropertyValue('--error-color-rgb'), '220 38 38');
-  const textSecondaryRgb = normalizeRgb(style.getPropertyValue('--text-secondary-rgb'), '75 85 99');
-  const borderRgb = normalizeRgb(style.getPropertyValue('--border-color-rgb'), '229 231 235');
-  const bgSecondaryRgb = normalizeRgb(style.getPropertyValue('--bg-secondary-rgb'), '255 255 255');
-  return {
-    primaryRgb,
-    primaryLightRgb,
-    infoRgb,
-    successRgb,
-    warningRgb,
-    errorRgb,
-    textSecondaryRgb,
-    borderRgb,
-    bgSecondaryRgb,
-  };
-};
-
-const updateSwatches = () => {
-  const { primaryRgb, primaryLightRgb, infoRgb, successRgb, warningRgb, errorRgb } = getThemeColors();
-  const palette = [primaryRgb, primaryLightRgb, infoRgb, successRgb, warningRgb, errorRgb];
-  categorySwatches.value = palette.map((rgb) => rgba(rgb, 0.9));
-};
-
-// Utility functions
-const formatMinutes = (minutes?: number): string => {
-  if (!minutes) return '0分钟';
-  if (minutes < 60) return `${minutes}分钟`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
-};
-
-const getMonday = (date: Date): string => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  return d.toISOString().split('T')[0];
-};
-
-const getWeekNumber = (date: Date): number => {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-};
-
-// Load report data
-const loadReport = async () => {
-  loading.value = true;
+async function load() {
+  loading.value = true
   try {
-    let res;
-    if (reportType.value === 'weekly') {
-      const weekStart = selectedWeekValue.value || getMonday(new Date());
-      res = await getWeeklyReport(weekStart);
-    } else if (reportType.value === 'monthly') {
-      let year: number, month: number;
-      if (selectedMonthValue.value) {
-        const [y, m] = selectedMonthValue.value.split('-');
-        year = parseInt(y);
-        month = parseInt(m);
-      } else {
-        const now = new Date();
-        year = now.getFullYear();
-        month = now.getMonth() + 1;
-      }
-      res = await getMonthlyReport(year, month);
-    } else {
-      const year = selectedYearValue.value ? parseInt(selectedYearValue.value) : new Date().getFullYear();
-      res = await getYearlyReport(year);
-    }
+    const n = new Date()
+    if (tab.value === 'w') rpt.value = await reportApi.weekly()
+    else if (tab.value === 'm') rpt.value = await reportApi.monthly(n.getFullYear(), n.getMonth() + 1)
+    else rpt.value = await reportApi.yearly(n.getFullYear())
+  } catch { rpt.value = null }
+  finally { loading.value = false }
+  await nextTick()
+  buildCharts()
+}
 
-    report.value = res.data;
-    updateSwatches();
+watch(theme, async () => {
+  await nextTick()
+  buildCharts()
+})
 
-    await nextTick();
-    renderTrendChart();
-    renderCategoryChart();
-  } catch (error) {
-    console.error('加载报告失败:', error);
-    showToast('加载报告失败', 'error');
-  } finally {
-    loading.value = false;
-  }
-};
-
-// Chart rendering
-const renderTrendChart = () => {
-  if (!trendChartRef.value || !report.value?.dailyStudyTrend) return;
-
-  trendChart?.dispose();
-  trendChart = echarts.init(trendChartRef.value);
-
-  const { primaryRgb, primaryLightRgb, textSecondaryRgb, borderRgb } = getThemeColors();
-  const dates = report.value.dailyStudyTrend.map((item) => item.date);
-  const minutes = report.value.dailyStudyTrend.map((item) => item.minutes);
-  const checkedIn = report.value.dailyStudyTrend.map((item) => item.checkedIn);
-
-  trendChart.setOption({
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'axis',
-      formatter: (params: any) => {
-        const data = params[0];
-        const isCheckedIn = checkedIn[data.dataIndex];
-        return `${data.name}<br/>学习时长：${data.value} 分钟<br/>打卡：${isCheckedIn ? '已打卡' : '未打卡'}`;
-      },
-    },
-    grid: { left: 24, right: 12, top: 18, bottom: 24, containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: dates,
-      axisLabel: {
-        color: rgba(textSecondaryRgb, 0.9),
-        formatter: (value: string) => {
-          const date = new Date(value);
-          return `${date.getMonth() + 1}/${date.getDate()}`;
-        },
-      },
-      axisLine: { lineStyle: { color: rgba(borderRgb, 0.8) } },
-      axisTick: { show: false },
-    },
-    yAxis: {
-      type: 'value',
-      name: '分钟',
-      minInterval: 1,
-      axisLabel: { color: rgba(textSecondaryRgb, 0.85) },
-      nameTextStyle: { color: rgba(textSecondaryRgb, 0.7) },
-      splitLine: { lineStyle: { color: rgba(borderRgb, 0.6) } },
-    },
-    series: [
-      {
-        name: '学习时长',
-        type: 'bar',
-        data: minutes,
-        barWidth: 16,
-        itemStyle: {
-          borderRadius: [10, 10, 6, 6],
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: rgba(primaryLightRgb, 0.9) },
-            { offset: 1, color: rgba(primaryRgb, 0.18) },
-          ]),
-        },
-      },
-    ],
-  });
-};
-
-const renderCategoryChart = () => {
-  if (!categoryChartRef.value || !report.value?.categoryDistribution) return;
-
-  categoryChart?.dispose();
-  categoryChart = echarts.init(categoryChartRef.value);
-
-  const { bgSecondaryRgb } = getThemeColors();
-  const data = report.value.categoryDistribution.map((item, index) => ({
-    name: item.categoryName,
-    value: item.minutes,
-    itemStyle: { color: categorySwatches.value[index % categorySwatches.value.length] },
-  }));
-
-  categoryChart.setOption({
-    backgroundColor: 'transparent',
-    tooltip: { trigger: 'item', formatter: '{b}: {c}分钟 ({d}%)' },
-    series: [
-      {
-        type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: rgba(bgSecondaryRgb, 0.9),
-          borderWidth: 2,
-        },
-        label: { show: false },
-        emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-        data,
-      },
-    ],
-  });
-};
-
-const handleResize = () => {
-  trendChart?.resize();
-  categoryChart?.resize();
-};
-
-// Watch report type changes
-watch(reportType, () => {
-  loadReport();
-});
-
-// Initialize default values
-const initDefaultValues = () => {
-  const now = new Date();
-  selectedWeekValue.value = getMonday(now);
-  selectedMonthValue.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  selectedYearValue.value = String(now.getFullYear());
-};
-
-onMounted(() => {
-  initDefaultValues();
-  loadReport();
-  window.addEventListener('resize', handleResize);
-  themeObserver = new MutationObserver(() => {
-    nextTick(() => {
-      updateSwatches();
-      renderTrendChart();
-      renderCategoryChart();
-    });
-  });
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
-  themeObserver?.disconnect();
-  trendChart?.dispose();
-  categoryChart?.dispose();
-});
+onMounted(load)
 </script>
 
 <style scoped>
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
+/* ======== STRIPE (Light) ======== */
+.stripe-card {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #E3E8EE;
+  box-shadow: 0 15px 35px rgba(60,66,87,0.08), 0 5px 15px rgba(0,0,0,0.04);
 }
 
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -20px);
+/* ======== RAYCAST (Dark) ======== */
+.raycast-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: #111113;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.raycast-card:hover {
+  border-color: rgba(129,140,248,0.2);
+  box-shadow: 0 0 20px rgba(129,140,248,0.06);
+}
+.raycast-gradient-text {
+  background: linear-gradient(135deg, #EDEDED 0%, #818CF8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ======== NOTION (Warm) ======== */
+.notion-card {
+  padding: 20px;
+  background: #FFFBF5;
+  border: 2px solid #E5E7EB;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 #E5E7EB;
+}
+.notion-summary-card {
+  padding: 24px;
+  background: linear-gradient(135deg, #FFF3D6 0%, #FFECD2 100%);
+  border: 2px solid #FBCF33;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 #E5A800;
+  text-align: center;
+}
+.notion-stat-block {
+  padding: 16px;
+  background: white;
+  border: 2px solid #E5E7EB;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 2px 0 #E5E7EB;
+}
+.notion-hint-card {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #FFF3D6 0%, #FFECD2 100%);
+  border: 2px solid #FBCF33;
+  border-radius: 16px;
+  box-shadow: 0 3px 0 #E5A800;
+}
+
+/* ======== GRAFANA (Pro) ======== */
+.grafana-panel {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.grafana-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+  font-size: 10px;
+  font-weight: 600;
+  color: #0F172A;
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.grafana-metric {
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
 }
 </style>
