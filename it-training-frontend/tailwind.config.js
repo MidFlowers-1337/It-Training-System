@@ -1,157 +1,98 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
-    // PrimeVue PassThrough 支持
-    "./src/design-system/**/*.{vue,js,ts}",
-  ],
-  // 暗色模式通过 data-theme 属性控制
+  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
-        // 背景色
-        'bg-primary': 'rgb(var(--bg-primary-rgb) / <alpha-value>)',
-        'bg-secondary': 'rgb(var(--bg-secondary-rgb) / <alpha-value>)',
-        'bg-tertiary': 'rgb(var(--bg-tertiary-rgb) / <alpha-value>)',
-        'bg-hover': 'rgb(var(--bg-hover-rgb) / <alpha-value>)',
-        'bg-card': 'rgb(var(--bg-card-rgb) / <alpha-value>)',
-        'bg-inverse': 'rgb(var(--bg-inverse-rgb) / <alpha-value>)',
-        
-        // 文本色
-        'text-primary': 'rgb(var(--text-primary-rgb) / <alpha-value>)',
-        'text-secondary': 'rgb(var(--text-secondary-rgb) / <alpha-value>)',
-        'text-muted': 'rgb(var(--text-muted-rgb) / <alpha-value>)',
-        'text-disabled': 'rgb(var(--text-disabled-rgb) / <alpha-value>)',
-        'text-inverse': 'rgb(var(--text-inverse-rgb) / <alpha-value>)',
-        
-        // 品牌色
-        'primary': {
-          DEFAULT: 'rgb(var(--primary-color-rgb) / <alpha-value>)',
-          light: 'rgb(var(--primary-light-rgb) / <alpha-value>)',
-          dark: 'rgb(var(--primary-dark-rgb) / <alpha-value>)',
-          alpha: 'rgb(var(--primary-color-rgb) / <alpha-value>)',
-        },
-
-        // 辅助品牌色：用于渐变/强调（不新增主题值，基于 primary-light 派生）
-        'secondary': {
-          DEFAULT: 'rgb(var(--primary-light-rgb) / <alpha-value>)',
-          dark: 'rgb(var(--primary-dark-rgb) / <alpha-value>)',
-        },
-        
-        // 边框色
-        'border-color': 'rgb(var(--border-color-rgb) / <alpha-value>)',
-        'border-light': 'rgb(var(--border-light-rgb) / <alpha-value>)',
-        'border-dark': 'rgb(var(--border-dark-rgb) / <alpha-value>)',
-        
-        // 状态色
-        'success': 'rgb(var(--success-color-rgb) / <alpha-value>)',
-        'warning': 'rgb(var(--warning-color-rgb) / <alpha-value>)',
-        'error': 'rgb(var(--error-color-rgb) / <alpha-value>)',
-        'info': 'rgb(var(--info-color-rgb) / <alpha-value>)',
+        primary: 'rgb(var(--color-primary) / <alpha-value>)',
+        'primary-light': 'rgb(var(--color-primary-light) / <alpha-value>)',
+        'primary-dark': 'rgb(var(--color-primary-dark) / <alpha-value>)',
+        accent: 'rgb(var(--color-accent) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        'surface-alt': 'rgb(var(--color-surface-alt) / <alpha-value>)',
+        background: 'rgb(var(--color-bg) / <alpha-value>)',
+        'text-primary': 'rgb(var(--color-text) / <alpha-value>)',
+        'text-secondary': 'rgb(var(--color-text-secondary) / <alpha-value>)',
+        'text-tertiary': 'rgb(var(--color-text-tertiary) / <alpha-value>)',
+        border: 'rgb(var(--color-border) / <alpha-value>)',
+        success: 'rgb(var(--color-success) / <alpha-value>)',
+        warning: 'rgb(var(--color-warning) / <alpha-value>)',
+        danger: 'rgb(var(--color-danger) / <alpha-value>)',
+        info: 'rgb(var(--color-info) / <alpha-value>)',
       },
-      
       fontFamily: {
-        sans: 'var(--font-sans)',
-        mono: 'var(--font-mono)',
+        sans: [
+          'Inter', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"',
+          '"SF Pro Text"', '"Helvetica Neue"', 'Arial',
+          '"PingFang SC"', '"Noto Sans SC"', 'sans-serif',
+        ],
+        heading: [
+          '"Space Grotesk"', 'Inter', '-apple-system', 'BlinkMacSystemFont',
+          '"SF Pro Display"', '"Helvetica Neue"', 'Arial',
+          '"PingFang SC"', '"Noto Sans SC"', 'sans-serif',
+        ],
+        mono: ['"SF Mono"', '"Fira Code"', '"Cascadia Code"', 'Consolas', 'monospace'],
       },
-      
-      fontSize: {
-        xs: 'var(--text-xs)',
-        sm: 'var(--text-sm)',
-        base: 'var(--text-base)',
-        lg: 'var(--text-lg)',
-        xl: 'var(--text-xl)',
-        '2xl': 'var(--text-2xl)',
-        '3xl': 'var(--text-3xl)',
-        '4xl': 'var(--text-4xl)',
-        '5xl': 'var(--text-5xl)',
-      },
-      
-      fontWeight: {
-        normal: 'var(--font-normal)',
-        medium: 'var(--font-medium)',
-        semibold: 'var(--font-semibold)',
-        bold: 'var(--font-bold)',
-      },
-      
-      lineHeight: {
-        tight: 'var(--leading-tight)',
-        normal: 'var(--leading-normal)',
-        relaxed: 'var(--leading-relaxed)',
-      },
-      
-      spacing: {
-        '1': 'var(--space-1)',
-        '2': 'var(--space-2)',
-        '3': 'var(--space-3)',
-        '4': 'var(--space-4)',
-        '5': 'var(--space-5)',
-        '6': 'var(--space-6)',
-        '8': 'var(--space-8)',
-        '10': 'var(--space-10)',
-        '12': 'var(--space-12)',
-        '16': 'var(--space-16)',
-        '20': 'var(--space-20)',
-        '24': 'var(--space-24)',
-      },
-      
       borderRadius: {
-        'sm': 'var(--radius-sm)',
-        'md': 'var(--radius-md)',
-        'lg': 'var(--radius-lg)',
-        'xl': 'var(--radius-xl)',
-        '2xl': 'var(--radius-2xl)',
-        'full': 'var(--radius-full)',
+        'theme': 'var(--radius)',
+        'theme-lg': 'var(--radius-lg)',
+        'theme-xl': 'var(--radius-xl)',
       },
-      
       boxShadow: {
-        'sm': 'var(--shadow-sm)',
-        'md': 'var(--shadow-md)',
-        'lg': 'var(--shadow-lg)',
-        'xl': 'var(--shadow-xl)',
-        '2xl': 'var(--shadow-2xl)',
+        'theme-sm': 'var(--shadow-sm)',
+        'theme': 'var(--shadow)',
+        'theme-lg': 'var(--shadow-lg)',
+        'theme-xl': 'var(--shadow-xl)',
+        'glass': 'var(--glass-shadow)',
+        'glow': 'var(--glow-primary)',
+        'glow-hover': 'var(--glow-hover)',
       },
-      
-      transitionDuration: {
-        'fast': 'var(--transition-fast)',
-        'normal': 'var(--transition-normal)',
-        'slow': 'var(--transition-slow)',
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'slide-up': 'slideUp 0.5s ease-out',
+        'scale-in': 'scaleIn 0.3s ease-out',
+        'shimmer': 'shimmer 2s infinite',
+        'aurora': 'aurora 8s ease-in-out infinite alternate',
+        'float': 'float 6s ease-in-out infinite',
+        'glow': 'glow 2s ease-in-out infinite alternate',
       },
-      
-      transitionTimingFunction: {
-        'in-out': 'var(--ease-in-out)',
-        'out': 'var(--ease-out)',
-        'in': 'var(--ease-in)',
-      },
-      
-      maxWidth: {
-        'container-sm': 'var(--container-sm)',
-        'container-md': 'var(--container-md)',
-        'container-lg': 'var(--container-lg)',
-        'container-xl': 'var(--container-xl)',
-      },
-      
-      height: {
-        'nav': 'var(--nav-height)',
-      },
-      
-      width: {
-        'sidebar': 'var(--sidebar-width)',
-        'sidebar-collapsed': 'var(--sidebar-collapsed-width)',
-      },
-      
-      zIndex: {
-        'dropdown': 'var(--z-dropdown)',
-        'sticky': 'var(--z-sticky)',
-        'fixed': 'var(--z-fixed)',
-        'modal-backdrop': 'var(--z-modal-backdrop)',
-        'modal': 'var(--z-modal)',
-        'popover': 'var(--z-popover)',
-        'tooltip': 'var(--z-tooltip)',
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        scaleIn: {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        aurora: {
+          '0%': { transform: 'translate(-20%, -20%) rotate(0deg) scale(1)' },
+          '33%': { transform: 'translate(10%, -10%) rotate(120deg) scale(1.1)' },
+          '66%': { transform: 'translate(-10%, 10%) rotate(240deg) scale(0.9)' },
+          '100%': { transform: 'translate(20%, 20%) rotate(360deg) scale(1)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        glow: {
+          '0%': { boxShadow: '0 0 5px rgb(var(--color-primary) / 0.2)' },
+          '100%': { boxShadow: '0 0 20px rgb(var(--color-primary) / 0.4)' },
+        },
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+  ],
 }
