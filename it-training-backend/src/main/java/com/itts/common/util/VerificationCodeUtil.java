@@ -40,7 +40,7 @@ public class VerificationCodeUtil {
     public void saveEmailCode(String email, String code) {
         String key = EMAIL_CODE_PREFIX + email;
         redisTemplate.opsForValue().set(key, code, CODE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-        log.info("邮箱验证码已保存到Redis: {} -> {}", email, code);
+        log.info("邮箱验证码已发送: {}", maskEmail(email));
     }
 
     /**
@@ -51,7 +51,7 @@ public class VerificationCodeUtil {
     public void savePhoneCode(String phone, String code) {
         String key = PHONE_CODE_PREFIX + phone;
         redisTemplate.opsForValue().set(key, code, CODE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-        log.info("手机验证码已保存到Redis: {} -> {}", phone, code);
+        log.info("手机验证码已发送: {}", maskPhone(phone));
     }
 
     /**
@@ -65,7 +65,7 @@ public class VerificationCodeUtil {
         String savedCode = redisTemplate.opsForValue().get(key);
 
         if (savedCode == null) {
-            log.warn("邮箱验证码不存在或已过期: {}", email);
+            log.warn("邮箱验证码不存在或已过期: {}", maskEmail(email));
             return false;
         }
 
@@ -73,9 +73,9 @@ public class VerificationCodeUtil {
         if (isValid) {
             // 验证成功后删除验证码
             redisTemplate.delete(key);
-            log.info("邮箱验证码验证成功: {}", email);
+            log.info("邮箱验证码验证成功: {}", maskEmail(email));
         } else {
-            log.warn("邮箱验证码验证失败: {}", email);
+            log.warn("邮箱验证码验证失败: {}", maskEmail(email));
         }
 
         return isValid;
@@ -92,7 +92,7 @@ public class VerificationCodeUtil {
         String savedCode = redisTemplate.opsForValue().get(key);
 
         if (savedCode == null) {
-            log.warn("手机验证码不存在或已过期: {}", phone);
+            log.warn("手机验证码不存在或已过期: {}", maskPhone(phone));
             return false;
         }
 
@@ -100,9 +100,9 @@ public class VerificationCodeUtil {
         if (isValid) {
             // 验证成功后删除验证码
             redisTemplate.delete(key);
-            log.info("手机验证码验证成功: {}", phone);
+            log.info("手机验证码验证成功: {}", maskPhone(phone));
         } else {
-            log.warn("手机验证码验证失败: {}", phone);
+            log.warn("手机验证码验证失败: {}", maskPhone(phone));
         }
 
         return isValid;
@@ -126,5 +126,31 @@ public class VerificationCodeUtil {
     public boolean phoneCodeExists(String phone) {
         String key = PHONE_CODE_PREFIX + phone;
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    // ==================== 脱敏方法 ====================
+
+    /**
+     * 脱敏邮箱：a***@example.com
+     */
+    private String maskEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            return "***";
+        }
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 1) {
+            return email;
+        }
+        return email.substring(0, 1) + "***" + email.substring(atIndex);
+    }
+
+    /**
+     * 脱敏手机号：138****1234
+     */
+    private String maskPhone(String phone) {
+        if (phone == null || phone.length() < 7) {
+            return "***";
+        }
+        return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
     }
 }
