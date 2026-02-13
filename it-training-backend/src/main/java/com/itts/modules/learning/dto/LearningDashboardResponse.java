@@ -1,5 +1,6 @@
 package com.itts.modules.learning.dto;
 
+import com.itts.modules.achievement.dto.AchievementResponse;
 import lombok.Data;
 
 import java.time.LocalDate;

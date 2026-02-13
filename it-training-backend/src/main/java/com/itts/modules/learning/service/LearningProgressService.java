@@ -1,5 +1,6 @@
 package com.itts.modules.learning.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.itts.modules.learning.dto.LearningDashboardResponse;
 import com.itts.modules.learning.dto.LearningProgressResponse;
@@ -26,6 +27,15 @@ public interface LearningProgressService extends IService<LearningProgress> {
      * @return 进度列表
      */
     List<LearningProgressResponse> getUserProgress(Long userId);
+
+    /**
+     * 分页获取用户所有课程的学习进度
+     * @param userId 用户ID
+     * @param page 页码
+     * @param size 每页大小
+     * @return 进度分页列表
+     */
+    IPage<LearningProgressResponse> getUserProgress(Long userId, int page, int size);
 
     /**
      * 获取用户某课程的学习进度
@@ -65,4 +75,13 @@ public interface LearningProgressService extends IService<LearningProgress> {
      * @return 进行中的课程进度列表
      */
     List<LearningProgressResponse> getInProgressCourses(Long userId);
+
+    /**
+     * 分页获取进行中的课程列表
+     * @param userId 用户ID
+     * @param page 页码
+     * @param size 每页大小
+     * @return 进行中的课程进度分页列表
+     */
+    IPage<LearningProgressResponse> getInProgressCourses(Long userId, int page, int size);
 }
