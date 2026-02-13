@@ -1,0 +1,87 @@
+/* ============================================================================
+ * 晴空白 (Light) — Stripe 克制派：实色 + 多层阴影 + 克制用色
+ * ============================================================================ */
+[data-theme='light'],
+:root {
+  /* Primary — Stripe Purple (更有辨识度) */
+  --color-primary: 99 91 255;
+  --color-primary-light: 129 140 248;
+  --color-primary-dark: 79 70 229;
+
+  /* Accent — Emerald (CTA / highlight) */
+  --color-accent: 16 185 129;
+
+  /* Backgrounds — Stripe auth 风格 */
+  --color-bg: 246 249 252;
+  --color-surface: 255 255 255;
+  --color-surface-alt: 248 250 253;
+
+  /* Text — Stripe 深蓝黑，更有质感 */
+  --color-text: 10 37 64;
+  --color-text-secondary: 66 84 102;
+  --color-text-tertiary: 136 152 170;
+
+  /* Border — 更柔和 */
+  --color-border: 227 232 238;
+
+  /* Semantic */
+  --color-success: 52 199 89;
+  --color-warning: 255 149 0;
+  --color-danger: 255 59 48;
+  --color-info: 59 130 246;
+
+  /* Shadows — Stripe 三层阴影体系 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow:
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-lg:
+    0 15px 35px rgba(60, 66, 87, 0.08),
+    0 5px 15px rgba(0, 0, 0, 0.04);
+  --shadow-xl:
+    0 30px 60px rgba(60, 66, 87, 0.12),
+    0 10px 20px rgba(0, 0, 0, 0.06);
+
+  /* Radius */
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+
+  /* Glass — 降低 blur，仅 navbar 使用 */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-blur: 16px;
+  --glass-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+
+  /* Navbar */
+  --navbar-bg: rgba(246, 249, 252, 0.72);
+  --navbar-border: rgba(0, 0, 0, 0.06);
+  --navbar-blur: 20px;
+
+  /* Sidebar */
+  --sidebar-bg: 255 255 255;
+  --sidebar-border: rgba(0, 0, 0, 0.06);
+
+  /* Aurora — 收敛色相，violet 为主 */
+  --aurora-1: rgba(99, 91, 255, 0.15);
+  --aurora-2: rgba(129, 140, 248, 0.12);
+  --aurora-3: rgba(139, 92, 246, 0.08);
+  --aurora-4: rgba(16, 185, 129, 0.06);
+
+  /* Gradient Text — Stripe 风格双色渐变 */
+  --gradient-text: linear-gradient(135deg, #635BFF, #818CF8);
+  --gradient-hero: linear-gradient(135deg, #635BFF 0%, #818CF8 40%, #A78BFA 70%, #06B6D4 100%);
+
+  /* Mesh Gradient — Stripe violet spectrum */
+  --mesh-1: radial-gradient(ellipse at 20% 50%, rgba(99, 91, 255, 0.12) 0%, transparent 50%);
+  --mesh-2: radial-gradient(ellipse at 80% 20%, rgba(129, 140, 248, 0.10) 0%, transparent 50%);
+  --mesh-3: radial-gradient(ellipse at 60% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+  --mesh-4: radial-gradient(ellipse at 30% 90%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
+
+  /* Glow — Light 模式不需要，但保持变量兼容 */
+  --glow-primary: none;
+  --glow-hover: none;
+  --gradient-border: none;
+}

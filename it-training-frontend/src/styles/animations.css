@@ -1,0 +1,193 @@
+/* ============================================================================
+ * Animations — @keyframes 动画集合
+ * ============================================================================ */
+
+/* Page transitions */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Fade */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Slide up */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* Scale */
+.scale-enter-active,
+.scale-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.scale-enter-from,
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Stagger children reveal */
+.stagger-enter > * {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.stagger-enter-active > * {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.stagger-enter-active > *:nth-child(1) { transition-delay: 0.05s; }
+.stagger-enter-active > *:nth-child(2) { transition-delay: 0.1s; }
+.stagger-enter-active > *:nth-child(3) { transition-delay: 0.15s; }
+.stagger-enter-active > *:nth-child(4) { transition-delay: 0.2s; }
+.stagger-enter-active > *:nth-child(5) { transition-delay: 0.25s; }
+.stagger-enter-active > *:nth-child(6) { transition-delay: 0.3s; }
+.stagger-enter-active > *:nth-child(7) { transition-delay: 0.35s; }
+.stagger-enter-active > *:nth-child(8) { transition-delay: 0.4s; }
+
+/* Sidebar */
+.sidebar-enter-active,
+.sidebar-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.sidebar-enter-from,
+.sidebar-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+/* Modal */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-enter-active .modal-content,
+.modal-leave-active .modal-content {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .modal-content {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
+}
+
+.modal-leave-to .modal-content {
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+/* ====================================================================
+ * Micro-interaction Animations
+ * ==================================================================== */
+
+/* Confetti burst — used after check-in success */
+@keyframes confetti-pop {
+  0% { transform: scale(0) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+.confetti-pop {
+  animation: confetti-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Flame glow — streak streak animation */
+@keyframes flame-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(251, 146, 60, 0.4)); }
+  50% { filter: drop-shadow(0 0 12px rgba(251, 146, 60, 0.8)); }
+}
+
+.flame-glow {
+  animation: flame-glow 1.5s ease-in-out infinite;
+}
+
+/* Pulse ring — achievement unlock */
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgb(var(--color-primary) / 0.4); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgb(var(--color-primary) / 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgb(var(--color-primary) / 0); }
+}
+
+.pulse-ring {
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+
+/* Gradient border spin — premium card effect */
+@keyframes gradient-spin {
+  0% { --gradient-angle: 0deg; }
+  100% { --gradient-angle: 360deg; }
+}
+
+/* Number count up — stat emphasis */
+@keyframes number-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.number-pop {
+  animation: number-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Shake — error feedback */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* ====================================================================
+ * Reduced Motion — 覆盖所有动画，确保无障碍
+ * ==================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
