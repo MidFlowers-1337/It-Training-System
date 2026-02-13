@@ -28,11 +28,14 @@ public enum ErrorCode {
     ACCOUNT_DISABLED(4004, "账户已被禁用，请联系管理员", HttpStatus.FORBIDDEN),
     TOKEN_EXPIRED(4005, "登录已过期，请重新登录", HttpStatus.UNAUTHORIZED),
     TOKEN_INVALID(4006, "无效的Token", HttpStatus.UNAUTHORIZED),
+    ACCOUNT_LOCKED(4008, "账号已锁定，请稍后重试", HttpStatus.TOO_MANY_REQUESTS),
 
     // 课程错误 402x - 资源冲突用 409，不存在用 404，业务规则用 422
     COURSE_CODE_EXISTS(4020, "课程编码已存在", HttpStatus.CONFLICT),
     COURSE_HAS_SESSION(4021, "该课程下存在班期，无法删除", HttpStatus.UNPROCESSABLE_ENTITY),
     COURSE_NOT_FOUND(4022, "课程不存在", HttpStatus.NOT_FOUND),
+    CHAPTER_NOT_FOUND(4023, "章节不存在", HttpStatus.NOT_FOUND),
+    CHAPTER_NOT_BELONG_TO_COURSE(4024, "章节不属于指定课程", HttpStatus.BAD_REQUEST),
 
     // 班期错误 403x
     SESSION_NOT_ENROLLABLE(4030, "该班期暂不可报名", HttpStatus.UNPROCESSABLE_ENTITY),
@@ -48,6 +51,13 @@ public enum ErrorCode {
 
     // AI 错误 405x - 外部服务不可用用 503
     AI_SERVICE_ERROR(4050, "AI服务暂时不可用", HttpStatus.SERVICE_UNAVAILABLE),
+
+    // 通知错误 406x
+    NOTIFICATION_NOT_FOUND(4060, "通知不存在", HttpStatus.NOT_FOUND),
+
+    // 成就错误 407x
+    ACHIEVEMENT_NOT_FOUND(4070, "成就不存在", HttpStatus.NOT_FOUND),
+    ACHIEVEMENT_CODE_EXISTS(4071, "成就编码已存在", HttpStatus.CONFLICT),
 
     // 限流错误 429 - Too Many Requests
     RATE_LIMIT_EXCEEDED(429, "请求过于频繁，请稍后再试", HttpStatus.TOO_MANY_REQUESTS);
