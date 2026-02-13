@@ -145,12 +145,26 @@ public class CorsConfig {
             effectiveOrigins = allowedOrigins;
         }
 
+        // 安全校验：allowCredentials=true 时，origins 不能为 "*"
+        if ("*".equals(effectiveOrigins.trim())) {
+            log.error("CORS安全校验失败: allowCredentials=true 时，origins 不能为 '*'");
+            throw new IllegalStateException(
+                    "CORS配置错误: 当 allowCredentials=true 时，不允许使用通配符 '*' 作为 origin。" +
+                    "请明确指定允许的域名列表。");
+        }
+
         // 解析来源列表
         List<String> origins = Arrays.asList(effectiveOrigins.split(","));
 
         for (String origin : origins) {
             String trimmedOrigin = origin.trim();
             if (!trimmedOrigin.isEmpty()) {
+                // 逐项校验不能为 "*"
+                if ("*".equals(trimmedOrigin)) {
+                    log.error("CORS安全校验失败: origins 列表中包含通配符 '*'");
+                    throw new IllegalStateException(
+                            "CORS配置错误: 当 allowCredentials=true 时，不允许使用通配符 '*' 作为 origin。");
+                }
                 config.addAllowedOrigin(trimmedOrigin);
             }
         }

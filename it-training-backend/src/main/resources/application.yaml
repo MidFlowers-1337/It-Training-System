@@ -32,10 +32,12 @@ spring:
     # incompatible migrations. Local overrides can still disable this in
     # profile-specific files if needed for development.
     validate-on-migrate: true
-    clean-disabled: false
+    clean-disabled: true
     encoding: UTF-8
     out-of-order: false
     table: flyway_schema_history
+    # 禁用占位符替换，防止 BCrypt 哈希中的 $ 符号被 Flyway 吞掉
+    placeholder-replacement: false
 
   # Redis 配置
   data:
@@ -98,8 +100,8 @@ server:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
   error:
-    include-message: always
-    include-binding-errors: always
+    include-message: never
+    include-binding-errors: never
 
 # ============================================================================
 # JWT 配置
@@ -107,7 +109,8 @@ server:
 jwt:
   # 安全警告：必须通过环境变量 JWT_SECRET 设置安全的密钥（至少32字符）
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000}  # 24小时（毫秒）
+  expiration: ${JWT_EXPIRATION:1800000}  # Access Token: 30分钟（毫秒）
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # Refresh Token: 7天（毫秒）
   header: Authorization
   prefix: "Bearer "
 
@@ -116,10 +119,10 @@ jwt:
 # ============================================================================
 springdoc:
   api-docs:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:false}
     path: /v3/api-docs
   swagger-ui:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:false}
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
@@ -152,20 +155,16 @@ ai:
 # 应用自定义配置
 # ============================================================================
 app:
-  # 跨域配置
-  cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
-    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
-    allowed-headers: "*"
-    allow-credentials: true
-    max-age: 3600
-
   # 接口限流配置
   rate-limit:
     # 窗口时间（秒）
     window-seconds: ${RATE_LIMIT_WINDOW:60}
     # 窗口内最大请求数
     max-requests: ${RATE_LIMIT_MAX:100}
+    # 认证端点独立限流阈值（请求/分钟）
+    auth-max-requests: ${RATE_LIMIT_AUTH_MAX:10}
+    # 是否信任代理头获取客户端IP（生产环境在反向代理后面时设为true）
+    trust-proxy: ${RATE_LIMIT_TRUST_PROXY:false}
 
   # 文件上传配置
   upload:
