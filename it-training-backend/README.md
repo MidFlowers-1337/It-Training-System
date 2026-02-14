@@ -4,7 +4,7 @@
 
 ---
 
-## 🚀 快速启动
+## 快速启动
 
 ### 环境要求
 
@@ -82,161 +82,227 @@ java -jar target/it-training-system-1.0.0-SNAPSHOT.jar
 
 ---
 
-## 📁 项目结构
+## 项目结构
 
 ```
 src/main/java/com/itts/
-├── ItTrainingApplication.java    # 启动类
-├── common/                       # 公共模块
-│   ├── config/                   # 配置类
-│   │   ├── CorsConfig.java       # CORS 配置
-│   │   ├── MyBatisPlusConfig.java
-│   │   ├── SecurityConfig.java   # Spring Security 配置
-│   │   └── SwaggerConfig.java    # API 文档配置
-│   ├── exception/                # 异常处理
-│   │   ├── BusinessException.java
-│   │   ├── ErrorCode.java
-│   │   └── GlobalExceptionHandler.java
-│   ├── response/                 # 统一响应
-│   │   └── R.java
-│   └── security/                 # 安全模块
-│       ├── JwtAuthenticationFilter.java
-│       ├── JwtTokenProvider.java
-│       └── UserDetailsServiceImpl.java
-├── enums/                        # 枚举定义
-│   ├── CourseCategory.java
-│   ├── CourseDifficulty.java
-│   ├── EnrollmentStatus.java
-│   ├── RoleEnum.java
-│   └── SessionStatus.java
-└── modules/                      # 业务模块
-    ├── ai/                       # AI 推荐模块
+├── ItTrainingApplication.java          # 启动类
+│
+├── common/                              # 公共基础设施
+│   ├── ai/                              #   AI 客户端封装
+│   │   ├── OpenAiService.java
+│   │   └── impl/OpenAiServiceImpl.java
+│   ├── config/                          #   配置类
+│   │   ├── AiClientConfig.java          #     AI 客户端配置
+│   │   ├── CorsConfig.java              #     CORS 跨域配置
+│   │   ├── MyBatisPlusConfig.java       #     MyBatis-Plus 配置
+│   │   ├── RedisCacheConfig.java        #     Redis 缓存配置
+│   │   ├── SecurityConfig.java          #     Spring Security 配置
+│   │   ├── SwaggerConfig.java           #     API 文档配置
+│   │   └── WebMvcConfig.java            #     Web MVC 配置
+│   ├── exception/                       #   异常处理
+│   │   ├── BusinessException.java       #     业务异常
+│   │   ├── ErrorCode.java               #     错误码枚举
+│   │   └── GlobalExceptionHandler.java  #     全局异常处理器
+│   ├── interceptor/                     #   拦截器
+│   │   └── RateLimitInterceptor.java    #     速率限制
+│   ├── response/                        #   统一响应
+│   │   └── R.java                       #     通用响应体
+│   ├── security/                        #   安全认证
+│   │   ├── CustomAccessDeniedHandler.java     # 403 处理器
+│   │   ├── JwtAuthenticationEntryPoint.java   # 401 处理器
+│   │   ├── JwtAuthenticationFilter.java       # JWT 过滤器
+│   │   ├── JwtTokenProvider.java              # Token 生成/解析
+│   │   └── UserDetailsServiceImpl.java        # 用户详情加载
+│   └── util/                            #   工具类
+│       ├── LevelDifficultyUtils.java    #     等级难度转换
+│       ├── SecurityUtils.java           #     安全上下文工具
+│       ├── TimeFormatUtils.java         #     时间格式化
+│       ├── UserCourseQueryHelper.java   #     用户课程查询辅助
+│       └── VerificationCodeUtil.java    #     验证码工具
+│
+├── enums/                               # 枚举定义
+│   ├── CourseCategory.java              #   课程分类
+│   ├── CourseDifficulty.java            #   课程难度
+│   ├── CourseStatus.java                #   课程状态
+│   ├── DeleteFlag.java                  #   删除标记
+│   ├── EnrollmentStatus.java            #   报名状态
+│   ├── LearningStatus.java              #   学习状态
+│   ├── PlanStatus.java                  #   计划状态
+│   ├── RoleEnum.java                    #   角色枚举
+│   ├── SessionStatus.java              #   班期状态
+│   └── UserStatus.java                  #   用户状态
+│
+└── modules/                             # 业务模块（16 个）
+    ├── achievement/                     #   成就系统
+    │   ├── controller/                  #     AchievementController + AdminController
+    │   ├── dto/                         #     4 个 DTO
+    │   ├── entity/                      #     Achievement + UserAchievement
+    │   ├── event/                       #     LearningActivityEvent
+    │   ├── mapper/
+    │   └── service/
+    ├── ai/                              #   AI 推荐
+    │   ├── controller/                  #     AiRecommendController + AiTestController
+    │   ├── dto/
+    │   ├── entity/
+    │   ├── mapper/
+    │   └── service/
+    ├── auth/                            #   认证授权
+    │   ├── controller/AuthController.java
+    │   ├── dto/                         #     LoginRequest, RegisterRequest,
+    │   │                                #     RefreshTokenRequest, TokenResponse
+    │   └── service/
+    ├── checkin/                          #   学习签到
+    │   ├── controller/CheckinController.java
+    │   ├── dto/
+    │   ├── entity/StudyCheckin.java
+    │   ├── mapper/
+    │   └── service/
+    ├── course/                          #   课程管理
+    │   ├── controller/CourseController.java
+    │   ├── dto/                         #     Course + Chapter CRUD DTO
+    │   ├── entity/                      #     Course + CourseChapter
+    │   ├── mapper/
+    │   └── service/
+    ├── enrollment/                      #   报名管理
     │   ├── controller/
     │   ├── dto/
     │   ├── entity/
     │   ├── mapper/
     │   └── service/
-    ├── auth/                     # 认证模块
-    ├── course/                   # 课程管理
-    ├── enrollment/               # 报名管理
-    ├── learning/                 # 学习管理
-    │   ├── controller/
+    ├── learning/                        #   学习进度（核心）
+    │   ├── controller/ProgressController.java
     │   ├── dto/
+    │   ├── entity/                      #     LearningProgress + UserLearningStats
     │   ├── mapper/
     │   └── service/
-    │       ├── AchievementService.java
-    │       ├── CollaborativeFilteringService.java
-    │       ├── ContentBasedRecommendService.java
-    │       ├── HybridRecommendService.java
-    │       ├── LearningPlanService.java
-    │       ├── LearningProgressService.java
-    │       ├── LearningReportService.java
-    │       ├── StudyCheckinService.java
-    │       ├── UserLearningStatsService.java
-    │       └── UserProfileService.java
-    ├── session/                  # 班期管理
-    ├── stats/                    # 统计模块
-    └── user/                     # 用户管理
-        ├── controller/
-        │   ├── ProfileController.java
-        │   └── UserController.java
-        ├── dto/
-        ├── entity/
+    ├── notification/                    #   通知系统
+    │   ├── controller/NotificationController.java
+    │   ├── dto/NotificationResponse.java
+    │   ├── entity/Notification.java
+    │   ├── mapper/
+    │   └── service/                     #     NotificationService + SystemNotificationService
+    ├── plan/                            #   学习计划
+    │   ├── controller/LearningPlanController.java
+    │   ├── dto/
+    │   ├── entity/LearningPlan.java
+    │   ├── mapper/
+    │   └── service/
+    ├── profile/                         #   学习画像
+    │   ├── controller/LearningProfileController.java
+    │   ├── dto/
+    │   └── service/                     #     复用 recommend 模块实体
+    ├── recommend/                       #   智能推荐
+    │   ├── controller/RecommendController.java
+    │   ├── dto/
+    │   ├── entity/                      #     CourseSimilarity, RecommendFeedback,
+    │   │                                #     UserPreference, UserSkillTag
+    │   ├── mapper/
+    │   └── service/                     #     Content + Collaborative + Hybrid
+    ├── report/                          #   学习报告
+    │   ├── controller/LearningReportController.java
+    │   ├── dto/LearningReportResponse.java
+    │   └── service/
+    ├── review/                          #   课程评价
+    │   ├── controller/CourseReviewController.java
+    │   ├── dto/                         #     Request + Response + Summary
+    │   ├── entity/CourseReview.java
+    │   ├── mapper/
+    │   └── service/
+    ├── session/                         #   班期管理
+    │   ├── controller/
+    │   ├── dto/
+    │   ├── entity/ClassSession.java
+    │   ├── mapper/
+    │   └── service/
+    ├── stats/                           #   统计分析
+    │   ├── controller/                  #     StatsController + PublicStatsController
+    │   │                                #     + PublicCourseController
+    │   ├── dto/                         #     7 个统计 DTO
+    │   └── service/
+    ├── student/                         #   学员中心
+    │   ├── controller/StudentController.java
+    │   ├── dto/
+    │   ├── entity/                      #     UserChapterProgress, UserLearningStreak,
+    │   │                                #     UserLevel
+    │   ├── mapper/
+    │   └── service/                     #     StudentService + StudentDashboardService
+    └── user/                            #   用户管理
+        ├── controller/                  #     UserController + ProfileController
+        ├── dto/                         #     7 个用户 DTO
+        ├── entity/SysUser.java
         ├── mapper/
-        └── service/
-            ├── ProfileService.java
-            └── UserService.java
+        └── service/                     #     UserService + ProfileService
 ```
 
 ---
 
-## 🔌 API 接口
+## API 接口概览
 
-### 认证接口
+> 完整 API 文档请参见 [docs/API-Frontend-Integration.md](../docs/API-Frontend-Integration.md)
+
+### 公开接口（无需认证）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/api/auth/register` | 用户注册 |
-| POST | `/api/auth/login` | 用户登录 |
-| POST | `/api/auth/logout` | 用户登出 |
+| POST | `/api/v1/auth/login` | 用户登录 |
+| POST | `/api/v1/auth/register` | 用户注册 |
+| POST | `/api/v1/auth/refresh` | 刷新 Token |
+| GET | `/api/v1/public/stats` | 平台公开统计 |
+| GET | `/api/v1/public/courses/featured` | 精选课程 |
 
-### 用户管理
+### 认证接口
 
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| GET | `/api/users` | 用户列表 | ADMIN |
-| POST | `/api/users` | 创建用户 | ADMIN |
-| PUT | `/api/users/{id}` | 更新用户 | ADMIN |
-| DELETE | `/api/users/{id}` | 删除用户 | ADMIN |
+| 模块 | Base Path | 说明 |
+|------|-----------|------|
+| 学习进度 | `/api/v1/learning/progress` | 进度查询与更新 |
+| 学习打卡 | `/api/v1/learning/checkin` | 打卡签到 |
+| 成就系统 | `/api/v1/learning/achievements` | 成就查询 |
+| 学习计划 | `/api/v1/learning/plans` | 计划 CRUD |
+| 智能推荐 | `/api/v1/learning/recommend` | 多策略推荐 |
+| 学习报告 | `/api/v1/learning/reports` | 周/月/年报 |
+| 用户画像 | `/api/v1/learning/profile` | 画像与偏好 |
+| 个人中心 | `/api/v1/profile` | 资料与安全 |
+| 课程评价 | `/api/v1/courses/{id}/reviews` | 评分评论 |
+| 通知中心 | `/api/v1/notifications` | 消息通知 |
+| 学员 Dashboard | `/api/v1/student` | 数据聚合 |
 
-### 课程管理
+### 管理员接口
 
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| GET | `/api/courses` | 课程列表 | ALL |
-| POST | `/api/courses` | 创建课程 | ADMIN |
-| PUT | `/api/courses/{id}` | 更新课程 | ADMIN |
-| DELETE | `/api/courses/{id}` | 删除课程 | ADMIN |
-
-### 报名管理
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| POST | `/api/enrollments` | 报名 | STUDENT |
-| GET | `/api/enrollments/my` | 我的报名 | STUDENT |
-| POST | `/api/enrollments/{id}/cancel` | 取消报名 | STUDENT |
-
-### AI 推荐
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| POST | `/api/ai/recommend` | 智能推荐 | STUDENT |
-
-### 学习管理
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| GET | `/api/learning/dashboard` | 学习仪表盘 | STUDENT |
-| POST | `/api/learning/progress` | 更新进度 | STUDENT |
-| POST | `/api/learning/checkin` | 打卡 | STUDENT |
-| GET | `/api/learning/achievements` | 成就列表 | STUDENT |
-| GET | `/api/learning/report` | 学习报告 | STUDENT |
-| GET | `/api/learning/recommend` | 课程推荐 | STUDENT |
-
-### 个人中心
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| GET | `/api/profile` | 获取个人信息 | ALL |
-| PUT | `/api/profile` | 更新个人信息 | ALL |
-| POST | `/api/profile/password` | 修改密码 | ALL |
-| POST | `/api/profile/avatar` | 上传头像 | ALL |
+| 模块 | Base Path | 说明 |
+|------|-----------|------|
+| 用户管理 | `/api/v1/users` | 用户 CRUD |
+| 课程管理 | `/api/v1/courses` | 课程 CRUD + 章节 |
+| 班期管理 | `/api/v1/sessions` | 班期 CRUD |
+| 报名管理 | `/api/v1/enrollments` | 报名查询 |
+| 统计看板 | `/api/v1/stats` | 数据统计 |
+| 成就管理 | `/api/v1/admin/achievements` | 成就 CRUD |
+| AI 测试 | `/api/v1/ai/test` | AI 服务调试 |
 
 ---
 
-## 🔒 安全配置
+## 安全配置
 
 ### JWT 认证
 
-- Token 有效期：24 小时
+- **Access Token** 有效期：24 小时
+- **Refresh Token** 有效期：7 天
 - 签名算法：HMAC-SHA256
 - Token 位置：Authorization Header (`Bearer <token>`)
-
-### 角色权限
-
-| 角色 | 权限范围 |
-|------|----------|
-| ADMIN | 全部功能 |
-| INSTRUCTOR | 查看班期、学员名单 |
-| STUDENT | 浏览课程、报名、AI 推荐、学习管理 |
 
 ### 安全端点配置
 
 ```java
-// 公开接口
-/api/auth/** - 认证相关
-/swagger-ui/** - API 文档
-/v3/api-docs/** - OpenAPI 规范
+// 公开接口（无需认证）
+/api/v1/auth/**          - 认证相关
+/api/v1/public/**        - 公开数据
+/swagger-ui/**           - API 文档
+/v3/api-docs/**          - OpenAPI 规范
+
+// 管理员专属
+/api/v1/users/**         - 用户管理
+/api/v1/admin/**         - 管理后台
+/api/v1/stats/**         - 统计看板
 
 // 需要认证
 其他所有接口
@@ -244,7 +310,55 @@ src/main/java/com/itts/
 
 ---
 
-## 🧪 测试
+## 数据库
+
+### 数据库迁移
+
+项目使用 **Flyway** 管理数据库版本，启动时自动执行迁移脚本。
+
+迁移脚本位置：`src/main/resources/db/migration/`
+
+| 脚本 | 说明 |
+|------|------|
+| V1 ~ V5 | 核心表结构（用户、课程、班期、报名、学习相关） |
+| V6 | 种子数据 |
+| V12 | 用户成就唯一约束 |
+| V13 | 通知表 |
+| V14 | 课程评价表 |
+| V15 | 推荐反馈表 |
+| V16 | 打卡唯一约束 |
+
+### 核心表
+
+| 表名 | 说明 |
+|------|------|
+| `sys_user` | 用户表 |
+| `course` | 课程表 |
+| `course_chapter` | 课程章节表 |
+| `class_session` | 班期表 |
+| `enrollment` | 报名表 |
+| `ai_recommend_log` | AI 推荐日志 |
+
+### 学习管理表
+
+| 表名 | 说明 |
+|------|------|
+| `learning_progress` | 学习进度 |
+| `learning_plan` | 学习计划 |
+| `study_checkin` | 打卡记录 |
+| `achievement` | 成就定义 |
+| `user_achievement` | 用户成就 |
+| `user_learning_stats` | 学习统计 |
+| `user_preference` | 用户偏好 |
+| `user_skill_tag` | 用户技能标签 |
+| `course_similarity` | 课程相似度 |
+| `notification` | 通知记录 |
+| `course_review` | 课程评价 |
+| `recommend_feedback` | 推荐反馈 |
+
+---
+
+## 测试
 
 ```bash
 # 运行所有测试
@@ -262,45 +376,15 @@ mvn jacoco:report
 
 | 模块 | 测试类 |
 |------|--------|
-| 认证 | AuthControllerTest, AuthServiceTest |
-| 课程 | CourseControllerTest, CourseServiceTest |
-| 报名 | EnrollmentControllerTest, EnrollmentServiceTest |
-| 用户 | UserControllerTest, UserServiceTest |
-| AI | AiRecommendServiceTest |
-| 统计 | StatsControllerTest, StatsServiceTest |
-| 班期 | SessionControllerTest, SessionServiceTest |
+| 认证 | AuthServiceTest |
+| 学习进度 | LearningProgressServiceTest |
+| 打卡签到 | CheckinServiceTest |
+| 通知 | NotificationServiceImplTest |
+| 学员 | StudentServiceImplTest |
 
 ---
 
-## 📊 数据库
-
-### 核心表
-
-| 表名 | 说明 |
-|------|------|
-| sys_user | 用户表 |
-| course | 课程表 |
-| class_session | 班期表 |
-| enrollment | 报名表 |
-| ai_recommend_log | AI 推荐日志 |
-
-### 学习管理表
-
-| 表名 | 说明 |
-|------|------|
-| learning_progress | 学习进度 |
-| learning_plan | 学习计划 |
-| study_checkin | 打卡记录 |
-| achievement | 成就定义 |
-| user_achievement | 用户成就 |
-| user_learning_stats | 学习统计 |
-| user_preference | 用户偏好 |
-| user_skill_tag | 用户技能标签 |
-| course_similarity | 课程相似度 |
-
----
-
-## 🐳 Docker
+## Docker
 
 ### 构建镜像
 
@@ -323,7 +407,7 @@ docker run -d \
 
 ---
 
-## 📝 日志
+## 日志
 
 日志文件位置：`logs/`
 
@@ -336,12 +420,11 @@ docker run -d \
 
 ---
 
-## 🔧 常见问题
+## 常见问题
 
 ### 1. Maven 构建报错：multiple main class
 
 ```bash
-# 清理 target 目录后重新编译
 mvn clean spring-boot:run
 ```
 
@@ -349,18 +432,18 @@ mvn clean spring-boot:run
 
 检查：
 1. MySQL 服务是否启动
-2. 数据库是否创建
+2. 数据库 `it_training` 是否创建
 3. 环境变量是否正确配置
 
 ### 3. JWT 认证失败
 
 检查：
 1. `JWT_SECRET` 环境变量是否配置
-2. Token 是否过期
-3. Authorization Header 格式是否正确
+2. Token 是否过期（Access Token 24h，Refresh Token 7d）
+3. Authorization Header 格式：`Bearer <token>`
 
 ---
 
-## 📄 许可证
+## 许可证
 
 MIT License

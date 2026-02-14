@@ -1,12 +1,7 @@
 # BMAD 相关文件和目录
-.bmad/
 .claude/
-.roo/
-.roomodes
+.codex/
 .serena/
-.spec-workflow/
-bmad-custom-modules-src/
-bmad-custom-src/
 
 # 环境配置文件（包含敏感信息）
 .env.local
@@ -40,3 +35,7 @@ node_modules/
 *.tmp
 *.temp
 .DS_Store
+
+# 工具缓存
+.playwright-mcp/
+.vite/

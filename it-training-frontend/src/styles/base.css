@@ -1,0 +1,138 @@
+/* ============================================================================
+ * Base Styles — Reset + 字体 + 滚动条 + Selection + 中文排版
+ * ============================================================================ */
+@import './themes/tokens.css';
+@import './animations.css';
+@import './utilities.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+      'Helvetica Neue', Arial, 'PingFang SC', 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: rgb(var(--color-bg));
+    color: rgb(var(--color-text));
+    transition: background-color 0.3s ease, color 0.3s ease;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ====================================================================
+   * 中文排版优化 — 方块字不适合负 letter-spacing
+   * ==================================================================== */
+
+  /* 中文标题：不使用负 letter-spacing，保持自然间距 */
+  :lang(zh) h1,
+  :lang(zh) h2,
+  :lang(zh) h3,
+  :lang(zh) h4 {
+    letter-spacing: 0em;
+    word-break: break-all;
+    overflow-wrap: break-word;
+  }
+
+  /* 英文/数字标题可以使用紧凑间距 */
+  h1, h2, h3 {
+    font-feature-settings: 'kern' 1, 'liga' 1;
+  }
+
+  /* 中文正文段落：增加行高提升可读性 */
+  :lang(zh) p,
+  :lang(zh) li {
+    line-height: 1.75;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-text-tertiary) / 0.3);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-text-tertiary) / 0.5);
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: rgb(var(--color-primary) / 0.2);
+    color: rgb(var(--color-text));
+  }
+
+  /* Focus */
+  :focus-visible {
+    outline: 2px solid rgb(var(--color-primary));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Links */
+  a {
+    color: rgb(var(--color-primary));
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  a:hover {
+    color: rgb(var(--color-primary-dark));
+  }
+
+  /* Images */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Skip Navigation */
+  .skip-nav {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    z-index: 9999;
+    padding: 12px 24px;
+    background: rgb(var(--color-primary));
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 0 0 8px 0;
+    text-decoration: none;
+  }
+  .skip-nav:focus {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: auto;
+    height: auto;
+    overflow: visible;
+  }
+}

@@ -44,9 +44,12 @@ public class StudentDashboardResponse {
     public static class UserInfo {
         private String username;
         private String realName;
-        private Integer level;
-        private Integer experience;
-        private Integer nextLevelExp;
+        private Integer level;            // 等级 (1-8, 基于学习时长)
+        private String levelName;         // 等级名称 (学习新手/初级学员/.../学习宗师)
+        private Integer totalStudyMinutes; // 总学习分钟数
+        private Integer nextLevelMinutes;  // 下一级所需分钟数
+        private Integer experience;       // 累计经验值/积分 (保留作为积分系统)
+        private Integer nextLevelExp;     // 保留兼容旧前端, 值=nextLevelMinutes
     }
 
     @Data

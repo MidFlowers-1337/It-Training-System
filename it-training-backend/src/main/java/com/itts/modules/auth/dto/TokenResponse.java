@@ -20,14 +20,24 @@ public class TokenResponse {
     private String accessToken;
 
     /**
+     * 刷新令牌
+     */
+    private String refreshToken;
+
+    /**
      * 令牌类型
      */
     private String tokenType;
 
     /**
-     * 过期时间（秒）
+     * Access Token 过期时间（秒）
      */
     private Long expiresIn;
+
+    /**
+     * Refresh Token 过期时间（秒）
+     */
+    private Long refreshExpiresIn;
 
     /**
      * 用户ID

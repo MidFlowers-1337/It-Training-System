@@ -1,0 +1,86 @@
+/* ============================================================================
+ * 深空黑 (Dark) — Linear 氛围派：深黑底 + glow 边框 + 渐变发光
+ * ============================================================================ */
+[data-theme='dark'] {
+  /* Primary — Indigo (brighter for dark bg) */
+  --color-primary: 129 140 248;
+  --color-primary-light: 165 180 252;
+  --color-primary-dark: 99 102 241;
+
+  /* Accent — Cyan */
+  --color-accent: 6 182 212;
+
+  /* Backgrounds — 更纯净的 Linear 黑 */
+  --color-bg: 8 9 10;
+  --color-surface: 17 17 19;
+  --color-surface-alt: 26 26 29;
+
+  /* Text — 不要纯白，减轻眼压 */
+  --color-text: 237 237 237;
+  --color-text-secondary: 160 160 170;
+  --color-text-tertiary: 110 110 115;
+
+  /* Border — Linear 风格微光边框 */
+  --color-border: 38 38 42;
+
+  /* Semantic */
+  --color-success: 48 209 88;
+  --color-warning: 255 159 10;
+  --color-danger: 255 69 58;
+  --color-info: 96 165 250;
+
+  /* Shadows — glow 替代传统阴影 */
+  --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-lg:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 20px rgba(129, 140, 248, 0.08);
+  --shadow-xl:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 40px rgba(129, 140, 248, 0.12);
+
+  /* Radius */
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+
+  /* Glass */
+  --glass-bg: rgba(17, 17, 19, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-blur: 24px;
+  --glass-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 20px rgba(129, 140, 248, 0.05);
+
+  /* Navbar */
+  --navbar-bg: rgba(8, 9, 10, 0.8);
+  --navbar-border: rgba(255, 255, 255, 0.06);
+  --navbar-blur: 24px;
+
+  /* Sidebar */
+  --sidebar-bg: 17 17 19;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+
+  /* Aurora — Indigo deep glows */
+  --aurora-1: rgba(129, 140, 248, 0.20);
+  --aurora-2: rgba(6, 182, 212, 0.15);
+  --aurora-3: rgba(139, 92, 246, 0.12);
+  --aurora-4: rgba(52, 211, 153, 0.06);
+
+  /* Gradient Text — Indigo spectrum for dark */
+  --gradient-text: linear-gradient(135deg, #818CF8, #A78BFA);
+  --gradient-hero: linear-gradient(135deg, #818CF8 0%, #A78BFA 30%, #06B6D4 65%, #34D399 100%);
+
+  /* Mesh Gradient — Linear spectrum */
+  --mesh-1: radial-gradient(ellipse at 20% 50%, rgba(129, 140, 248, 0.20) 0%, transparent 50%);
+  --mesh-2: radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, 0.15) 0%, transparent 50%);
+  --mesh-3: radial-gradient(ellipse at 60% 80%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
+  --mesh-4: radial-gradient(ellipse at 30% 90%, rgba(52, 211, 153, 0.06) 0%, transparent 50%);
+
+  /* Dark-specific glow effects — Linear 风格 */
+  --glow-primary: 0 0 20px rgba(129, 140, 248, 0.15);
+  --glow-hover: 0 0 30px rgba(129, 140, 248, 0.25);
+  --glow-accent: 0 0 30px rgba(6, 182, 212, 0.15);
+  --gradient-border: linear-gradient(135deg, rgba(129, 140, 248, 0.3), rgba(6, 182, 212, 0.2));
+}

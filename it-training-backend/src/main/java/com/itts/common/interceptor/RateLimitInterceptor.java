@@ -8,11 +8,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -43,9 +45,39 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     private int maxRequests;
 
     /**
+     * 认证端点独立限流阈值（请求/分钟）
+     */
+    @Value("${app.rate-limit.auth-max-requests:10}")
+    private int authMaxRequests;
+
+    /**
+     * 是否信任代理 X-Forwarded-For 头
+     */
+    @Value("${app.rate-limit.trust-proxy:false}")
+    private boolean trustProxy;
+
+    /**
      * Redis key 前缀
      */
     private static final String RATE_LIMIT_KEY_PREFIX = "rate_limit:";
+
+    /**
+     * Redis Lua 限流脚本（原子化 INCR + EXPIRE）
+     * KEYS[1] = 限流key
+     * ARGV[1] = 窗口过期时间（秒）
+     * 返回当前计数值
+     */
+    private static final DefaultRedisScript<Long> RATE_LIMIT_SCRIPT;
+
+    static {
+        RATE_LIMIT_SCRIPT = new DefaultRedisScript<>();
+        RATE_LIMIT_SCRIPT.setScriptText(
+                "local count = redis.call('incr', KEYS[1]) " +
+                "if count == 1 then redis.call('expire', KEYS[1], ARGV[1]) end " +
+                "return count"
+        );
+        RATE_LIMIT_SCRIPT.setResultType(Long.class);
+    }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -58,24 +90,45 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         String clientIp = getClientIp(request);
         String key = RATE_LIMIT_KEY_PREFIX + clientIp + ":" + uri;
 
-        Long count = stringRedisTemplate.opsForValue().increment(key);
+        // 判断是否为认证端点，使用独立阈值
+        boolean isAuthEndpoint = isAuthEndpoint(uri);
+        int effectiveMaxRequests = isAuthEndpoint ? authMaxRequests : maxRequests;
+
+        // 使用 Lua 脚本原子化 INCR + EXPIRE，避免竞态条件
+        Long count = stringRedisTemplate.execute(
+                RATE_LIMIT_SCRIPT,
+                Collections.singletonList(key),
+                String.valueOf(windowSeconds)
+        );
+
         if (count == null) {
             count = 1L;
         }
 
-        // 第一次请求，设置过期时间
-        if (count == 1) {
-            stringRedisTemplate.expire(key, windowSeconds, TimeUnit.SECONDS);
-        }
+        // 添加 Rate Limit 响应头
+        long remaining = Math.max(0, effectiveMaxRequests - count);
+        response.setHeader("X-RateLimit-Limit", String.valueOf(effectiveMaxRequests));
+        response.setHeader("X-RateLimit-Remaining", String.valueOf(remaining));
 
         // 检查是否超过限制
-        if (count > maxRequests) {
-            log.warn("接口限流触发: ip={}, uri={}, count={}", clientIp, uri, count);
+        if (count > effectiveMaxRequests) {
+            log.warn("接口限流触发: ip={}, uri={}, count={}, limit={}", clientIp, uri, count, effectiveMaxRequests);
+            // 获取 key 剩余 TTL 作为 Retry-After
+            Long ttl = stringRedisTemplate.getExpire(key, TimeUnit.SECONDS);
+            response.setHeader("Retry-After", String.valueOf(ttl != null && ttl > 0 ? ttl : windowSeconds));
             writeErrorResponse(response);
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * 判断是否为认证端点（使用独立限流阈值）
+     */
+    private boolean isAuthEndpoint(String uri) {
+        return uri.startsWith("/api/v1/auth/login")
+                || uri.startsWith("/api/v1/auth/register");
     }
 
     /**
@@ -91,33 +144,60 @@ public class RateLimitInterceptor implements HandlerInterceptor {
 
     /**
      * 获取客户端真实IP
+     * 当 trust-proxy=false 时，只使用 request.getRemoteAddr()，防止 IP 伪造
+     * 当 trust-proxy=true 时，读取代理头但取最后一个非内网 IP
      */
     private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
+        if (!trustProxy) {
+            return request.getRemoteAddr();
         }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
+
+        // 信任代理模式：从 X-Forwarded-For 取最后一个非内网 IP
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            String[] ips = xForwardedFor.split(",");
+            // 从右向左找第一个非私有地址（最后添加的、最可信的代理记录）
+            for (int i = ips.length - 1; i >= 0; i--) {
+                String ip = ips[i].trim();
+                if (!isPrivateIp(ip)) {
+                    return ip;
+                }
+            }
         }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isEmpty() && !"unknown".equalsIgnoreCase(realIp)) {
+            return realIp;
         }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
+
+        return request.getRemoteAddr();
+    }
+
+    /**
+     * 判断是否为内网/私有 IP 地址
+     */
+    private boolean isPrivateIp(String ip) {
+        if (ip == null || ip.isEmpty()) {
+            return true;
         }
-        // 多个代理时，取第一个IP
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
+        return ip.startsWith("10.")
+                || ip.startsWith("172.16.") || ip.startsWith("172.17.") || ip.startsWith("172.18.")
+                || ip.startsWith("172.19.") || ip.startsWith("172.20.") || ip.startsWith("172.21.")
+                || ip.startsWith("172.22.") || ip.startsWith("172.23.") || ip.startsWith("172.24.")
+                || ip.startsWith("172.25.") || ip.startsWith("172.26.") || ip.startsWith("172.27.")
+                || ip.startsWith("172.28.") || ip.startsWith("172.29.") || ip.startsWith("172.30.")
+                || ip.startsWith("172.31.")
+                || ip.startsWith("192.168.")
+                || ip.equals("127.0.0.1")
+                || ip.equals("0:0:0:0:0:0:0:1")
+                || "unknown".equalsIgnoreCase(ip);
     }
 
     /**
      * 写入限流错误响应
      */
     private void writeErrorResponse(HttpServletResponse response) throws Exception {
-        response.setStatus(HttpServletResponse.SC_OK);
+        response.setStatus(429);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 

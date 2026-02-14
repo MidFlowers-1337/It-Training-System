@@ -4,7 +4,8 @@ import com.itts.common.exception.BusinessException;
 import com.itts.common.exception.ErrorCode;
 import com.itts.modules.user.entity.SysUser;
 import com.itts.modules.user.mapper.SysUserMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,16 +16,17 @@ import java.util.Optional;
 /**
  * 安全工具类
  * <p>
- * 提供获取当前登录用户信息的公共方法
+ * 提供获取当前登录用户信息的公共方法。
+ * 通过 {@link ApplicationContextAware} 获取 Bean，避免 static 字段的 @Autowired 注入反模式。
  */
 @Component
-public final class SecurityUtils {
+public final class SecurityUtils implements ApplicationContextAware {
 
     private static SysUserMapper userMapper;
 
-    @Autowired
-    public void setUserMapper(SysUserMapper userMapper) {
-        SecurityUtils.userMapper = userMapper;
+    @Override
+    public void setApplicationContext(ApplicationContext ctx) {
+        SecurityUtils.userMapper = ctx.getBean(SysUserMapper.class);
     }
 
     private SecurityUtils() {
@@ -88,11 +90,32 @@ public final class SecurityUtils {
 
     /**
      * 获取当前登录用户ID
+     * <p>
+     * 优先从 Authentication details 中获取（JWT 解析时存入），
+     * 若不存在则降级查询数据库（兼容旧 Token）。
      *
      * @return 用户ID
      * @throws BusinessException 未登录或用户不存在时抛出异常
      */
     public static Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        // 检查是否是匿名用户
+        Object principal = authentication.getPrincipal();
+        if ("anonymousUser".equals(principal.toString())) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        // 优先从 Authentication details 中获取（JWT 解析时存入）
+        Object details = authentication.getDetails();
+        if (details instanceof Long) {
+            return (Long) details;
+        }
+
+        // 降级：从数据库查询（兼容旧 Token）
         String username = getCurrentUsername();
         if (userMapper == null) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "SecurityUtils 未正确初始化");

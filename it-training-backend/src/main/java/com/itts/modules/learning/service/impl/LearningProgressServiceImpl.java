@@ -1,20 +1,24 @@
 package com.itts.modules.learning.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.itts.common.util.TimeFormatUtils;
 import com.itts.enums.LearningStatus;
 import com.itts.modules.course.entity.Course;
 import com.itts.modules.course.mapper.CourseMapper;
-import com.itts.modules.learning.dto.AchievementResponse;
+import com.itts.modules.achievement.dto.AchievementResponse;
 import com.itts.modules.learning.dto.LearningDashboardResponse;
 import com.itts.modules.learning.dto.LearningProgressResponse;
+import com.itts.modules.checkin.dto.StudyCheckinResponse;
 import com.itts.modules.learning.dto.UpdateProgressRequest;
 import com.itts.modules.learning.entity.LearningProgress;
 import com.itts.modules.learning.entity.UserLearningStats;
 import com.itts.modules.learning.mapper.LearningProgressMapper;
-import com.itts.modules.learning.service.AchievementService;
+import com.itts.modules.achievement.service.AchievementService;
 import com.itts.modules.learning.service.LearningProgressService;
-import com.itts.modules.learning.service.StudyCheckinService;
+import com.itts.modules.checkin.service.StudyCheckinService;
 import com.itts.modules.learning.service.UserLearningStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +28,10 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -48,7 +55,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
         UserLearningStats stats = userLearningStatsService.getOrCreateStats(userId);
         
         dashboard.setTotalStudyMinutes(stats.getTotalStudyMinutes());
-        dashboard.setTotalStudyFormatted(formatStudyTime(stats.getTotalStudyMinutes()));
+        dashboard.setTotalStudyFormatted(TimeFormatUtils.formatStudyTime(stats.getTotalStudyMinutes()));
         dashboard.setTotalCoursesEnrolled(stats.getTotalCoursesEnrolled());
         dashboard.setTotalCoursesCompleted(stats.getTotalCoursesCompleted());
         dashboard.setCurrentStreakDays(stats.getCurrentStreakDays());
@@ -79,10 +86,41 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
                 .eq(LearningProgress::getUserId, userId)
                 .orderByDesc(LearningProgress::getLastStudyAt)
         );
-        
-        return progressList.stream()
-            .map(this::convertToResponse)
+
+        // 批量查询所有课程信息，避免 N+1 问题
+        List<Long> courseIds = progressList.stream()
+            .map(LearningProgress::getCourseId)
+            .distinct()
             .collect(Collectors.toList());
+        Map<Long, Course> courseMap = courseIds.isEmpty() ? Collections.emptyMap() :
+            courseMapper.selectBatchIds(courseIds).stream()
+                .collect(Collectors.toMap(Course::getId, Function.identity()));
+
+        return progressList.stream()
+            .map(p -> convertToResponse(p, courseMap.get(p.getCourseId())))
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public IPage<LearningProgressResponse> getUserProgress(Long userId, int page, int size) {
+        Page<LearningProgress> pageParam = new Page<>(page, size);
+
+        IPage<LearningProgress> progressPage = page(pageParam,
+            new LambdaQueryWrapper<LearningProgress>()
+                .eq(LearningProgress::getUserId, userId)
+                .orderByDesc(LearningProgress::getLastStudyAt)
+        );
+
+        // 批量查询当前页的课程信息，避免 N+1 问题
+        List<Long> courseIds = progressPage.getRecords().stream()
+            .map(LearningProgress::getCourseId)
+            .distinct()
+            .collect(Collectors.toList());
+        Map<Long, Course> courseMap = courseIds.isEmpty() ? Collections.emptyMap() :
+            courseMapper.selectBatchIds(courseIds).stream()
+                .collect(Collectors.toMap(Course::getId, Function.identity()));
+
+        return progressPage.convert(p -> convertToResponse(p, courseMap.get(p.getCourseId())));
     }
 
     @Override
@@ -97,7 +135,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public LearningProgressResponse updateProgress(Long userId, UpdateProgressRequest request) {
         LearningProgress progress = getOne(
             new LambdaQueryWrapper<LearningProgress>()
@@ -144,7 +182,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public LearningProgress initProgress(Long userId, Long courseId) {
         // 检查是否已存在
         LearningProgress existing = getOne(
@@ -169,7 +207,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public LearningProgressResponse markCompleted(Long userId, Long courseId) {
         LearningProgress progress = getOne(
             new LambdaQueryWrapper<LearningProgress>()
@@ -206,83 +244,109 @@ public class LearningProgressServiceImpl extends ServiceImpl<LearningProgressMap
                 .in(LearningProgress::getStatus, LearningStatus.NOT_STARTED.getCode(), LearningStatus.IN_PROGRESS.getCode())
                 .orderByDesc(LearningProgress::getLastStudyAt)
         );
-        
+
+        // 批量查询所有课程信息，避免 N+1 问题
+        List<Long> courseIds = progressList.stream()
+            .map(LearningProgress::getCourseId)
+            .distinct()
+            .collect(Collectors.toList());
+        Map<Long, Course> courseMap = courseIds.isEmpty() ? Collections.emptyMap() :
+            courseMapper.selectBatchIds(courseIds).stream()
+                .collect(Collectors.toMap(Course::getId, Function.identity()));
+
         return progressList.stream()
-            .map(this::convertToResponse)
+            .map(p -> convertToResponse(p, courseMap.get(p.getCourseId())))
             .collect(Collectors.toList());
     }
 
+    @Override
+    public IPage<LearningProgressResponse> getInProgressCourses(Long userId, int page, int size) {
+        Page<LearningProgress> pageParam = new Page<>(page, size);
+
+        IPage<LearningProgress> progressPage = page(pageParam,
+            new LambdaQueryWrapper<LearningProgress>()
+                .eq(LearningProgress::getUserId, userId)
+                .in(LearningProgress::getStatus, LearningStatus.NOT_STARTED.getCode(), LearningStatus.IN_PROGRESS.getCode())
+                .orderByDesc(LearningProgress::getLastStudyAt)
+        );
+
+        // 批量查询当前页的课程信息，避免 N+1 问题
+        List<Long> courseIds = progressPage.getRecords().stream()
+            .map(LearningProgress::getCourseId)
+            .distinct()
+            .collect(Collectors.toList());
+        Map<Long, Course> courseMap = courseIds.isEmpty() ? Collections.emptyMap() :
+            courseMapper.selectBatchIds(courseIds).stream()
+                .collect(Collectors.toMap(Course::getId, Function.identity()));
+
+        return progressPage.convert(p -> convertToResponse(p, courseMap.get(p.getCourseId())));
+    }
+
     /**
-     * 转换为响应DTO
+     * 转换为响应DTO（单条查询场景，内部查库获取课程信息）
      */
     private LearningProgressResponse convertToResponse(LearningProgress progress) {
+        Course course = courseMapper.selectById(progress.getCourseId());
+        return convertToResponse(progress, course);
+    }
+
+    /**
+     * 转换为响应DTO（批量查询场景，接收已查询的课程对象）
+     */
+    private LearningProgressResponse convertToResponse(LearningProgress progress, Course course) {
         LearningProgressResponse response = new LearningProgressResponse();
         response.setId(progress.getId());
         response.setUserId(progress.getUserId());
         response.setCourseId(progress.getCourseId());
         response.setProgressPercent(progress.getProgressPercent());
         response.setStudyDurationMinutes(progress.getStudyDurationMinutes());
-        response.setStudyDurationFormatted(formatStudyTime(progress.getStudyDurationMinutes()));
+        response.setStudyDurationFormatted(TimeFormatUtils.formatStudyTime(progress.getStudyDurationMinutes()));
         response.setLastStudyAt(progress.getLastStudyAt());
         response.setStatus(progress.getStatus());
         response.setCompletedAt(progress.getCompletedAt());
-        
-        // 获取课程信息
-        Course course = courseMapper.selectById(progress.getCourseId());
+
+        // 填充课程信息
         if (course != null) {
             response.setCourseName(course.getName());
             response.setCourseCategory(course.getCategory());
             response.setCourseDifficulty(course.getDifficulty());
             response.setCourseCoverImage(course.getCoverImage());
         }
-        
+
         return response;
     }
 
     /**
-     * 格式化学习时长
-     */
-    private String formatStudyTime(int minutes) {
-        if (minutes < 60) {
-            return minutes + "分钟";
-        }
-        int hours = minutes / 60;
-        int remainingMinutes = minutes % 60;
-        if (remainingMinutes == 0) {
-            return hours + "小时";
-        }
-        return hours + "小时" + remainingMinutes + "分钟";
-    }
-
-    /**
      * 获取本周学习数据
+     * [Phase 4 #P6] 优化：一次查询整周打卡记录，避免循环 7 次查询
      */
     private List<LearningDashboardResponse.DailyStudyItem> getWeeklyStudyData(Long userId) {
         List<LearningDashboardResponse.DailyStudyItem> weeklyData = new ArrayList<>();
         LocalDate today = LocalDate.now();
-        
+
         // 获取本周一
         LocalDate monday = today.with(DayOfWeek.MONDAY);
-        
+        LocalDate sunday = monday.plusDays(6);
+
         String[] dayNames = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
-        
+
+        // 一次查询整周所有打卡记录
+        List<StudyCheckinResponse> weekCheckins = studyCheckinService.getCheckinHistory(userId, monday, sunday);
+        Map<LocalDate, StudyCheckinResponse> checkinMap = weekCheckins.stream()
+            .collect(Collectors.toMap(StudyCheckinResponse::getCheckinDate, c -> c, (a, b) -> a));
+
         for (int i = 0; i < 7; i++) {
             LocalDate date = monday.plusDays(i);
             LearningDashboardResponse.DailyStudyItem item = new LearningDashboardResponse.DailyStudyItem();
             item.setDate(date);
             item.setDayOfWeek(dayNames[i]);
-            
-            // 获取该日期的打卡记录
-            var checkin = studyCheckinService.getCheckinHistory(userId, date, date);
-            if (!checkin.isEmpty()) {
-                item.setStudyMinutes(checkin.get(0).getStudyMinutes());
-            } else {
-                item.setStudyMinutes(0);
-            }
-            
+
+            StudyCheckinResponse checkin = checkinMap.get(date);
+            item.setStudyMinutes(checkin != null ? checkin.getStudyMinutes() : 0);
+
             weeklyData.add(item);
         }
-        
+
         return weeklyData;
     }
 }

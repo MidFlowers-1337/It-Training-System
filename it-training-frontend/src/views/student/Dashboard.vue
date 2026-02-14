@@ -1,523 +1,666 @@
 <template>
-  <PageLayout max-width="xl">
-    <div v-if="loading" class="flex items-center justify-center py-20">
-      <div class="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+  <div>
+    <Transition name="fade" mode="out-in">
+    <!-- Skeleton Loading -->
+    <div v-if="loading" key="skeleton">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div v-for="i in 6" :key="i" class="rounded-2xl bg-surface-alt h-32 animate-pulse" :class="i <= 2 ? 'sm:col-span-2' : ''" />
+      </div>
     </div>
 
-    <div v-else class="space-y-8">
-      <!-- Hero Section -->
-      <section class="relative overflow-hidden rounded-2xl border border-border-color bg-bg-secondary p-6 md:p-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div class="lg:col-span-8">
-            <div class="flex items-start gap-4">
-              <div class="w-11 h-11 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-                </svg>
-              </div>
-
-              <div class="min-w-0">
-                <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-text-primary">
-                  欢迎回来，{{ userInfo.realName || userInfo.username }}。
-                </h1>
-                <p class="mt-2 text-text-secondary">继续你的学习旅程，保持节奏。</p>
-              </div>
-            </div>
-
-            <!-- 今日统计 -->
-            <div class="mt-6 flex flex-wrap gap-3">
-              <div class="flex items-center gap-3 rounded-xl bg-bg-tertiary border border-border-color px-4 py-3">
-                <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                </svg>
-                <div class="leading-tight">
-                  <div class="text-xs text-text-muted">今日学习</div>
-                  <div class="text-sm font-semibold text-text-primary tabular-nums">{{ todayStats.studyMinutes }} 分钟</div>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 rounded-xl bg-bg-tertiary border border-border-color px-4 py-3">
-                <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-                </svg>
-                <div class="leading-tight">
-                  <div class="text-xs text-text-muted">连续打卡</div>
-                  <div class="text-sm font-semibold text-text-primary tabular-nums">{{ todayStats.streakDays }} 天</div>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 rounded-xl bg-bg-tertiary border border-border-color px-4 py-3">
-                <svg
-                  class="w-4 h-4"
-                  :class="todayStats.checkedIn ? 'text-success' : 'text-warning'"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
-                <div class="leading-tight">
-                  <div class="text-xs text-text-muted">今日状态</div>
-                  <div class="text-sm font-semibold" :class="todayStats.checkedIn ? 'text-success' : 'text-warning'">
-                    {{ todayStats.checkedIn ? '已打卡' : '未打卡' }}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 操作按钮 -->
-            <div class="mt-6 flex flex-wrap gap-3">
-              <Button variant="primary" :disabled="todayStats.checkedIn" @click="checkin">
-                {{ todayStats.checkedIn ? '今日已打卡' : '学习打卡' }}
-              </Button>
-              <Button variant="secondary" @click="goToLearningPlan">学习计划</Button>
-              <Button variant="ghost" @click="router.push('/courses')">浏览课程</Button>
-            </div>
+    <!-- Theme Content -->
+    <div v-else key="content">
+    <!-- ================================================================
+         ☀️ LIGHT — Stripe Dashboard：干净实色卡片 + 多层阴影
+         ================================================================ -->
+    <template v-if="theme === 'light'">
+      <div class="space-y-6">
+        <!-- Welcome Bar -->
+        <ScrollReveal>
+        <div class="stripe-dash-welcome">
+          <div>
+            <h2 class="text-xl font-semibold text-[#0A2540]">
+              欢迎回来{{ userName ? '，' + userName : '' }}
+            </h2>
+            <p class="text-sm text-[#425466] mt-0.5">今天也要努力学习哦</p>
           </div>
+          <button
+            v-if="!db?.todayCheckedIn"
+            @click="doCheckin"
+            class="px-5 py-2 bg-[#635BFF] text-white rounded-md text-sm font-medium hover:brightness-110 transition-all cursor-pointer stripe-btn-shadow"
+          >今日打卡</button>
+          <span v-else class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-md text-sm font-medium">
+            <CheckCircle class="w-4 h-4" :stroke-width="2" /> 已打卡
+          </span>
+        </div>
+        </ScrollReveal>
 
-          <!-- 等级进度 -->
-          <div class="lg:col-span-4 flex items-center justify-center lg:justify-end">
-            <div class="text-center">
-              <ProgressRing :percentage="expPercentage" :size="140" type="primary">
-                <div class="flex flex-col items-center justify-center">
-                  <span class="text-3xl font-bold text-text-primary tabular-nums">{{ userInfo.level }}</span>
-                  <span class="text-[10px] tracking-widest text-text-muted font-semibold mt-1">LEVEL</span>
-                </div>
-              </ProgressRing>
-
-              <div class="mt-4 text-xs text-text-muted">
-                <div class="font-medium text-text-secondary tabular-nums">
-                  {{ userInfo.experience }} / {{ userInfo.nextLevelExp }} 经验
-                </div>
-                <div class="mt-1">
-                  距离下一级还需
-                  <span class="font-semibold text-text-primary tabular-nums">{{ userInfo.nextLevelExp - userInfo.experience }}</span>
-                  经验
-                </div>
-              </div>
+        <!-- 4 Stat Cards -->
+        <ScrollReveal :delay="100">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div v-for="s in stripeStats" :key="s.label" class="stripe-stat-card">
+            <div class="text-xs text-[#8898AA] uppercase tracking-wider font-medium">{{ s.label }}</div>
+            <div class="text-2xl font-bold text-[#0A2540] mt-1">
+              <NumberCounter :value="s.value" :suffix="s.suffix" />
             </div>
           </div>
         </div>
-      </section>
+        </ScrollReveal>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- 主内容区 -->
-        <section class="lg:col-span-8 space-y-6">
-          <!-- 继续学习 -->
-          <div v-if="continueLearning" class="bg-bg-secondary rounded-xl border border-border-color p-6 hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between gap-4">
-              <div>
-                <h2 class="text-lg font-semibold text-text-primary">继续学习</h2>
-                <p class="text-sm text-text-secondary mt-1">从上次的位置继续。</p>
-              </div>
-              <Button variant="ghost" @click="continueCourse">
-                进入学习
-                <svg class="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-                </svg>
-              </Button>
-            </div>
-
-            <div class="mt-5 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
-              <div class="md:col-span-5">
-                <div class="relative overflow-hidden rounded-xl border border-border-color bg-bg-tertiary">
-                  <img
-                    :src="continueLearning.coverImage || getDefaultCover()"
-                    class="w-full aspect-video object-cover"
-                    alt="课程封面"
-                  />
-                </div>
-              </div>
-              <div class="md:col-span-7">
-                <h3 class="text-xl font-semibold text-text-primary">{{ continueLearning.courseName }}</h3>
-                <p class="mt-1 text-sm text-text-secondary">{{ continueLearning.currentChapter }}</p>
-
-                <div class="mt-4 flex items-center gap-3">
-                  <div class="h-2 flex-1 rounded-full bg-bg-tertiary overflow-hidden">
-                    <div
-                      class="h-full bg-primary rounded-full transition-all duration-slow"
-                      :style="{ width: `${continueLearning.progressPercent}%` }"
-                    />
-                  </div>
-                  <span class="text-xs font-semibold text-primary tabular-nums">{{ continueLearning.progressPercent }}%</span>
-                </div>
-
-                <div class="mt-5">
-                  <Button variant="primary" @click="continueCourse">继续学习</Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 我的课程 -->
-          <div class="bg-bg-secondary rounded-xl border border-border-color p-6">
-            <div class="flex items-center justify-between gap-4">
-              <div>
-                <h2 class="text-lg font-semibold text-text-primary">我的课程</h2>
-                <p class="text-sm text-text-secondary mt-1">快速返回你正在学习的内容。</p>
-              </div>
-              <Button variant="ghost" @click="goToMyCourses">查看全部</Button>
-            </div>
-
-            <div v-if="myCourses.length" class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                v-for="course in myCourses.slice(0, 4)"
-                :key="course.courseId"
-                type="button"
-                class="group text-left rounded-xl border border-border-color bg-bg-tertiary hover:bg-bg-hover transition px-4 py-4 flex gap-4"
-                @click="goToCourse(course.courseId)"
-              >
-                <div class="w-16 h-16 rounded-xl overflow-hidden border border-border-color bg-bg-secondary flex-shrink-0">
-                  <img :src="course.coverImage || getDefaultCover()" alt="课程封面" class="w-full h-full object-cover" />
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                      <div class="text-sm font-semibold text-text-primary line-clamp-1">{{ course.courseName }}</div>
-                      <div class="mt-1 text-xs text-text-muted">{{ course.status }}</div>
-                    </div>
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border"
-                      :class="statusBadgeClass(course.status)"
-                    >
-                      {{ course.progressPercent }}%
-                    </span>
-                  </div>
-                  <div class="mt-3 h-1.5 rounded-full bg-bg-secondary overflow-hidden">
-                    <div
-                      class="h-full bg-primary rounded-full"
-                      :style="{ width: `${course.progressPercent}%` }"
-                    />
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            <EmptyState
-              v-else
-              emoji="📚"
-              title="暂无课程"
-              description="去课程中心选择一门你感兴趣的课程开始学习。"
-              action-text="去选课"
-              size="sm"
-              @action="router.push('/courses')"
-            />
-          </div>
-        </section>
-
-        <!-- 侧边栏 -->
-        <aside class="lg:col-span-4 space-y-6">
-          <!-- 本周学习 -->
-          <div class="bg-bg-secondary rounded-xl border border-border-color p-6">
-            <div class="flex items-center justify-between gap-4">
-              <div>
-                <h2 class="text-lg font-semibold text-text-primary">本周学习</h2>
-                <p class="text-sm text-text-secondary mt-1">学习时长趋势</p>
-              </div>
-              <div class="text-right">
-                <div class="text-2xl font-semibold text-text-primary tabular-nums">{{ weeklyStats.totalMinutes }}</div>
-                <div class="text-xs text-text-muted">分钟</div>
-              </div>
-            </div>
-
-            <div ref="weeklyChart" class="mt-4 h-56 w-full" />
-
-            <div class="mt-4 flex items-center justify-between text-xs text-text-muted">
-              <span>日均</span>
-              <span class="font-semibold text-text-primary tabular-nums">{{ Math.round(weeklyStats.totalMinutes / 7) }} 分钟</span>
-            </div>
-          </div>
-
-          <!-- 最近成就 -->
-          <div class="bg-bg-secondary rounded-xl border border-border-color p-6">
-            <div class="flex items-center justify-between gap-4">
-              <div>
-                <h2 class="text-lg font-semibold text-text-primary">最近成就</h2>
-                <p class="text-sm text-text-secondary mt-1">记录你的进步</p>
-              </div>
-              <Button variant="ghost" @click="goToAchievements">查看全部</Button>
-            </div>
-
-            <div v-if="recentAchievements.length" class="mt-5 space-y-3">
+        <!-- 2-Column: Recent Courses | Weekly Chart -->
+        <ScrollReveal :delay="200">
+        <div class="grid lg:grid-cols-2 gap-4">
+          <!-- Recent -->
+          <div class="stripe-card">
+            <h3 class="text-sm font-semibold text-[#0A2540] mb-4">最近学习</h3>
+            <div v-if="db?.recentCourses?.length" class="divide-y divide-[#E3E8EE]">
               <div
-                v-for="achievement in recentAchievements.slice(0, 5)"
-                :key="achievement.achievementId"
-                class="flex items-center gap-3 rounded-xl bg-bg-tertiary border border-border-color px-4 py-3"
+                v-for="c in db.recentCourses" :key="c.courseId"
+                class="flex items-center gap-3 py-3 cursor-pointer hover:bg-[#F6F9FC] -mx-5 px-5 transition-colors"
+                @click="$router.push(`/student/courses/${c.courseId}`)"
               >
-                <div class="w-9 h-9 rounded-xl bg-bg-secondary border border-border-color flex items-center justify-center text-primary">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="8" r="6" /><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
-                  </svg>
+                <div class="w-8 h-8 rounded-md bg-[#635BFF]/10 flex items-center justify-center text-[#635BFF] font-semibold text-xs">{{ (c.courseName||'')[0] }}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-medium text-[#0A2540] truncate">{{ c.courseName }}</div>
+                  <div class="w-full h-1 bg-[#E3E8EE] rounded-full mt-1.5">
+                    <div class="h-full bg-[#635BFF] rounded-full" :style="{ width: (c.progress||0) + '%' }"></div>
+                  </div>
                 </div>
-                <div class="min-w-0 flex-1">
-                  <div class="text-sm font-semibold text-text-primary line-clamp-1">{{ achievement.name }}</div>
-                  <div class="text-xs text-text-muted mt-0.5">{{ achievement.unlockedAt }}</div>
-                </div>
+                <span class="text-xs text-[#8898AA] font-mono">{{ c.progress||0 }}%</span>
               </div>
             </div>
-
-            <EmptyState
-              v-else
-              emoji="🏆"
-              title="暂无成就"
-              description="完成学习任务解锁成就徽章。"
-              size="sm"
-            />
+            <div v-else class="text-center py-8 text-[#8898AA] text-sm">暂无学习记录</div>
           </div>
-        </aside>
+
+          <!-- Weekly -->
+          <div class="stripe-card">
+            <h3 class="text-sm font-semibold text-[#0A2540] mb-4">本周学习</h3>
+            <div v-if="db?.weeklyStats?.length" class="flex items-end gap-3 h-36">
+              <div v-for="(d, i) in db.weeklyStats" :key="i" class="flex-1 flex flex-col items-center gap-2">
+                <div
+                  class="w-full rounded-sm transition-all bg-[#635BFF]"
+                  :style="{ height: Math.max((d.hours / mx) * 100, 4) + '%', opacity: 0.6 + (d.hours / mx) * 0.4 }"
+                />
+                <span class="text-[10px] text-[#8898AA] font-medium">{{ d.day }}</span>
+              </div>
+            </div>
+            <div v-else class="text-center py-8 text-[#8898AA] text-sm">本周暂无数据</div>
+          </div>
+        </div>
+        </ScrollReveal>
       </div>
+    </template>
+
+    <!-- ================================================================
+         🌙 DARK — Linear Dashboard：Bento + Glow + 渐变数字
+         ================================================================ -->
+    <template v-else-if="theme === 'dark'">
+      <div class="space-y-5">
+        <!-- Welcome -->
+        <ScrollReveal>
+        <div class="linear-dash-welcome">
+          <div>
+            <h2 class="text-2xl font-bold">
+              <span class="linear-gradient-text">欢迎回来</span>{{ userName ? '，' + userName : '' }}
+            </h2>
+            <p class="text-sm text-[#6B6B6E] mt-1">今天也要努力学习哦</p>
+          </div>
+          <button
+            v-if="!db?.todayCheckedIn"
+            @click="doCheckin"
+            class="px-5 py-2 rounded-lg text-sm font-medium bg-[#818CF8] text-white hover:shadow-[0_0_20px_rgba(129,140,248,0.3)] transition-all cursor-pointer"
+          >今日打卡</button>
+          <span v-else class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-sm font-medium">
+            <CheckCircle class="w-4 h-4" :stroke-width="2" /> 已打卡
+          </span>
+        </div>
+        </ScrollReveal>
+
+        <!-- Bento Stats -->
+        <ScrollReveal :delay="100">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="linear-bento-card group" v-for="s in linearStats" :key="s.label">
+            <component :is="s.icon" class="w-5 h-5 text-[#6B6B6E] group-hover:text-[#818CF8] transition-colors mb-2" :stroke-width="1.75" />
+            <div class="text-2xl font-bold linear-gradient-text">
+              <NumberCounter :value="s.value" :suffix="s.suffix" />
+            </div>
+            <div class="text-xs text-[#6B6B6E] mt-0.5">{{ s.label }}</div>
+          </div>
+        </div>
+        </ScrollReveal>
+
+        <!-- Bento Grid: Recent (large) + Weekly (large) -->
+        <ScrollReveal :delay="200">
+        <div class="grid lg:grid-cols-5 gap-3">
+          <!-- Recent — 3 cols -->
+          <GlowCard class="lg:col-span-3 p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <BookMarked class="w-4 h-4 text-[#818CF8]" :stroke-width="1.75" />
+              <h3 class="text-sm font-semibold text-[#EDEDED]">最近学习</h3>
+            </div>
+            <div v-if="db?.recentCourses?.length" class="space-y-2">
+              <div
+                v-for="c in db.recentCourses" :key="c.courseId"
+                class="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/[0.03] cursor-pointer transition-colors"
+                @click="$router.push(`/student/courses/${c.courseId}`)"
+              >
+                <div class="w-8 h-8 rounded-lg bg-[#818CF8]/10 flex items-center justify-center text-[#818CF8] font-semibold text-xs">{{ (c.courseName||'')[0] }}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-medium text-[#EDEDED] truncate">{{ c.courseName }}</div>
+                  <div class="w-full h-1 bg-white/[0.06] rounded-full mt-1.5">
+                    <div class="h-full rounded-full bg-gradient-to-r from-[#818CF8] to-[#06B6D4]" :style="{ width: (c.progress||0) + '%' }"></div>
+                  </div>
+                </div>
+                <span class="text-xs text-[#6B6B6E] font-mono">{{ c.progress||0 }}%</span>
+              </div>
+            </div>
+            <div v-else class="text-center py-8 text-[#6B6B6E] text-sm">暂无学习记录</div>
+          </GlowCard>
+
+          <!-- Weekly — 2 cols -->
+          <GlowCard class="lg:col-span-2 p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <BarChart3 class="w-4 h-4 text-[#818CF8]" :stroke-width="1.75" />
+              <h3 class="text-sm font-semibold text-[#EDEDED]">本周学习</h3>
+            </div>
+            <div v-if="db?.weeklyStats?.length" class="flex items-end gap-2 h-32">
+              <div v-for="(d, i) in db.weeklyStats" :key="i" class="flex-1 flex flex-col items-center gap-2">
+                <div
+                  class="w-full rounded-sm bg-gradient-to-t from-[#818CF8] to-[#06B6D4] transition-all"
+                  :style="{ height: Math.max((d.hours / mx) * 100, 6) + '%', opacity: 0.5 + (d.hours / mx) * 0.5 }"
+                />
+                <span class="text-[10px] text-[#6B6B6E]">{{ d.day }}</span>
+              </div>
+            </div>
+            <div v-else class="text-center py-8 text-[#6B6B6E] text-sm">本周暂无数据</div>
+          </GlowCard>
+        </div>
+        </ScrollReveal>
+      </div>
+    </template>
+
+    <!-- ================================================================
+         🌅 WARM — Duolingo Dashboard：游戏化 XP + 打卡 + 进度环
+         ================================================================ -->
+    <template v-else-if="theme === 'warm'">
+      <div class="space-y-5">
+        <!-- Welcome + Level Badge -->
+        <ScrollReveal>
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-extrabold text-[#292524]">
+              👋 {{ userName ? userName + '，' : '' }}继续你的冒险！
+            </h2>
+            <p class="text-[#78716C] mt-0.5 font-medium">保持学习节奏，解锁更多成就</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-12 h-12 rounded-2xl bg-[#FFC800] shadow-[0_3px_0_#E5A800] flex items-center justify-center">
+              <span class="text-white text-sm font-extrabold">Lv.{{ duoLevel }}</span>
+            </div>
+          </div>
+        </div>
+        </ScrollReveal>
+
+        <!-- XP Progress Bar -->
+        <ScrollReveal :delay="100">
+        <div class="duo-xp-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold text-[#292524]">🏆 经验值</span>
+            <span class="text-xs font-bold text-[#78716C]">{{ duoCurrentXP }} / {{ duoNextXP }} XP</span>
+          </div>
+          <div class="w-full h-6 bg-[#E5E7EB] rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-[#58CC02] to-[#7AE82F] rounded-full transition-all relative"
+                 :style="{ width: duoXPPercent + '%' }">
+              <div class="absolute inset-0 bg-white/20 rounded-full"
+                   style="background: repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(255,255,255,0.15) 8px, rgba(255,255,255,0.15) 16px)" />
+            </div>
+          </div>
+          <p class="text-xs text-[#A8A29E] mt-1.5 font-medium">距离下一等级还需 {{ duoNextXP - duoCurrentXP }} XP</p>
+        </div>
+        </ScrollReveal>
+
+        <!-- Daily Quest (打卡) -->
+        <ScrollReveal :delay="200">
+        <div class="duo-quest-card">
+          <div class="flex items-center gap-4">
+            <!-- Flame + Streak -->
+            <div class="flex-shrink-0 text-center">
+              <div class="w-16 h-16 rounded-2xl bg-[#FF9600]/10 flex items-center justify-center mb-1">
+                <Flame class="w-9 h-9 text-[#FF9600]" :stroke-width="2" />
+              </div>
+              <span class="text-2xl font-extrabold text-[#FF9600]">{{ db?.currentStreak || 0 }}</span>
+              <span class="block text-[10px] text-[#78716C] font-bold">天连续</span>
+            </div>
+            <!-- Quest Info -->
+            <div class="flex-1">
+              <h3 class="text-base font-extrabold text-[#292524] mb-1">🔥 每日打卡</h3>
+              <p class="text-sm text-[#78716C] mb-3">坚持每天学习，保持连续纪录！</p>
+              <button
+                v-if="!db?.todayCheckedIn"
+                @click="doCheckin"
+                class="px-6 py-2.5 rounded-2xl bg-[#58CC02] text-white text-sm font-bold
+                       shadow-[0_4px_0_#46A302] hover:brightness-105
+                       active:translate-y-[2px] active:shadow-[0_2px_0_#46A302] transition-all cursor-pointer"
+              >完成打卡 +50 XP</button>
+              <span v-else class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#58CC02]/10 text-[#58CC02] rounded-2xl text-sm font-bold">
+                <CheckCircle class="w-4 h-4" :stroke-width="2.5" /> 今日已完成！
+              </span>
+            </div>
+          </div>
+          <!-- Week dots -->
+          <div class="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-[#E7E5E4]">
+            <div v-for="(day, i) in weekDays" :key="i" class="flex flex-col items-center gap-1">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                   :class="day.done
+                     ? 'bg-[#58CC02] text-white shadow-[0_2px_0_#46A302]'
+                     : day.today
+                       ? 'bg-[#FFC800] text-white shadow-[0_2px_0_#E5A800] animate-pulse'
+                       : 'bg-[#E5E7EB] text-[#A8A29E]'">
+                {{ day.done ? '✓' : day.label }}
+              </div>
+              <span class="text-[9px] font-bold" :class="day.today ? 'text-[#FFC800]' : 'text-[#A8A29E]'">{{ day.name }}</span>
+            </div>
+          </div>
+        </div>
+        </ScrollReveal>
+
+        <!-- Course Progress Cards -->
+        <ScrollReveal :delay="300">
+        <div>
+          <h3 class="text-base font-extrabold text-[#292524] mb-3">📚 学习进度</h3>
+          <div v-if="db?.recentCourses?.length" class="space-y-3">
+            <div
+              v-for="(c, i) in db.recentCourses" :key="c.courseId"
+              class="duo-course-card cursor-pointer"
+              :class="courseColor(i).card"
+              @click="$router.push(`/student/courses/${c.courseId}`)"
+            >
+              <div class="flex items-center gap-4">
+                <!-- SVG Progress Ring -->
+                <div class="relative w-14 h-14 flex-shrink-0">
+                  <svg class="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="#E5E7EB" stroke-width="5" />
+                    <circle cx="28" cy="28" r="24" fill="none"
+                      :stroke="courseColor(i).ring"
+                      stroke-width="5" stroke-linecap="round"
+                      :stroke-dasharray="`${(c.progress||0) * 1.508} 150.8`" />
+                  </svg>
+                  <span class="absolute inset-0 flex items-center justify-center text-xs font-extrabold text-[#292524]">
+                    {{ c.progress||0 }}%
+                  </span>
+                </div>
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                  <h4 class="text-sm font-bold text-[#292524] truncate">{{ c.courseName }}</h4>
+                  <p class="text-xs text-[#78716C] mt-0.5">继续学习获取更多 XP</p>
+                </div>
+                <!-- CTA -->
+                <button class="px-4 py-2 rounded-xl bg-white text-sm font-bold border-2 border-[#E5E7EB]
+                               shadow-[0_3px_0_#E5E7EB] hover:shadow-[0_4px_0_#D6D3D1] hover:-translate-y-0.5
+                               active:translate-y-[1px] active:shadow-[0_1px_0_#E5E7EB] transition-all"
+                        :class="courseColor(i).btn"
+                        @click.stop="$router.push(`/student/courses/${c.courseId}/study`)">
+                  继续
+                </button>
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-center py-8">
+            <div class="text-4xl mb-2">🎮</div>
+            <p class="text-sm text-[#A8A29E] font-medium">还没开始冒险？去选择你的第一门课程吧！</p>
+          </div>
+        </div>
+        </ScrollReveal>
+
+        <!-- Weekly Activity Chart -->
+        <ScrollReveal :delay="400">
+        <div>
+          <h3 class="text-base font-extrabold text-[#292524] mb-3">📊 本周活动</h3>
+          <div v-if="db?.weeklyStats?.length" class="duo-weekly-card">
+            <div class="flex items-end gap-3 h-32">
+              <div v-for="(d, i) in db.weeklyStats" :key="i" class="flex-1 flex flex-col items-center gap-1.5">
+                <span class="text-[10px] font-bold text-[#78716C]">{{ d.hours }}h</span>
+                <div class="w-full rounded-xl transition-all"
+                     :class="barColor(i)"
+                     :style="{ height: Math.max((Number(d.hours) / mx) * 100, 8) + '%' }" />
+                <span class="text-[10px] font-bold text-[#78716C]">{{ d.day }}</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between mt-3 pt-3 border-t border-[#E7E5E4]">
+              <span class="text-xs font-bold text-[#78716C]">合计</span>
+              <span class="text-sm font-extrabold text-[#292524]">{{ db?.weeklyStudyHours || 0 }}h</span>
+            </div>
+          </div>
+          <p v-else class="text-sm text-[#A8A29E] py-4 font-medium">本周暂无数据，快去学习吧！</p>
+        </div>
+        </ScrollReveal>
+      </div>
+    </template>
+
+    <!-- ================================================================
+         ❄️ PRO — Vercel Dashboard：数据密集 + monospace + 极简
+         ================================================================ -->
+    <template v-else>
+      <div class="space-y-5">
+        <!-- Top Metrics Bar -->
+        <ScrollReveal>
+        <div class="pro-metrics-bar">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-semibold text-[#0F172A]">总览</h2>
+            <span class="text-xs text-[#64748B]">{{ userName }}</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button
+              v-if="!db?.todayCheckedIn"
+              @click="doCheckin"
+              class="px-3 py-1.5 bg-[#0F172A] text-white rounded-md text-xs font-medium hover:bg-[#1E293B] transition-colors cursor-pointer"
+            >签到</button>
+            <span v-else class="text-xs text-emerald-600 font-medium">✓ 已签到</span>
+          </div>
+        </div>
+        </ScrollReveal>
+
+        <!-- Inline Stats Row -->
+        <ScrollReveal :delay="100">
+        <div class="pro-stats-row">
+          <div v-for="(s, i) in proStats" :key="s.label" class="pro-stat-item" :class="i < proStats.length - 1 ? 'border-r border-[#E2E8F0]' : ''">
+            <span class="font-mono text-xl font-semibold text-[#0F172A]"><NumberCounter :value="s.value" :suffix="s.suffix" /></span>
+            <span class="text-[11px] text-[#64748B] uppercase tracking-wider">{{ s.label }}</span>
+          </div>
+        </div>
+        </ScrollReveal>
+
+        <!-- 2 Columns: Activity Log | Weekly -->
+        <ScrollReveal :delay="200">
+        <div class="grid lg:grid-cols-2 gap-4">
+          <!-- Recent — Terminal style -->
+          <div class="pro-card">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-semibold text-[#0F172A] uppercase tracking-wider">最近学习</span>
+              <span class="text-[10px] text-[#94A3B8]">{{ db?.recentCourses?.length || 0 }} 条</span>
+            </div>
+            <div v-if="db?.recentCourses?.length" class="space-y-0 divide-y divide-[#F1F5F9]">
+              <div
+                v-for="c in db.recentCourses" :key="c.courseId"
+                class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-[#F8FAFC] -mx-4 px-4 transition-colors"
+                @click="$router.push(`/student/courses/${c.courseId}`)"
+              >
+                <div class="w-1.5 h-1.5 rounded-full" :class="(c.progress||0) >= 100 ? 'bg-emerald-500' : 'bg-[#0284C7]'"></div>
+                <span class="text-sm text-[#0F172A] flex-1 truncate">{{ c.courseName }}</span>
+                <code class="text-xs text-[#64748B] font-mono bg-[#F1F5F9] px-1.5 py-0.5 rounded">{{ c.progress||0 }}%</code>
+              </div>
+            </div>
+            <div v-else class="text-center py-6 text-[#94A3B8] text-xs">暂无学习记录</div>
+          </div>
+
+          <!-- Weekly — Minimal bars -->
+          <div class="pro-card">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-semibold text-[#0F172A] uppercase tracking-wider">本周学习</span>
+              <span class="font-mono text-xs text-[#64748B]">{{ db?.weeklyStudyHours || 0 }}h 合计</span>
+            </div>
+            <div v-if="db?.weeklyStats?.length" class="flex items-end gap-1.5 h-28">
+              <div v-for="(d, i) in db.weeklyStats" :key="i" class="flex-1 flex flex-col items-center gap-1.5">
+                <div
+                  class="w-full rounded-[2px] bg-[#0284C7] transition-all"
+                  :style="{ height: Math.max((d.hours / mx) * 100, 4) + '%', opacity: 0.4 + (d.hours / mx) * 0.6 }"
+                />
+                <span class="text-[10px] text-[#94A3B8] font-mono">{{ d.day }}</span>
+              </div>
+            </div>
+            <div v-else class="text-center py-6 text-[#94A3B8] text-xs">本周暂无数据</div>
+          </div>
+        </div>
+        </ScrollReveal>
+      </div>
+    </template>
     </div>
-  </PageLayout>
+    </Transition>
+
+    <!-- New User Onboarding Wizard -->
+    <WelcomeWizard v-model="showWelcome" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
-import * as echarts from 'echarts';
-import { getStudentDashboard } from '@/api/student';
-import { checkin as learningCheckin } from '@/api/learning';
-import { PageLayout, Button, EmptyState, ProgressRing } from '@/design-system';
+import { ref, computed, onMounted } from 'vue'
+import { useHead } from '@unhead/vue'
+import { useUserStore } from '@/stores/user'
+import { useThemeStore } from '@/stores/theme'
+import { studentApi } from '@/api/student'
+import { checkinApi } from '@/api/checkin'
+import { toast } from '@/composables/useToast'
+import NumberCounter from '@/components/effects/NumberCounter.vue'
+import ScrollReveal from '@/components/effects/ScrollReveal.vue'
+import GlowCard from '@/components/effects/GlowCard.vue'
+import WelcomeWizard from '@/components/WelcomeWizard.vue'
+import { useConfetti } from '@/composables/useConfetti'
+import {
+  CheckCircle, Flame, Clock, BookOpen,
+  GraduationCap, BookMarked, BarChart3,
+} from 'lucide-vue-next'
 
-// 类型定义
-interface UserInfo {
-  username: string;
-  realName: string;
-  level: number;
-  experience: number;
-  nextLevelExp: number;
-}
+const userStore = useUserStore()
+const themeStore = useThemeStore()
+const theme = computed(() => themeStore.theme)
+const { pop } = useConfetti()
 
-interface TodayStats {
-  studyMinutes: number;
-  streakDays: number;
-  checkedIn: boolean;
-}
+useHead({ title: '仪表盘 — IT 智能培训系统' })
+const userName = computed(() => userStore.userInfo?.realName || userStore.userInfo?.username || '')
+const db = ref<any>(null)
+const loading = ref(true)
 
-interface ContinueLearning {
-  courseId: number;
-  courseName: string;
-  currentChapter: string;
-  progressPercent: number;
-  coverImage?: string;
-}
+/* ── Welcome Wizard (first-time user onboarding) ── */
+const showWelcome = ref(false)
+const mx = computed(() => Math.max(...(db.value?.weeklyStats?.map((d: any) => d.hours) || [1]), 1))
 
-interface Course {
-  courseId: number;
-  courseName: string;
-  status: string;
-  progressPercent: number;
-  coverImage?: string;
-}
+/* Per-theme stat configs */
+const stripeStats = computed(() => [
+  { label: '连续打卡', value: db.value?.currentStreak || 0, suffix: '天' },
+  { label: '本周学时', value: db.value?.weeklyStudyHours || 0, suffix: 'h' },
+  { label: '在学课程', value: db.value?.inProgressCourses || 0, suffix: '' },
+  { label: '已完成', value: db.value?.completedCourses || 0, suffix: '' },
+])
 
-interface Achievement {
-  achievementId: number;
-  name: string;
-  unlockedAt: string;
-}
+const linearStats = computed(() => [
+  { label: '连续打卡', value: db.value?.currentStreak || 0, suffix: '天', icon: Flame },
+  { label: '本周学时', value: db.value?.weeklyStudyHours || 0, suffix: 'h', icon: Clock },
+  { label: '在学课程', value: db.value?.inProgressCourses || 0, suffix: '', icon: BookOpen },
+  { label: '已完成', value: db.value?.completedCourses || 0, suffix: '', icon: GraduationCap },
+])
 
-const router = useRouter();
+/* ── Duolingo (Warm) Data ── */
+const duoLevel = computed(() => Math.floor((db.value?.completedCourses || 0) * 2 + (db.value?.currentStreak || 0) / 7) + 1)
+const duoCurrentXP = computed(() => ((db.value?.completedCourses || 0) * 200 + (db.value?.currentStreak || 0) * 50) % 1000)
+const duoNextXP = 1000
+const duoXPPercent = computed(() => Math.min((duoCurrentXP.value / duoNextXP) * 100, 100))
 
-// 状态
-const loading = ref(true);
-const userInfo = ref<UserInfo>({
-  username: '',
-  realName: '',
-  level: 1,
-  experience: 0,
-  nextLevelExp: 100,
-});
+const duoCourseColors = [
+  { card: 'bg-[#DDF4FF]', ring: '#1CB0F6', btn: 'text-[#1CB0F6]' },
+  { card: 'bg-[#D7FFB8]', ring: '#58CC02', btn: 'text-[#58CC02]' },
+  { card: 'bg-[#FFF3D6]', ring: '#FFC800', btn: 'text-[#FF9600]' },
+  { card: 'bg-[#F3E8FF]', ring: '#CE82FF', btn: 'text-[#A855F7]' },
+  { card: 'bg-[#FFE0E0]', ring: '#FF4B4B', btn: 'text-[#FF4B4B]' },
+]
 
-const todayStats = ref<TodayStats>({
-  studyMinutes: 0,
-  streakDays: 0,
-  checkedIn: false,
-});
+const duoBarColors = [
+  'bg-[#58CC02]', 'bg-[#1CB0F6]', 'bg-[#FFC800]',
+  'bg-[#CE82FF]', 'bg-[#FF4B4B]', 'bg-[#FF9600]', 'bg-[#58CC02]',
+]
 
-const continueLearning = ref<ContinueLearning | null>(null);
+/* ── Theme-safe array helpers (avoids vue-tsc TS2362 in template) ── */
+function courseColor(i: number | string) { return duoCourseColors[+i % duoCourseColors.length]! }
+function barColor(i: number | string) { return duoBarColors[+i % duoBarColors.length]! }
 
-const weeklyStats = ref({
-  dailyMinutes: [0, 0, 0, 0, 0, 0, 0],
-  totalMinutes: 0,
-});
+const weekDays = computed(() => {
+  const days = ['日', '一', '二', '三', '四', '五', '六']
+  const now = new Date()
+  const todayIdx = now.getDay()
+  return days.map((name, i) => ({
+    name,
+    label: days[i]!.charAt(0),
+    done: db.value?.weeklyStats?.[i]?.hours > 0 && i < todayIdx,
+    today: i === todayIdx,
+  }))
+})
 
-const myCourses = ref<Course[]>([]);
-const recentAchievements = ref<Achievement[]>([]);
-const weeklyChart = ref<HTMLElement | null>(null);
-let chartInstance: echarts.ECharts | null = null;
-let themeObserver: MutationObserver | null = null;
+const proStats = computed(() => [
+  { label: '连续打卡', value: db.value?.currentStreak || 0, suffix: '天' },
+  { label: '本周学时', value: db.value?.weeklyStudyHours || 0, suffix: 'h' },
+  { label: '在学课程', value: db.value?.inProgressCourses || 0, suffix: '' },
+  { label: '已完成', value: db.value?.completedCourses || 0, suffix: '' },
+])
 
-// 计算属性
-const expPercentage = computed(() => {
-  return Math.round((userInfo.value.experience / userInfo.value.nextLevelExp) * 100);
-});
-
-// 方法
-const getDefaultCover = () => 'https://via.placeholder.com/400x240?text=Course';
-
-const statusBadgeClass = (status: string): string => {
-  if (status === '已完成') return 'bg-success/10 text-success border-success/30';
-  if (status === '进行中') return 'bg-primary/10 text-primary border-primary/30';
-  if (status === '未开始') return 'bg-info/10 text-info border-info/30';
-  return 'bg-bg-secondary text-text-secondary border-border-color';
-};
-
-const loadDashboardData = async () => {
+async function doCheckin() {
   try {
-    loading.value = true;
-    const res = await getStudentDashboard();
-
-    if (res.code === 200 && res.data) {
-      const data = res.data;
-
-      if (data.userInfo) userInfo.value = data.userInfo;
-      if (data.todayStats) todayStats.value = data.todayStats;
-
-      continueLearning.value = data.continueLearning || null;
-      if (data.weeklyStats) weeklyStats.value = data.weeklyStats;
-
-      myCourses.value = data.myCourses || [];
-      recentAchievements.value = data.recentAchievements || [];
-
-      await nextTick();
-      initWeeklyChart();
-    }
-  } catch (error) {
-    console.error('加载 Dashboard 数据失败:', error);
-  } finally {
-    loading.value = false;
+    await checkinApi.checkin()
+    toast.success('打卡成功！')
+    if (db.value) db.value.todayCheckedIn = true
+    pop()
+    // Haptic feedback for mobile devices
+    if (navigator.vibrate) navigator.vibrate([50, 30, 100])
+  } catch (e: any) {
+    toast.error(e.message || '打卡失败')
   }
-};
-
-const checkin = async () => {
-  try {
-    const res = await learningCheckin({
-      studyMinutes: todayStats.value.studyMinutes || 0,
-      studyContent: '今日学习打卡',
-    });
-
-    if (res.code === 200 && res.data) {
-      console.info(`打卡成功！连续学习 ${res.data.currentStreak || 0} 天`);
-      await loadDashboardData();
-    }
-  } catch (error: any) {
-    console.error('打卡失败:', error);
-  }
-};
-
-const continueCourse = () => {
-  if (!continueLearning.value) return;
-  router.push(`/course/${continueLearning.value.courseId}/study`);
-};
-
-const goToCourse = (courseId: number) => {
-  router.push(`/course/${courseId}/study`);
-};
-
-const goToMyCourses = () => {
-  router.push('/my-courses');
-};
-
-const goToLearningPlan = () => {
-  router.push('/learning-plan');
-};
-
-const goToAchievements = () => {
-  router.push('/achievements');
-};
-
-const initWeeklyChart = () => {
-  if (!weeklyChart.value) return;
-
-  const style = getComputedStyle(document.documentElement);
-
-  const readRgb = (name: string, fallback = '0 0 0') => style.getPropertyValue(name).trim() || fallback;
-  const toRgb = (rgb: string) => {
-    const [r, g, b] = rgb.split(/\s+/).map((value) => Number(value));
-    if (![r, g, b].every(Number.isFinite)) return 'rgb(0, 0, 0)';
-    return `rgb(${r}, ${g}, ${b})`;
-  };
-
-  const primaryRgb = readRgb('--primary-color-rgb', '79 70 229');
-  const textPrimary = toRgb(readRgb('--text-primary-rgb', '17 24 39'));
-  const textMuted = toRgb(readRgb('--text-muted-rgb', '107 114 128'));
-  const border = toRgb(readRgb('--border-color-rgb', '229 231 235'));
-  const grid = toRgb(readRgb('--border-light-rgb', '243 244 246'));
-  const surface = toRgb(readRgb('--bg-secondary-rgb', '255 255 255'));
-  const primary = toRgb(primaryRgb);
-
-  const [r, g, b] = primaryRgb.split(/\s+/).map(Number);
-  const areaTop = `rgba(${r}, ${g}, ${b}, 0.22)`;
-  const areaBottom = `rgba(${r}, ${g}, ${b}, 0.02)`;
-
-  if (chartInstance) chartInstance.dispose();
-  chartInstance = echarts.init(weeklyChart.value);
-
-  chartInstance.setOption({
-    tooltip: {
-      trigger: 'axis',
-      formatter: '{b}: {c} 分钟',
-      backgroundColor: surface,
-      borderColor: border,
-      borderWidth: 1,
-      textStyle: { color: textPrimary },
-    },
-    xAxis: {
-      type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-      axisLine: { lineStyle: { color: border } },
-      axisLabel: { color: textMuted, fontSize: 12 },
-    },
-    yAxis: {
-      type: 'value',
-      name: '分钟',
-      nameTextStyle: { color: textMuted, fontSize: 12 },
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: { color: textMuted, fontSize: 12 },
-      splitLine: { lineStyle: { color: grid, type: 'dashed' } },
-    },
-    series: [
-      {
-        data: weeklyStats.value.dailyMinutes,
-        type: 'line',
-        smooth: true,
-        showSymbol: false,
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: areaTop },
-            { offset: 1, color: areaBottom },
-          ]),
-        },
-        itemStyle: { color: primary },
-        lineStyle: { width: 2, color: primary },
-      },
-    ],
-    grid: { left: '10%', right: '6%', bottom: '12%', top: '14%' },
-  });
-};
-
-const handleResize = () => chartInstance?.resize();
+}
 
 onMounted(async () => {
-  await loadDashboardData();
-  window.addEventListener('resize', handleResize);
-
-  themeObserver = new MutationObserver(() => {
-    initWeeklyChart();
-  });
-  themeObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['data-theme'],
-  });
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
-  themeObserver?.disconnect();
-  themeObserver = null;
-  chartInstance?.dispose();
-  chartInstance = null;
-});
+  try {
+    db.value = await studentApi.getDashboard()
+  } catch {}
+  finally {
+    loading.value = false
+    // Show welcome wizard for first-time users
+    if (!localStorage.getItem('onboarding_completed')) {
+      showWelcome.value = true
+    }
+  }
+})
 </script>
+
+<style scoped>
+/* ======== STRIPE (Light) ======== */
+.stripe-dash-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #E3E8EE;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.04),
+    0 0 0 1px rgba(0,0,0,0.02);
+}
+.stripe-stat-card {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #E3E8EE;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.stripe-card {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #E3E8EE;
+  box-shadow:
+    0 15px 35px rgba(60,66,87,0.08),
+    0 5px 15px rgba(0,0,0,0.04);
+}
+.stripe-btn-shadow {
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.08),
+    0 0 0 1px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* ======== LINEAR (Dark) ======== */
+.linear-dash-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-radius: 12px;
+  background: #111113;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.linear-gradient-text {
+  background: linear-gradient(135deg, #EDEDED 0%, #818CF8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.linear-bento-card {
+  padding: 20px;
+  border-radius: 12px;
+  background: #111113;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.linear-bento-card:hover {
+  border-color: rgba(129,140,248,0.2);
+  box-shadow: 0 0 20px rgba(129,140,248,0.08);
+}
+
+/* ======== DUOLINGO (Warm) ======== */
+.duo-xp-card {
+  padding: 20px;
+  background: #FFFBF5;
+  border: 2px solid #E5E7EB;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 #E5E7EB;
+}
+.duo-quest-card {
+  padding: 20px;
+  background: #fff;
+  border: 2px solid #E5E7EB;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 #E5E7EB;
+}
+.duo-course-card {
+  padding: 16px;
+  border: 2px solid #E5E7EB;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 #E5E7EB;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.duo-course-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 #D6D3D1;
+}
+.duo-weekly-card {
+  padding: 20px;
+  background: #FFFBF5;
+  border: 2px solid #E5E7EB;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 #E5E7EB;
+}
+
+/* ======== PRO (Vercel) ======== */
+.pro-metrics-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #E2E8F0;
+}
+.pro-stats-row {
+  display: flex;
+  padding: 16px 0;
+}
+.pro-stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 16px;
+}
+.pro-card {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+}
+</style>

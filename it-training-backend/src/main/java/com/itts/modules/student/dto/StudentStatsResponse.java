@@ -57,4 +57,14 @@ public class StudentStatsResponse {
      * 下一级所需经验值
      */
     private Integer nextLevelExp;
+
+    /**
+     * 等级名称
+     */
+    private String levelName;
+
+    /**
+     * 下一级所需学习分钟数
+     */
+    private Integer nextLevelMinutes;
 }

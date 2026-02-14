@@ -1,27 +1,16 @@
 package com.itts.modules.student.service.impl;
 
-import com.itts.modules.course.entity.Course;
-import com.itts.modules.course.mapper.CourseMapper;
-import com.itts.modules.enrollment.entity.Enrollment;
 import com.itts.modules.enrollment.mapper.EnrollmentMapper;
-import com.itts.modules.learning.dto.AchievementResponse;
-import com.itts.modules.learning.entity.LearningProgress;
+import com.itts.modules.achievement.dto.AchievementResponse;
 import com.itts.modules.learning.entity.UserLearningStats;
 import com.itts.modules.learning.mapper.LearningProgressMapper;
-import com.itts.modules.learning.mapper.StudyCheckinMapper;
-import com.itts.modules.learning.service.AchievementService;
+import com.itts.modules.achievement.service.AchievementService;
 import com.itts.modules.learning.service.UserLearningStatsService;
-import com.itts.modules.session.entity.ClassSession;
-import com.itts.modules.session.mapper.ClassSessionMapper;
-import com.itts.modules.student.dto.StudentDashboardResponse;
 import com.itts.modules.student.dto.StudentStatsResponse;
 import com.itts.modules.student.entity.UserLearningStreak;
 import com.itts.modules.student.entity.UserLevel;
-import com.itts.modules.student.mapper.UserChapterProgressMapper;
 import com.itts.modules.student.mapper.UserLearningStreakMapper;
 import com.itts.modules.student.mapper.UserLevelMapper;
-import com.itts.modules.user.entity.SysUser;
-import com.itts.modules.user.mapper.SysUserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,13 +30,12 @@ import static org.mockito.Mockito.*;
 
 /**
  * StudentService 单元测试
+ * <p>
+ * [Phase 6 #7] Dashboard 测试已移至 StudentDashboardServiceImplTest
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("学生服务测试")
 class StudentServiceImplTest {
-
-    @Mock
-    private SysUserMapper sysUserMapper;
 
     @Mock
     private UserLevelMapper userLevelMapper;
@@ -56,25 +44,10 @@ class StudentServiceImplTest {
     private UserLearningStreakMapper userLearningStreakMapper;
 
     @Mock
-    private UserChapterProgressMapper userChapterProgressMapper;
-
-    @Mock
     private EnrollmentMapper enrollmentMapper;
 
     @Mock
-    private ClassSessionMapper classSessionMapper;
-
-    @Mock
-    private CourseMapper courseMapper;
-
-    @Mock
-    private com.itts.modules.course.mapper.CourseChapterMapper courseChapterMapper;
-
-    @Mock
     private LearningProgressMapper learningProgressMapper;
-
-    @Mock
-    private StudyCheckinMapper studyCheckinMapper;
 
     @Mock
     private AchievementService achievementService;
@@ -86,20 +59,12 @@ class StudentServiceImplTest {
     private StudentServiceImpl studentService;
 
     private Long testUserId;
-    private SysUser testUser;
     private UserLevel testUserLevel;
     private UserLearningStreak testStreak;
 
     @BeforeEach
     void setUp() {
         testUserId = 1L;
-
-        // 准备测试用户
-        testUser = new SysUser();
-        testUser.setId(testUserId);
-        testUser.setUsername("testuser");
-        testUser.setRealName("测试用户");
-        testUser.setEmail("test@example.com");
 
         // 准备用户等级
         testUserLevel = new UserLevel();
@@ -118,35 +83,6 @@ class StudentServiceImplTest {
     }
 
     @Test
-    @DisplayName("应该成功获取Dashboard数据")
-    void should_ReturnDashboard_When_UserExists() {
-        // Given
-        when(sysUserMapper.selectById(testUserId)).thenReturn(testUser);
-        when(userLevelMapper.selectOne(any())).thenReturn(testUserLevel);
-        when(userLearningStreakMapper.selectOne(any())).thenReturn(testStreak);
-        when(studyCheckinMapper.selectOne(any())).thenReturn(null);
-        when(learningProgressMapper.selectOne(any())).thenReturn(null);
-        when(learningProgressMapper.selectList(any())).thenReturn(new ArrayList<>());
-        when(enrollmentMapper.selectList(any())).thenReturn(new ArrayList<>());
-        when(achievementService.getRecentAchievements(eq(testUserId), anyInt()))
-            .thenReturn(new ArrayList<>());
-
-        // When
-        StudentDashboardResponse dashboard = studentService.getDashboard(testUserId);
-
-        // Then
-        assertThat(dashboard).isNotNull();
-        assertThat(dashboard.getUserInfo()).isNotNull();
-        assertThat(dashboard.getUserInfo().getUsername()).isEqualTo("testuser");
-        assertThat(dashboard.getUserInfo().getLevel()).isEqualTo(5);
-        assertThat(dashboard.getTodayStats()).isNotNull();
-        assertThat(dashboard.getTodayStats().getStreakDays()).isEqualTo(7);
-
-        verify(sysUserMapper).selectById(testUserId);
-        verify(userLevelMapper).selectOne(any());
-    }
-
-    @Test
     @DisplayName("应该成功获取学习统计")
     void should_ReturnStats_When_UserExists() {
         // Given
@@ -160,7 +96,7 @@ class StudentServiceImplTest {
 
         when(userLearningStatsService.getOrCreateStats(testUserId)).thenReturn(learningStats);
         when(userLearningStreakMapper.selectOne(any())).thenReturn(testStreak);
-        when(enrollmentMapper.selectList(any())).thenReturn(new ArrayList<>());
+        when(enrollmentMapper.selectUserEnrollmentsWithDetails(testUserId)).thenReturn(new ArrayList<>());
         when(achievementService.getUserAchievements(testUserId)).thenReturn(createMockAchievements(5));
         when(userLevelMapper.selectOne(any())).thenReturn(testUserLevel);
 
@@ -258,7 +194,7 @@ class StudentServiceImplTest {
             achievement.setId((long) (i + 1));
             achievement.setName("成就" + (i + 1));
             achievement.setDescription("测试成就");
-            achievement.setIcon("🏆");
+            achievement.setIcon("trophy");
             achievement.setPoints(100);
             achievement.setEarned(true);
             achievement.setEarnedAt(LocalDateTime.now());

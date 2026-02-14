@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 课程 Mapper
@@ -48,4 +49,43 @@ public interface CourseMapper extends BaseMapper<Course> {
             LIMIT #{limit}
             """)
     List<CourseHotItem> selectCourseHotRanking(@Param("enrolledStatus") int enrolledStatus, @Param("limit") int limit);
+
+    /**
+     * 按课程分类聚合报名人数（SQL 层 GROUP BY，避免全量加载到内存）
+     * LEFT JOIN 确保没有班期的分类也能返回（enrollmentCount = 0）
+     *
+     * @param publishedStatus 已发布状态码
+     * @return category + enrollmentCount 的聚合结果
+     */
+    @Select("""
+            SELECT c.category,
+                   COALESCE(SUM(cs.current_enrollment), 0) AS enrollmentCount
+            FROM course c
+            LEFT JOIN class_session cs ON cs.course_id = c.id AND cs.deleted = 0
+            WHERE c.status = #{publishedStatus} AND c.deleted = 0
+            GROUP BY c.category
+            ORDER BY enrollmentCount DESC
+            """)
+    List<Map<String, Object>> selectCategoryEnrollmentDistribution(@Param("publishedStatus") int publishedStatus);
+
+    /**
+     * 查询热门课程 ID 及其报名人数（SQL 层排序 + LIMIT，避免全量加载）
+     * 按班期 current_enrollment 之和降序排列
+     *
+     * @param publishedStatus 已发布状态码
+     * @param limit           返回数量限制
+     * @return courseId + enrollmentCount
+     */
+    @Select("""
+            SELECT c.id AS courseId,
+                   COALESCE(SUM(cs.current_enrollment), 0) AS enrollmentCount
+            FROM course c
+            LEFT JOIN class_session cs ON cs.course_id = c.id AND cs.deleted = 0
+            WHERE c.status = #{publishedStatus} AND c.deleted = 0
+            GROUP BY c.id
+            ORDER BY enrollmentCount DESC
+            LIMIT #{limit}
+            """)
+    List<Map<String, Object>> selectTopPopularCourseIds(@Param("publishedStatus") int publishedStatus,
+                                                         @Param("limit") int limit);
 }

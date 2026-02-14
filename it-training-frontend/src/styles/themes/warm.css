@@ -1,0 +1,86 @@
+/* ============================================================================
+ * 暖阳橙 (Warm) — Notion/Craft 温润派：暖纸白 + stone 灰 + amber 点睛
+ * ============================================================================ */
+[data-theme='warm'] {
+  /* Primary — Amber-600 (稍沉稳) */
+  --color-primary: 217 119 6;
+  --color-primary-light: 245 158 11;
+  --color-primary-dark: 180 83 9;
+
+  /* Accent — Rose for warm theme */
+  --color-accent: 244 63 94;
+
+  /* Backgrounds — 更白一点的暖底 */
+  --color-bg: 255 251 245;
+  --color-surface: 255 255 255;
+  --color-surface-alt: 254 252 248;
+
+  /* Text — Stone 色系 */
+  --color-text: 41 37 36;
+  --color-text-secondary: 87 83 78;
+  --color-text-tertiary: 168 162 158;
+
+  /* Border — 柔和暖灰 */
+  --color-border: 231 229 228;
+
+  /* Semantic */
+  --color-success: 76 175 80;
+  --color-warning: 245 158 11;
+  --color-danger: 244 67 54;
+  --color-info: 33 150 243;
+
+  /* Shadows — 暖色 tint */
+  --shadow-sm: 0 1px 2px rgba(120, 80, 20, 0.04);
+  --shadow:
+    0 2px 4px rgba(120, 80, 20, 0.05),
+    0 0 0 1px rgba(120, 80, 20, 0.03);
+  --shadow-lg:
+    0 15px 35px rgba(120, 80, 20, 0.08),
+    0 5px 15px rgba(120, 80, 20, 0.04);
+  --shadow-xl:
+    0 30px 60px rgba(120, 80, 20, 0.10),
+    0 10px 20px rgba(120, 80, 20, 0.05);
+
+  /* Radius — slightly rounder */
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 24px;
+
+  /* Glass */
+  --glass-bg: rgba(255, 252, 248, 0.75);
+  --glass-border: rgba(217, 119, 6, 0.12);
+  --glass-blur: 16px;
+  --glass-shadow:
+    0 2px 4px rgba(120, 80, 20, 0.05),
+    0 0 0 1px rgba(120, 80, 20, 0.03);
+
+  /* Navbar */
+  --navbar-bg: rgba(255, 251, 245, 0.75);
+  --navbar-border: rgba(200, 160, 100, 0.12);
+  --navbar-blur: 20px;
+
+  /* Sidebar */
+  --sidebar-bg: 255 252 248;
+  --sidebar-border: rgba(200, 160, 100, 0.10);
+
+  /* Aurora — 暖色 amber spectrum */
+  --aurora-1: rgba(217, 119, 6, 0.15);
+  --aurora-2: rgba(245, 158, 11, 0.12);
+  --aurora-3: rgba(180, 83, 9, 0.08);
+  --aurora-4: rgba(76, 175, 80, 0.05);
+
+  /* Gradient Text — Amber warm spectrum */
+  --gradient-text: linear-gradient(135deg, #D97706, #F59E0B);
+  --gradient-hero: linear-gradient(135deg, #D97706 0%, #F59E0B 40%, #EA580C 70%, #4CAF50 100%);
+
+  /* Mesh Gradient — warm amber */
+  --mesh-1: radial-gradient(ellipse at 20% 50%, rgba(217, 119, 6, 0.12) 0%, transparent 50%);
+  --mesh-2: radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.10) 0%, transparent 50%);
+  --mesh-3: radial-gradient(ellipse at 60% 80%, rgba(180, 83, 9, 0.06) 0%, transparent 50%);
+  --mesh-4: radial-gradient(ellipse at 30% 90%, rgba(76, 175, 80, 0.04) 0%, transparent 50%);
+
+  /* Glow — Warm 模式不需要，但保持变量兼容 */
+  --glow-primary: none;
+  --glow-hover: none;
+  --gradient-border: none;
+}

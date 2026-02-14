@@ -1,20 +1,13 @@
 package com.itts.modules.student.service;
 
-import com.itts.modules.student.dto.StudentDashboardResponse;
 import com.itts.modules.student.dto.StudentStatsResponse;
 
 /**
  * 学生服务接口
+ * <p>
+ * [Phase 6 #7] getDashboard 已拆分至 StudentDashboardService
  */
 public interface StudentService {
-
-    /**
-     * 获取学生Dashboard数据
-     *
-     * @param userId 用户ID
-     * @return Dashboard数据
-     */
-    StudentDashboardResponse getDashboard(Long userId);
 
     /**
      * 获取学生学习统计

@@ -1,0 +1,86 @@
+/* ============================================================================
+ * 冰川蓝 (Pro) — Vercel 冷峻派：冷灰底 + slate/sky 专业色 + 极简线条
+ * ============================================================================ */
+[data-theme='pro'] {
+  /* Primary — Sky-600 (更明亮) */
+  --color-primary: 2 132 199;
+  --color-primary-light: 14 165 233;
+  --color-primary-dark: 3 105 161;
+
+  /* Accent — Violet for pro theme */
+  --color-accent: 139 92 246;
+
+  /* Backgrounds — Vercel 风格 */
+  --color-bg: 248 250 252;
+  --color-surface: 255 255 255;
+  --color-surface-alt: 241 245 249;
+
+  /* Text — Slate 色系 */
+  --color-text: 15 23 42;
+  --color-text-secondary: 100 116 139;
+  --color-text-tertiary: 148 163 184;
+
+  /* Border */
+  --color-border: 226 232 240;
+
+  /* Semantic */
+  --color-success: 34 197 94;
+  --color-warning: 245 158 11;
+  --color-danger: 239 68 68;
+  --color-info: 59 130 246;
+
+  /* Shadows — 更淡、更 subtle (Vercel 风格) */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.03);
+  --shadow:
+    0 1px 3px rgba(15, 23, 42, 0.04),
+    0 0 0 1px rgba(15, 23, 42, 0.03);
+  --shadow-lg:
+    0 10px 25px rgba(15, 23, 42, 0.06),
+    0 4px 10px rgba(15, 23, 42, 0.03);
+  --shadow-xl:
+    0 20px 50px rgba(15, 23, 42, 0.08),
+    0 8px 20px rgba(15, 23, 42, 0.04);
+
+  /* Radius — 更紧凑锐利 (Vercel 风格) */
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(226, 232, 240, 0.5);
+  --glass-blur: 16px;
+  --glass-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.04),
+    0 0 0 1px rgba(15, 23, 42, 0.03);
+
+  /* Navbar */
+  --navbar-bg: rgba(248, 250, 252, 0.8);
+  --navbar-border: rgba(15, 23, 42, 0.06);
+  --navbar-blur: 16px;
+
+  /* Sidebar */
+  --sidebar-bg: 255 255 255;
+  --sidebar-border: rgba(15, 23, 42, 0.06);
+
+  /* Aurora — Stripe-style cool professional mesh */
+  --aurora-1: rgba(2, 132, 199, 0.12);
+  --aurora-2: rgba(14, 165, 233, 0.10);
+  --aurora-3: rgba(59, 130, 246, 0.06);
+  --aurora-4: rgba(34, 197, 94, 0.04);
+
+  /* Gradient Text — Sky cool spectrum */
+  --gradient-text: linear-gradient(135deg, #0284C7, #0EA5E9);
+  --gradient-hero: linear-gradient(135deg, #0284C7 0%, #3B82F6 30%, #0EA5E9 60%, #22C55E 100%);
+
+  /* Mesh Gradient — cool pro */
+  --mesh-1: radial-gradient(ellipse at 20% 50%, rgba(2, 132, 199, 0.10) 0%, transparent 50%);
+  --mesh-2: radial-gradient(ellipse at 80% 20%, rgba(14, 165, 233, 0.08) 0%, transparent 50%);
+  --mesh-3: radial-gradient(ellipse at 60% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+  --mesh-4: radial-gradient(ellipse at 30% 90%, rgba(34, 197, 94, 0.03) 0%, transparent 50%);
+
+  /* Glow — Pro 模式不需要，但保持变量兼容 */
+  --glow-primary: none;
+  --glow-hover: none;
+  --gradient-border: none;
+}

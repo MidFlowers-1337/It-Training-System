@@ -18,7 +18,6 @@ import com.itts.modules.course.mapper.CourseMapper;
 import com.itts.modules.course.service.CourseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -100,7 +99,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
     public CourseResponse createCourse(CourseCreateRequest request) {
         log.info("创建课程: {}", request.getCode());
@@ -112,7 +111,14 @@ public class CourseServiceImpl implements CourseService {
         }
 
         Course course = new Course();
-        BeanUtils.copyProperties(request, course);
+        course.setCode(request.getCode());
+        course.setName(request.getName());
+        course.setCategory(request.getCategory());
+        course.setDescription(request.getDescription());
+        course.setCoverImage(request.getCoverImage());
+        course.setDifficulty(request.getDifficulty());
+        course.setDurationHours(request.getDurationHours());
+        course.setTags(request.getTags());
         course.setStatus(CourseStatus.DRAFT.getCode()); // 默认草稿状态
         course.setDeleted(DeleteFlag.NOT_DELETED);
 
@@ -123,7 +129,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Caching(evict = {
             @CacheEvict(value = RedisCacheConfig.CACHE_COURSES, key = "#id"),
             @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
@@ -131,10 +137,7 @@ public class CourseServiceImpl implements CourseService {
     public CourseResponse updateCourse(Long id, CourseUpdateRequest request) {
         log.info("更新课程: {}", id);
 
-        Course course = courseMapper.selectById(id);
-        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
-            throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
-        }
+        Course course = getActiveCourseOrThrow(id);
 
         // 更新字段（只更新非空字段）
         if (StringUtils.hasText(request.getName())) {
@@ -166,7 +169,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Caching(evict = {
             @CacheEvict(value = RedisCacheConfig.CACHE_COURSES, key = "#id"),
             @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
@@ -174,10 +177,7 @@ public class CourseServiceImpl implements CourseService {
     public void deleteCourse(Long id) {
         log.info("删除课程: {}", id);
 
-        Course course = courseMapper.selectById(id);
-        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
-            throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
-        }
+        Course course = getActiveCourseOrThrow(id);
 
         // 检查是否有班期
         int sessionCount = courseMapper.countSessionsByCourseId(id);
@@ -193,7 +193,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Caching(evict = {
             @CacheEvict(value = RedisCacheConfig.CACHE_COURSES, key = "#id"),
             @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
@@ -201,10 +201,7 @@ public class CourseServiceImpl implements CourseService {
     public void publishCourse(Long id) {
         log.info("发布课程: {}", id);
 
-        Course course = courseMapper.selectById(id);
-        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
-            throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
-        }
+        Course course = getActiveCourseOrThrow(id);
 
         course.setStatus(CourseStatus.PUBLISHED.getCode()); // 已发布
         courseMapper.updateById(course);
@@ -213,7 +210,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Caching(evict = {
             @CacheEvict(value = RedisCacheConfig.CACHE_COURSES, key = "#id"),
             @CacheEvict(value = RedisCacheConfig.CACHE_COURSE_LIST, allEntries = true)
@@ -221,10 +218,7 @@ public class CourseServiceImpl implements CourseService {
     public void unpublishCourse(Long id) {
         log.info("下架课程: {}", id);
 
-        Course course = courseMapper.selectById(id);
-        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
-            throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
-        }
+        Course course = getActiveCourseOrThrow(id);
 
         course.setStatus(CourseStatus.DRAFT.getCode()); // 草稿
         courseMapper.updateById(course);
@@ -232,31 +226,55 @@ public class CourseServiceImpl implements CourseService {
         log.info("课程下架成功: {}", id);
     }
 
+
+    /**
+     * 获取未删除的课程，不存在或已删除则抛出异常
+     * 统一前置校验逻辑，消除 updateCourse/deleteCourse/publishCourse/unpublishCourse 中的重复代码
+     */
+    private Course getActiveCourseOrThrow(Long id) {
+        Course course = courseMapper.selectById(id);
+        if (course == null || DeleteFlag.isDeleted(course.getDeleted())) {
+            throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
+        }
+        return course;
+    }
+
     /**
      * 转换为响应对象
      */
     private CourseResponse convertToResponse(Course course) {
-        CourseResponse response = new CourseResponse();
-        BeanUtils.copyProperties(course, response);
-
-        // 设置分类名称
+        // 获取分类名称
+        String categoryName;
         try {
             CourseCategory category = CourseCategory.valueOf(course.getCategory());
-            response.setCategoryName(category.getDesc());
-        } catch (Exception e) {
-            response.setCategoryName(course.getCategory());
+            categoryName = category.getDesc();
+        } catch (IllegalArgumentException e) {
+            log.warn("未知的课程分类: {}", course.getCategory());
+            categoryName = course.getCategory();
         }
 
-        // 设置难度名称
+        // 获取难度名称
         CourseDifficulty difficulty = CourseDifficulty.fromCode(course.getDifficulty());
-        if (difficulty != null) {
-            response.setDifficultyName(difficulty.getDesc());
-        }
 
-        // 设置状态名称
+        // 获取状态名称
         CourseStatus status = CourseStatus.fromCode(course.getStatus());
-        response.setStatusName(status != null ? status.getDesc() : "未知");
 
-        return response;
+        return CourseResponse.builder()
+                .id(course.getId())
+                .code(course.getCode())
+                .name(course.getName())
+                .category(course.getCategory())
+                .categoryName(categoryName)
+                .description(course.getDescription())
+                .coverImage(course.getCoverImage())
+                .difficulty(course.getDifficulty())
+                .difficultyName(difficulty != null ? difficulty.getDesc() : null)
+                .durationHours(course.getDurationHours())
+                .tags(course.getTags())
+                .status(course.getStatus())
+                .statusName(status != null ? status.getDesc() : "未知")
+                .createdAt(course.getCreatedAt())
+                .updatedAt(course.getUpdatedAt())
+                .build();
     }
 }

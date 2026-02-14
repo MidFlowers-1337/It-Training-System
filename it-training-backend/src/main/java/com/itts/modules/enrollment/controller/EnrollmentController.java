@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 
 /**
  * 报名管理控制器
@@ -44,7 +43,7 @@ public class EnrollmentController {
     @PatchMapping("/{id}/cancel")
     public R<Void> cancelEnrollment(
             @PathVariable Long id,
-            @RequestBody(required = false) CancelEnrollmentRequest request) {
+            @Valid @RequestBody(required = false) CancelEnrollmentRequest request) {
         String reason = request != null ? request.getReason() : null;
         enrollmentService.cancelEnrollment(id, reason);
         return R.ok();
@@ -52,8 +51,10 @@ public class EnrollmentController {
 
     @Operation(summary = "获取我的报名列表")
     @GetMapping("/my")
-    public R<List<EnrollmentResponse>> getMyEnrollments() {
-        List<EnrollmentResponse> enrollments = enrollmentService.getMyEnrollments();
+    public R<IPage<EnrollmentResponse>> getMyEnrollments(
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") int size) {
+        IPage<EnrollmentResponse> enrollments = enrollmentService.getMyEnrollments(page, size);
         return R.ok(enrollments);
     }
 

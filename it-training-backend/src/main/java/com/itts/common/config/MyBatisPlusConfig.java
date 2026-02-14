@@ -20,8 +20,8 @@ public class MyBatisPlusConfig {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         // 分页插件
         PaginationInnerInterceptor paginationInterceptor = new PaginationInnerInterceptor(DbType.MYSQL);
-        // 设置单页最大限制为 500 条，防止内存溢出
-        paginationInterceptor.setMaxLimit(500L);
+        // 设置单页最大限制为 100 条，防止恶意传入极大值导致查询过重
+        paginationInterceptor.setMaxLimit(100L);
         // 溢出后继续查询（不抛异常，而是返回最大限制条数）
         paginationInterceptor.setOverflow(false);
         interceptor.addInnerInterceptor(paginationInterceptor);

@@ -1,5 +1,6 @@
 package com.itts.modules.session.dto;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -48,5 +49,7 @@ public class SessionUpdateRequest {
     /**
      * 状态: 0-未开放, 1-报名中, 2-已满员, 3-进行中, 4-已结束
      */
+    @Min(value = 0, message = "状态值最小为0")
+    @Max(value = 4, message = "状态值最大为4")
     private Integer status;
 }

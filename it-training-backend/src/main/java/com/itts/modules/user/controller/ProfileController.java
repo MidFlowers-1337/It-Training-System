@@ -3,13 +3,18 @@ package com.itts.modules.user.controller;
 import com.itts.common.response.R;
 import com.itts.common.util.SecurityUtils;
 import com.itts.modules.user.dto.ChangePasswordRequest;
+import com.itts.modules.user.dto.PasswordConfirmRequest;
 import com.itts.modules.user.dto.ProfileUpdateRequest;
 import com.itts.modules.user.dto.UserResponse;
 import com.itts.modules.user.service.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/profile")
 @RequiredArgsConstructor
+@Validated
 public class ProfileController {
 
     private final ProfileService profileService;
@@ -54,7 +60,7 @@ public class ProfileController {
 
     @Operation(summary = "上传头像")
     @PostMapping("/avatar")
-    public R<String> uploadAvatar(@RequestParam String avatarUrl) {
+    public R<String> uploadAvatar(@RequestParam @NotBlank(message = "头像URL不能为空") String avatarUrl) {
         Long userId = SecurityUtils.getCurrentUserId();
         String url = profileService.updateAvatar(userId, avatarUrl);
         return R.ok(url);
@@ -69,7 +75,9 @@ public class ProfileController {
 
     @Operation(summary = "绑定邮箱")
     @PostMapping("/bind-email")
-    public R<Void> bindEmail(@RequestParam String email, @RequestParam String code) {
+    public R<Void> bindEmail(
+            @RequestParam @Email(message = "邮箱格式不正确") String email,
+            @RequestParam @NotBlank(message = "验证码不能为空") String code) {
         Long userId = SecurityUtils.getCurrentUserId();
         profileService.bindEmail(userId, email, code);
         return R.ok();
@@ -77,7 +85,9 @@ public class ProfileController {
 
     @Operation(summary = "绑定手机")
     @PostMapping("/bind-phone")
-    public R<Void> bindPhone(@RequestParam String phone, @RequestParam String code) {
+    public R<Void> bindPhone(
+            @RequestParam @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确") String phone,
+            @RequestParam @NotBlank(message = "验证码不能为空") String code) {
         Long userId = SecurityUtils.getCurrentUserId();
         profileService.bindPhone(userId, phone, code);
         return R.ok();
@@ -85,31 +95,32 @@ public class ProfileController {
 
     @Operation(summary = "发送邮箱验证码")
     @PostMapping("/send-email-code")
-    public R<Void> sendEmailCode(@RequestParam String email) {
+    public R<Void> sendEmailCode(@RequestParam @Email(message = "邮箱格式不正确") String email) {
         profileService.sendEmailCode(email);
         return R.ok();
     }
 
     @Operation(summary = "发送手机验证码")
     @PostMapping("/send-phone-code")
-    public R<Void> sendPhoneCode(@RequestParam String phone) {
+    public R<Void> sendPhoneCode(
+            @RequestParam @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确") String phone) {
         profileService.sendPhoneCode(phone);
         return R.ok();
     }
 
-    @Operation(summary = "注销账号")
+    @Operation(summary = "停用账号", description = "软删除：将账号状态设为禁用，非物理删除")
     @DeleteMapping
-    public R<Void> deleteAccount(@RequestParam String password) {
+    public R<Void> disableAccount(@Valid @RequestBody PasswordConfirmRequest request) {
         Long userId = SecurityUtils.getCurrentUserId();
-        profileService.deleteAccount(userId, password);
+        profileService.disableAccount(userId, request.getPassword());
         return R.ok();
     }
 
     @Operation(summary = "清除学习数据")
     @PostMapping("/clear-data")
-    public R<Void> clearLearningData(@RequestParam String password) {
+    public R<Void> clearLearningData(@Valid @RequestBody PasswordConfirmRequest request) {
         Long userId = SecurityUtils.getCurrentUserId();
-        profileService.clearLearningData(userId, password);
+        profileService.clearLearningData(userId, request.getPassword());
         return R.ok();
     }
 }

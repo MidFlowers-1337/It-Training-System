@@ -2,17 +2,23 @@ package com.itts.modules.learning.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.itts.common.util.TimeFormatUtils;
 import com.itts.modules.learning.dto.UserStatsResponse;
-import com.itts.modules.learning.entity.StudyCheckin;
+import com.itts.modules.checkin.entity.StudyCheckin;
+import com.itts.modules.achievement.entity.UserAchievement;
 import com.itts.modules.learning.entity.UserLearningStats;
-import com.itts.modules.learning.mapper.StudyCheckinMapper;
+import com.itts.modules.achievement.event.LearningActivityEvent;
+import com.itts.modules.checkin.mapper.StudyCheckinMapper;
+import com.itts.modules.achievement.mapper.UserAchievementMapper;
 import com.itts.modules.learning.mapper.UserLearningStatsMapper;
 import com.itts.modules.learning.service.UserLearningStatsService;
 import com.itts.modules.user.entity.SysUser;
 import com.itts.modules.user.mapper.SysUserMapper;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +29,12 @@ import java.util.List;
 
 /**
  * 用户学习统计服务实现
+ * <p>
+ * [Phase 5 #30] 移除 @Lazy AchievementService 循环依赖，
+ * 改用 ApplicationEventPublisher 发布 LearningActivityEvent 触发成就检查，
+ * 成就数量统计改为直接查询 UserAchievementMapper（避免循环引用）。
  */
+@Slf4j
 @Service
 public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsMapper, UserLearningStats>
         implements UserLearningStatsService {
@@ -34,9 +45,11 @@ public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsM
     @Autowired
     private StudyCheckinMapper checkinMapper;
 
-    @Lazy
     @Autowired
-    private com.itts.modules.learning.service.AchievementService achievementService;
+    private UserAchievementMapper userAchievementMapper;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     public UserStatsResponse getUserStats(Long userId) {
@@ -49,10 +62,10 @@ public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsM
 
         // 总体统计
         response.setTotalStudyMinutes(stats.getTotalStudyMinutes());
-        response.setTotalStudyFormatted(formatStudyTime(stats.getTotalStudyMinutes()));
+        response.setTotalStudyFormatted(TimeFormatUtils.formatStudyTime(stats.getTotalStudyMinutes()));
         response.setTotalCoursesEnrolled(stats.getTotalCoursesEnrolled());
         response.setTotalCoursesCompleted(stats.getTotalCoursesCompleted());
-        
+
         // 计算完成率
         if (stats.getTotalCoursesEnrolled() > 0) {
             response.setCompletionRate(
@@ -71,14 +84,47 @@ public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsM
         // 成就统计
         response.setTotalAchievementPoints(stats.getTotalAchievementPoints());
 
-        // 获取成就数量
-        List<com.itts.modules.learning.dto.AchievementResponse> achievements =
-            achievementService.getUserAchievements(userId);
-        response.setAchievementsEarned(achievements.size());
+        // [Phase 5 #30] 直接查询 Mapper 获取成就数量，避免循环依赖 AchievementService
+        long achievementsEarned = userAchievementMapper.selectCount(
+            new LambdaQueryWrapper<UserAchievement>().eq(UserAchievement::getUserId, userId)
+        );
+        response.setAchievementsEarned((int) achievementsEarned);
 
         // 时间分布统计
-        response.setWeeklyStudyMinutes(calculateWeeklyStudyMinutes(userId));
-        response.setMonthlyStudyMinutes(calculateMonthlyStudyMinutes(userId));
+        // [Phase 4 #P11] 合并查询：一次查询过去30天打卡记录，在内存中计算周/月统计
+        LocalDate today = LocalDate.now();
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate weekStart = today.minusDays(today.getDayOfWeek().getValue() - 1);
+        LocalDate thirtyDaysAgo = today.minusDays(29);
+
+        // 选取最早的日期作为查询起点（monthStart 或 thirtyDaysAgo）
+        LocalDate queryStart = monthStart.isBefore(thirtyDaysAgo) ? monthStart : thirtyDaysAgo;
+        if (weekStart.isBefore(queryStart)) {
+            queryStart = weekStart;
+        }
+
+        List<StudyCheckin> recentCheckins = checkinMapper.selectList(
+            new LambdaQueryWrapper<StudyCheckin>()
+                .eq(StudyCheckin::getUserId, userId)
+                .ge(StudyCheckin::getCheckinDate, queryStart)
+                .le(StudyCheckin::getCheckinDate, today)
+        );
+
+        // 从同一批数据计算周学习时长
+        final LocalDate finalWeekStart = weekStart;
+        int weeklyMinutes = recentCheckins.stream()
+            .filter(c -> !c.getCheckinDate().isBefore(finalWeekStart) && !c.getCheckinDate().isAfter(today))
+            .mapToInt(StudyCheckin::getStudyMinutes)
+            .sum();
+        response.setWeeklyStudyMinutes(weeklyMinutes);
+
+        // 从同一批数据计算月学习时长
+        final LocalDate finalMonthStart = monthStart;
+        int monthlyMinutes = recentCheckins.stream()
+            .filter(c -> !c.getCheckinDate().isBefore(finalMonthStart) && !c.getCheckinDate().isAfter(today))
+            .mapToInt(StudyCheckin::getStudyMinutes)
+            .sum();
+        response.setMonthlyStudyMinutes(monthlyMinutes);
 
         // 最近30天学习趋势
         response.setLast30DaysTrend(getLast30DaysTrend(userId));
@@ -87,7 +133,7 @@ public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsM
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserLearningStats initUserStats(Long userId) {
         // 检查是否已存在
         UserLearningStats existing = getOne(
@@ -111,75 +157,80 @@ public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsM
     }
 
     @Override
-    @Transactional
+    @CacheEvict(value = "stats:user", key = "#userId")
+    @Transactional(rollbackFor = Exception.class)
     public void addStudyTime(Long userId, int studyMinutes) {
-        UserLearningStats stats = getOrCreateStats(userId);
-        stats.setTotalStudyMinutes(stats.getTotalStudyMinutes() + studyMinutes);
-        stats.setLastStudyDate(LocalDate.now());
-        updateById(stats);
+        // 确保统计记录存在
+        getOrCreateStats(userId);
+        // 使用原子 SQL 增加学习时长，避免并发读-改-写竞态
+        baseMapper.atomicAddStudyMinutes(userId, studyMinutes, LocalDate.now());
+
+        // [Phase 5 #30] 发布学习活动事件，由 AchievementService 监听并检查成就
+        eventPublisher.publishEvent(new LearningActivityEvent(this, userId, "study_time"));
     }
 
     @Override
-    @Transactional
+    @CacheEvict(value = "stats:user", key = "#userId")
+    @Transactional(rollbackFor = Exception.class)
     public void updateStreakDays(Long userId) {
         UserLearningStats stats = getOrCreateStats(userId);
         LocalDate today = LocalDate.now();
         LocalDate lastStudyDate = stats.getLastStudyDate();
 
         if (lastStudyDate == null) {
-            // 首次学习
-            stats.setCurrentStreakDays(1);
-            stats.setMaxStreakDays(1);
-            stats.setTotalCheckinDays(1);
+            // 首次学习：原子初始化打卡
+            baseMapper.atomicInitStreak(userId, today);
         } else {
             long daysBetween = ChronoUnit.DAYS.between(lastStudyDate, today);
-            
+
             if (daysBetween == 0) {
                 // 今天已经打过卡，不更新
                 return;
             } else if (daysBetween == 1) {
-                // 连续打卡
-                stats.setCurrentStreakDays(stats.getCurrentStreakDays() + 1);
-                stats.setTotalCheckinDays(stats.getTotalCheckinDays() + 1);
-                if (stats.getCurrentStreakDays() > stats.getMaxStreakDays()) {
-                    stats.setMaxStreakDays(stats.getCurrentStreakDays());
-                }
+                // 连续打卡：原子递增
+                baseMapper.atomicIncrementStreak(userId, today);
             } else {
-                // 断签，重新开始
-                stats.setCurrentStreakDays(1);
-                stats.setTotalCheckinDays(stats.getTotalCheckinDays() + 1);
+                // 断签：原子重置为1
+                baseMapper.atomicResetStreak(userId, today);
             }
         }
-
-        stats.setLastStudyDate(today);
-        updateById(stats);
     }
 
     @Override
-    @Transactional
+    @CacheEvict(value = "stats:user", key = "#userId")
+    @Transactional(rollbackFor = Exception.class)
     public void incrementCompletedCourses(Long userId) {
-        UserLearningStats stats = getOrCreateStats(userId);
-        stats.setTotalCoursesCompleted(stats.getTotalCoursesCompleted() + 1);
-        updateById(stats);
+        // 确保统计记录存在
+        getOrCreateStats(userId);
+        // 原子递增已完成课程数
+        baseMapper.atomicIncrementCompletedCourses(userId);
+
+        // [Phase 5 #30] 完成课程也可能触发成就
+        eventPublisher.publishEvent(new LearningActivityEvent(this, userId, "progress_update"));
     }
 
     @Override
-    @Transactional
+    @CacheEvict(value = "stats:user", key = "#userId")
+    @Transactional(rollbackFor = Exception.class)
     public void incrementEnrolledCourses(Long userId) {
-        UserLearningStats stats = getOrCreateStats(userId);
-        stats.setTotalCoursesEnrolled(stats.getTotalCoursesEnrolled() + 1);
-        updateById(stats);
+        // 确保统计记录存在
+        getOrCreateStats(userId);
+        // 原子递增已报名课程数
+        baseMapper.atomicIncrementEnrolledCourses(userId);
     }
 
     @Override
-    @Transactional
+    @CacheEvict(value = "stats:user", key = "#userId")
+    @Transactional(rollbackFor = Exception.class)
     public void addAchievementPoints(Long userId, int points) {
-        UserLearningStats stats = getOrCreateStats(userId);
-        stats.setTotalAchievementPoints(stats.getTotalAchievementPoints() + points);
-        updateById(stats);
+        // 确保统计记录存在
+        getOrCreateStats(userId);
+        // 原子增加成就积分
+        baseMapper.atomicAddAchievementPoints(userId, points);
     }
 
     @Override
+    @Cacheable(value = "stats:user", key = "#userId")
     public UserLearningStats getOrCreateStats(Long userId) {
         UserLearningStats stats = getOne(
             new LambdaQueryWrapper<UserLearningStats>().eq(UserLearningStats::getUserId, userId)
@@ -191,85 +242,32 @@ public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsM
     }
 
     /**
-     * 格式化学习时长
-     */
-    private String formatStudyTime(int minutes) {
-        if (minutes < 60) {
-            return minutes + "分钟";
-        }
-        int hours = minutes / 60;
-        int remainingMinutes = minutes % 60;
-        if (remainingMinutes == 0) {
-            return hours + "小时";
-        }
-        return hours + "小时" + remainingMinutes + "分钟";
-    }
-
-    /**
-     * 计算本周学习时长
-     */
-    private Integer calculateWeeklyStudyMinutes(Long userId) {
-        LocalDate today = LocalDate.now();
-        LocalDate weekStart = today.minusDays(today.getDayOfWeek().getValue() - 1);
-        
-        List<StudyCheckin> checkins = checkinMapper.selectList(
-            new LambdaQueryWrapper<StudyCheckin>()
-                .eq(StudyCheckin::getUserId, userId)
-                .ge(StudyCheckin::getCheckinDate, weekStart)
-                .le(StudyCheckin::getCheckinDate, today)
-        );
-        
-        return checkins.stream()
-            .mapToInt(StudyCheckin::getStudyMinutes)
-            .sum();
-    }
-
-    /**
-     * 计算本月学习时长
-     */
-    private Integer calculateMonthlyStudyMinutes(Long userId) {
-        LocalDate today = LocalDate.now();
-        LocalDate monthStart = today.withDayOfMonth(1);
-        
-        List<StudyCheckin> checkins = checkinMapper.selectList(
-            new LambdaQueryWrapper<StudyCheckin>()
-                .eq(StudyCheckin::getUserId, userId)
-                .ge(StudyCheckin::getCheckinDate, monthStart)
-                .le(StudyCheckin::getCheckinDate, today)
-        );
-        
-        return checkins.stream()
-            .mapToInt(StudyCheckin::getStudyMinutes)
-            .sum();
-    }
-
-    /**
      * 获取最近30天学习趋势
      */
     private List<UserStatsResponse.DailyStudyTrend> getLast30DaysTrend(Long userId) {
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(29);
-        
+
         List<StudyCheckin> checkins = checkinMapper.selectList(
             new LambdaQueryWrapper<StudyCheckin>()
                 .eq(StudyCheckin::getUserId, userId)
                 .ge(StudyCheckin::getCheckinDate, startDate)
                 .le(StudyCheckin::getCheckinDate, today)
         );
-        
+
         List<UserStatsResponse.DailyStudyTrend> trends = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
             LocalDate date = startDate.plusDays(i);
             UserStatsResponse.DailyStudyTrend trend = new UserStatsResponse.DailyStudyTrend();
             trend.setDate(date);
-            
+
             // 查找该日期的打卡记录
             final LocalDate checkDate = date;
             StudyCheckin checkin = checkins.stream()
                 .filter(c -> c.getCheckinDate().equals(checkDate))
                 .findFirst()
                 .orElse(null);
-            
+
             if (checkin != null) {
                 trend.setStudyMinutes(checkin.getStudyMinutes());
                 trend.setCheckedIn(true);
@@ -277,10 +275,10 @@ public class UserLearningStatsServiceImpl extends ServiceImpl<UserLearningStatsM
                 trend.setStudyMinutes(0);
                 trend.setCheckedIn(false);
             }
-            
+
             trends.add(trend);
         }
-        
+
         return trends;
     }
 }
